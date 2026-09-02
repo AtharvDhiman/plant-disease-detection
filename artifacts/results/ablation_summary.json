@@ -1,0 +1,395 @@
+{
+  "available": true,
+  "control": "abl_cnn_none",
+  "arms": [
+    {
+      "arm": "A",
+      "model_name": "abl_cnn_none",
+      "label": "CNN (control)",
+      "description": "No attention.",
+      "accuracy": 0.9587719298245614,
+      "f1_macro": 0.9582211797526797,
+      "recall_macro": 0.9587719298245615,
+      "precision_macro": 0.9592764515034942,
+      "top3_accuracy": 0.9951754385964913,
+      "ece": 0.06765205567669975,
+      "parameters": 1248774,
+      "inference_ms": 1.922292499921241,
+      "training_time_s": 625.2560763000001,
+      "delta_vs_control": {
+        "accuracy": 0.0,
+        "f1_macro": 0.0,
+        "recall_macro": 0.0,
+        "parameter_overhead": 0,
+        "parameter_overhead_pct": 0.0,
+        "inference_overhead_ms": 0.0,
+        "inference_overhead_pct": 0.0
+      }
+    },
+    {
+      "arm": "B",
+      "model_name": "abl_cnn_channel",
+      "label": "CNN + Channel attention",
+      "description": "CBAM's channel branch only - learns *what* is important.",
+      "accuracy": 0.9633771929824562,
+      "f1_macro": 0.9631067467245754,
+      "recall_macro": 0.9633771929824564,
+      "precision_macro": 0.9637247957951675,
+      "top3_accuracy": 0.9964912280701754,
+      "ece": 0.042878572541501465,
+      "parameters": 1259782,
+      "inference_ms": 4.216572500035909,
+      "training_time_s": 762.6106914000002,
+      "delta_vs_control": {
+        "accuracy": 0.004605263157894779,
+        "f1_macro": 0.004885566971895683,
+        "recall_macro": 0.00460526315789489,
+        "parameter_overhead": 11008,
+        "parameter_overhead_pct": 0.8815045796917617,
+        "inference_overhead_ms": 2.294280000114668,
+        "inference_overhead_pct": 119.35124338302667
+      }
+    },
+    {
+      "arm": "C",
+      "model_name": "abl_cnn_spatial",
+      "label": "CNN + Spatial attention",
+      "description": "CBAM's spatial branch only - learns *where* it is important.",
+      "accuracy": 0.9611842105263158,
+      "f1_macro": 0.9606112847878152,
+      "recall_macro": 0.961184210526316,
+      "precision_macro": 0.9614297017001368,
+      "top3_accuracy": 0.9940789473684211,
+      "ece": 0.06567904082894849,
+      "parameters": 1249166,
+      "inference_ms": 3.2452050000301824,
+      "training_time_s": 778.7823071000003,
+      "delta_vs_control": {
+        "accuracy": 0.0024122807017543657,
+        "f1_macro": 0.0023901050351354813,
+        "recall_macro": 0.0024122807017544767,
+        "parameter_overhead": 392,
+        "parameter_overhead_pct": 0.03139078808495372,
+        "inference_overhead_ms": 1.3229125001089415,
+        "inference_overhead_pct": 68.81952149129974
+      }
+    },
+    {
+      "arm": "D",
+      "model_name": "abl_cnn_se",
+      "label": "CNN + SE",
+      "description": "Squeeze-and-Excitation: channel attention from average pooling alone.",
+      "accuracy": 0.9638157894736842,
+      "f1_macro": 0.9633610020068778,
+      "recall_macro": 0.9638157894736842,
+      "precision_macro": 0.9643022858999298,
+      "top3_accuracy": 0.9958333333333333,
+      "ece": 0.05821894350739423,
+      "parameters": 1259782,
+      "inference_ms": 5.374219999998786,
+      "training_time_s": 714.9504606,
+      "delta_vs_control": {
+        "accuracy": 0.005043859649122795,
+        "f1_macro": 0.005139822254198068,
+        "recall_macro": 0.005043859649122684,
+        "parameter_overhead": 11008,
+        "parameter_overhead_pct": 0.8815045796917617,
+        "inference_overhead_ms": 3.451927500077545,
+        "inference_overhead_pct": 179.5734780330764
+      }
+    },
+    {
+      "arm": "E",
+      "model_name": "abl_cnn_cbam",
+      "label": "CNN + CBAM",
+      "description": "Both branches, channel then spatial (the proposed configuration).",
+      "accuracy": 0.962938596491228,
+      "f1_macro": 0.9627509904436913,
+      "recall_macro": 0.9629385964912281,
+      "precision_macro": 0.9634543436574315,
+      "top3_accuracy": 0.9958333333333333,
+      "ece": 0.041298899616588655,
+      "parameters": 1260174,
+      "inference_ms": 6.662212500077658,
+      "training_time_s": 922.1305828,
+      "delta_vs_control": {
+        "accuracy": 0.004166666666666652,
+        "f1_macro": 0.004529810691011549,
+        "recall_macro": 0.004166666666666652,
+        "parameter_overhead": 11400,
+        "parameter_overhead_pct": 0.9128953677767154,
+        "inference_overhead_ms": 4.739920000156417,
+        "inference_overhead_pct": 246.57641853935434
+      }
+    }
+  ],
+  "verdict": {
+    "cbam_delta_f1_macro": 0.004529810691011549,
+    "cbam_delta_accuracy": 0.004166666666666652,
+    "cbam_inference_overhead_pct": 246.57641853935434,
+    "cbam_parameter_overhead_pct": 0.9128953677767154,
+    "best_arm": "CNN + SE",
+    "best_arm_f1": 0.9633610020068778,
+    "cbam_is_best": false,
+    "statement": "CBAM improved macro F1 by 0.45 points, which is within the 0.47-point run-to-run variation measured on this setup. The improvement is directionally positive but not established.",
+    "significance_threshold_f1": 0.004680854615235375,
+    "margin_over_threshold": 0.9677315497618311,
+    "evidence_strength": "within noise",
+    "caveat": "All five arms share one architecture, one training budget, one data subset and one seed; only the attention block differs. A single run per arm cannot establish statistical significance. Retraining cnn_baseline at 3 seeds moved macro F1 across 0.22 points (SD 0.11). Repeating identical configurations moved it further still, by up to 0.47 points, so 0.47 points is used as the threshold: it is the largest variation observed between runs that should have been equivalent. A gap between attention arms smaller than this is not evidence of an architectural effect."
+  },
+  "noise_floor": {
+    "available": true,
+    "nondeterminism": {
+      "method": "Identical architectures and hyperparameters trained once in the benchmark suite and once in the ablation suite, at the same seed. See differs_in on each observation for what varied; where the DataLoader worker count differs the pair also captures augmentation and batch-order variance, not only GPU non-determinism.",
+      "observations": [
+        {
+          "pair": [
+            "cnn_baseline",
+            "abl_cnn_none"
+          ],
+          "group": [
+            "cnn_baseline",
+            "abl_cnn_none"
+          ],
+          "runs": 2,
+          "accuracy": [
+            0.9583333333333334,
+            0.9587719298245614
+          ],
+          "f1_macro": [
+            0.9577771587006444,
+            0.9582211797526797
+          ],
+          "accuracy_gap": 0.00043859649122801603,
+          "f1_macro_gap": 0.00044402105203533715,
+          "differs_in": [
+            "cuDNN algorithm selection",
+            "GPU reduction order",
+            "DataLoader worker count (2 vs 4), and so the per-worker augmentation seeds and batch composition"
+          ]
+        },
+        {
+          "pair": [
+            "cnn_se",
+            "abl_cnn_se"
+          ],
+          "group": [
+            "cnn_se",
+            "abl_cnn_se"
+          ],
+          "runs": 2,
+          "accuracy": [
+            0.9603070175438596,
+            0.9638157894736842
+          ],
+          "f1_macro": [
+            0.9598336064606504,
+            0.9633610020068778
+          ],
+          "accuracy_gap": 0.0035087719298245723,
+          "f1_macro_gap": 0.0035273955462273854,
+          "differs_in": [
+            "cuDNN algorithm selection",
+            "GPU reduction order",
+            "DataLoader worker count (2 vs 4), and so the per-worker augmentation seeds and batch composition"
+          ]
+        },
+        {
+          "pair": [
+            "cnn_cbam",
+            "place_cbam_all"
+          ],
+          "group": [
+            "cnn_cbam",
+            "abl_cnn_cbam",
+            "place_cbam_all"
+          ],
+          "runs": 3,
+          "accuracy": [
+            0.9607456140350877,
+            0.9653508771929824
+          ],
+          "f1_macro": [
+            0.9605200091779169,
+            0.9652008637931523
+          ],
+          "accuracy_gap": 0.004605263157894668,
+          "f1_macro_gap": 0.004680854615235375,
+          "differs_in": [
+            "cuDNN algorithm selection",
+            "GPU reduction order",
+            "DataLoader worker count (0 vs 2), and so the per-worker augmentation seeds and batch composition"
+          ]
+        }
+      ],
+      "max_accuracy_gap": 0.004605263157894668,
+      "max_f1_macro_gap": 0.004680854615235375,
+      "mean_f1_macro_gap": 0.0028840904044993656
+    },
+    "seed": {
+      "method": "The same architecture (cnn_baseline) trained 3 times at different seeds. Everything varies that varies between two different architectures - weight initialisation, augmentation draws, batch composition - except the architecture itself.",
+      "model_name": "cnn_baseline",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "f1_macro": [
+        0.9577771587006444,
+        0.9556074569719416,
+        0.9569789786904431
+      ],
+      "accuracy": [
+        0.9583333333333334,
+        0.956140350877193,
+        0.9574561403508772
+      ],
+      "mean_f1_macro": 0.9567878647876764,
+      "sd_f1_macro": 0.001097403658986529,
+      "spread_f1_macro": 0.0021697017287027887
+    },
+    "threshold_f1_macro": 0.004680854615235375,
+    "threshold_basis": "nondeterminism",
+    "interpretation": "Retraining cnn_baseline at 3 seeds moved macro F1 across 0.22 points (SD 0.11). Repeating identical configurations moved it further still, by up to 0.47 points, so 0.47 points is used as the threshold: it is the largest variation observed between runs that should have been equivalent. A gap between attention arms smaller than this is not evidence of an architectural effect."
+  },
+  "transfer_pairs": {
+    "available": true,
+    "pairs": [
+      {
+        "backbone": "EfficientNet-B0",
+        "without_cbam": {
+          "model_name": "efficientnet_b0",
+          "accuracy": 0.9701754385964912,
+          "f1_macro": 0.970039053744108,
+          "parameters": 4056226,
+          "inference_ms": 19.466277500043816
+        },
+        "with_cbam": {
+          "model_name": "efficientnet_b0_cbam",
+          "accuracy": 0.9682017543859649,
+          "f1_macro": 0.9680816300462523,
+          "parameters": 4261124,
+          "inference_ms": 17.842557499989198
+        },
+        "delta_accuracy": -0.0019736842105263497,
+        "delta_f1_macro": -0.001957423697855787,
+        "parameter_overhead_pct": 5.051444372182418,
+        "inference_overhead_pct": -8.341194149990738,
+        "beyond_noise": false
+      },
+      {
+        "backbone": "ResNet50",
+        "without_cbam": {
+          "model_name": "resnet50",
+          "accuracy": 0.9912280701754386,
+          "f1_macro": 0.9912120540380606,
+          "parameters": 23585894,
+          "inference_ms": 14.19245749999618
+        },
+        "with_cbam": {
+          "model_name": "resnet50_cbam",
+          "accuracy": 0.9914473684210526,
+          "f1_macro": 0.9914433568654919,
+          "parameters": 24110280,
+          "inference_ms": 15.927767499943002
+        },
+        "delta_accuracy": 0.00021929824561406353,
+        "delta_f1_macro": 0.00023130282743133446,
+        "parameter_overhead_pct": 2.2233034711340602,
+        "inference_overhead_pct": 12.226987468148405,
+        "beyond_noise": false
+      },
+      {
+        "backbone": "MobileNetV3-Large",
+        "without_cbam": {
+          "model_name": "mobilenet_v3_large",
+          "accuracy": 0.950219298245614,
+          "f1_macro": 0.9497335588422178,
+          "parameters": 3008470,
+          "inference_ms": 13.64365250000219
+        },
+        "with_cbam": {
+          "model_name": "mobilenet_v3_large_cbam",
+          "accuracy": 0.9478070175438597,
+          "f1_macro": 0.9472598640895885,
+          "parameters": 3123768,
+          "inference_ms": 14.240222500006894
+        },
+        "delta_accuracy": -0.0024122807017543657,
+        "delta_f1_macro": -0.002473694752629263,
+        "parameter_overhead_pct": 3.8324463930170487,
+        "inference_overhead_pct": 4.372509487504228,
+        "beyond_noise": false
+      }
+    ],
+    "improved_count": 1,
+    "total_pairs": 3,
+    "significance_threshold_f1": 0.004680854615235375,
+    "verdict": "Across 3 matched backbone pair(s), every CBAM/no-CBAM difference is smaller than the 0.47-point run-to-run variation measured on this setup. On pretrained backbones at this scale, the evidence neither supports nor refutes a CBAM benefit.",
+    "caveat": "One run per configuration. These pairs are a secondary line of evidence alongside the controlled five-arm ablation, not a replacement for it - the ablation holds the backbone fixed, whereas each pair here changes only where CBAM is inserted in an already pretrained network."
+  },
+  "placement": {
+    "available": true,
+    "control": "abl_cnn_none",
+    "control_f1_macro": 0.9582211797526797,
+    "variants": [
+      {
+        "model_name": "place_cbam_last",
+        "label": "Last stage only",
+        "stages_with_attention": 1,
+        "accuracy": 0.9574561403508772,
+        "f1_macro": 0.9569219926266893,
+        "parameters": 1257064,
+        "inference_ms": 3.6021149999896807,
+        "delta_f1_macro": -0.0012991871259904197,
+        "beyond_noise": false
+      },
+      {
+        "model_name": "place_cbam_last2",
+        "label": "Last two stages",
+        "stages_with_attention": 2,
+        "accuracy": 0.9677631578947369,
+        "f1_macro": 0.9675886329064374,
+        "parameters": 1259210,
+        "inference_ms": 5.7021374999976615,
+        "delta_f1_macro": 0.009367453153757643,
+        "beyond_noise": true
+      },
+      {
+        "model_name": "place_cbam_all",
+        "label": "Every stage",
+        "stages_with_attention": 4,
+        "accuracy": 0.9653508771929824,
+        "f1_macro": 0.9652008637931523,
+        "parameters": 1260174,
+        "inference_ms": 4.582992499854299,
+        "delta_f1_macro": 0.006979684040472556,
+        "beyond_noise": true
+      }
+    ],
+    "best": "place_cbam_last2",
+    "best_label": "Last two stages",
+    "spread_f1_macro": 0.010666640279748063,
+    "spread_beyond_noise": true,
+    "production_replication": {
+      "available": true,
+      "all_stages": {
+        "model_name": "cnn_cbam",
+        "f1_macro": 0.9841949284592842,
+        "accuracy": 0.9842362849988618,
+        "parameters": 1260174
+      },
+      "last_two_stages": {
+        "model_name": "place_cbam_last2",
+        "f1_macro": 0.9880308957593098,
+        "accuracy": 0.9881060778511268,
+        "parameters": 1259210
+      },
+      "delta_f1_macro": 0.0038359673000255556,
+      "agrees_with_fixed_budget": true,
+      "statement": "At full data scale the same contrast holds: CBAM on the last two stages reaches 0.9880 macro F1 against 0.9842 for CBAM on every stage, a +0.38 pt difference at an identical parameter count. The fixed-budget study and the full-data runs therefore agree on direction, which a single measurement could not establish."
+    },
+    "statement": "Attention on the last two stages scored highest (0.9676 macro F1, +0.94 pt against the identical network without attention). The spread between the best and worst placement is 1.07 pt, larger than the 0.47-pt run-to-run floor. The worst placement is 0.13 pt *below* the no-attention control, so the same block can help or hurt depending only on where it is inserted.",
+    "caveat": "One run per placement. The spread is compared against the measured run-to-run floor, which is a lower bound rather than a significance test, so this identifies where to look next rather than settling the question."
+  }
+}

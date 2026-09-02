@@ -1,0 +1,47 @@
+# Datasets and caches
+_kagglehub_cache/
+data/manifests/
+data/dataset_path.json
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Model weights and artefacts. Patterns are recursive (**) because checkpoints
+# are written into per-suite subdirectories such as models/checkpoints/tuning/,
+# which a single-level pattern silently misses. Weights are build output: they
+# are reproducible from the pipeline and would otherwise add hundreds of MB of
+# binary churn to the history.
+models/checkpoints/**/*.pt
+models/exported/**/*.pt
+models/exported/**/*.onnx
+models/exported/**/*.torchscript.pt
+artifacts/features/
+artifacts/logs/
+artifacts/_samples/
+uploads/*
+!uploads/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Environment
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+artifacts/results/predictions/

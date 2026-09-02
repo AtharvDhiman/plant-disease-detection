@@ -1,0 +1,106 @@
+{
+  "experiment_id": "place_cbam_last2__prod__a300cf2a",
+  "model_name": "place_cbam_last2",
+  "config": {
+    "model_name": "place_cbam_last2",
+    "experiment_id": "place_cbam_last2__prod__a300cf2a",
+    "train_split": "train",
+    "val_split": "val",
+    "test_split": "test",
+    "image_size": 224,
+    "batch_size": 32,
+    "num_workers": 0,
+    "augmentation": "medium",
+    "epochs": 6,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "optimizer": "adamw",
+    "scheduler": "cosine",
+    "warmup_epochs": 1,
+    "label_smoothing": 0.05,
+    "grad_clip": 1.0,
+    "two_stage": true,
+    "stage1_epochs": 2,
+    "stage2_lr_scale": 0.15,
+    "unfreeze_last_n": 3,
+    "class_weight_scheme": null,
+    "use_balanced_sampler": false,
+    "use_focal_loss": false,
+    "focal_gamma": 2.0,
+    "amp": false,
+    "seed": 42,
+    "early_stopping_patience": 2,
+    "min_delta": 0.0001,
+    "pretrained": true,
+    "group": "placement",
+    "notes": "",
+    "tags": []
+  },
+  "history": {
+    "epoch": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "train_loss": [
+      2.258789,
+      0.990249,
+      0.766884,
+      0.657128,
+      0.58571,
+      0.556199
+    ],
+    "train_acc": [
+      0.439539,
+      0.815598,
+      0.894347,
+      0.930387,
+      0.954919,
+      0.963597
+    ],
+    "val_loss": [
+      1.106146,
+      0.660199,
+      0.591355,
+      0.516756,
+      0.488358,
+      0.478969
+    ],
+    "val_acc": [
+      0.760028,
+      0.934282,
+      0.955192,
+      0.97909,
+      0.985206,
+      0.987767
+    ],
+    "lr": [
+      0.0003,
+      0.00027163902366467965,
+      0.00019738902366467966,
+      0.0001056109763353203,
+      3.1360976335320314e-05,
+      2.9999999999999997e-06
+    ],
+    "epoch_time_s": [
+      1839.43,
+      1712.98,
+      1579.01,
+      1683.54,
+      1686.74,
+      1756.42
+    ],
+    "stage_boundary": null
+  },
+  "best_val_accuracy": 0.9877667140825036,
+  "best_val_loss": 0.4789691179015728,
+  "best_epoch": 6,
+  "epochs_run": 6,
+  "training_time_s": 10258.733109300001,
+  "total_parameters": 1259210,
+  "model_size_mb": 4.810890197753906,
+  "stopped_early": false
+}

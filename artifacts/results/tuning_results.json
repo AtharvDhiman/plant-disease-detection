@@ -1,0 +1,118 @@
+{
+  "generated_at": "2026-09-01T12:17:35.882255+00:00",
+  "model": "cnn_cbam",
+  "strategy": "random",
+  "epochs_per_trial": 8,
+  "search_space": {
+    "learning_rate": [
+      0.0001,
+      0.0003,
+      0.001
+    ],
+    "weight_decay": [
+      1e-05,
+      0.0001,
+      0.001
+    ],
+    "dropout": [
+      0.2,
+      0.4
+    ]
+  },
+  "selection_metric": "best validation accuracy",
+  "trials": [
+    {
+      "params": {
+        "learning_rate": 0.001,
+        "weight_decay": 1e-05,
+        "dropout": 0.2
+      },
+      "experiment_id": "cnn_cbam__tune__bfc22c43",
+      "val_accuracy": 0.9649122807017544,
+      "val_loss": 0.5702316916825478,
+      "best_epoch": 8,
+      "epochs_run": 8,
+      "training_time_s": 840.0882712
+    },
+    {
+      "params": {
+        "learning_rate": 0.001,
+        "weight_decay": 0.001,
+        "dropout": 0.2
+      },
+      "experiment_id": "cnn_cbam__tune__b5a21636",
+      "val_accuracy": 0.9592105263157895,
+      "val_loss": 0.5808288049279597,
+      "best_epoch": 8,
+      "epochs_run": 8,
+      "training_time_s": 712.8313289000002
+    },
+    {
+      "params": {
+        "learning_rate": 0.001,
+        "weight_decay": 0.0001,
+        "dropout": 0.2
+      },
+      "experiment_id": "cnn_cbam__tune__6e4108fe",
+      "val_accuracy": 0.9587719298245614,
+      "val_loss": 0.5704386852289501,
+      "best_epoch": 8,
+      "epochs_run": 8,
+      "training_time_s": 716.8463828000001
+    },
+    {
+      "params": {
+        "learning_rate": 0.001,
+        "weight_decay": 1e-05,
+        "dropout": 0.4
+      },
+      "experiment_id": "cnn_cbam__tune__4594c351",
+      "val_accuracy": 0.9425438596491228,
+      "val_loss": 0.6307959736439219,
+      "best_epoch": 8,
+      "epochs_run": 8,
+      "training_time_s": 720.6699197999997
+    },
+    {
+      "params": {
+        "learning_rate": 0.0001,
+        "weight_decay": 0.001,
+        "dropout": 0.2
+      },
+      "experiment_id": "cnn_cbam__tune__9868cc42",
+      "val_accuracy": 0.900438596491228,
+      "val_loss": 0.7501862877293637,
+      "best_epoch": 8,
+      "epochs_run": 8,
+      "training_time_s": 717.0121918
+    },
+    {
+      "params": {
+        "learning_rate": 0.0001,
+        "weight_decay": 1e-05,
+        "dropout": 0.2
+      },
+      "experiment_id": "cnn_cbam__tune__e3a898de",
+      "val_accuracy": 0.8995614035087719,
+      "val_loss": 0.7606468790455868,
+      "best_epoch": 8,
+      "epochs_run": 8,
+      "training_time_s": 728.1439403999998
+    }
+  ],
+  "best": {
+    "params": {
+      "learning_rate": 0.001,
+      "weight_decay": 1e-05,
+      "dropout": 0.2
+    },
+    "experiment_id": "cnn_cbam__tune__bfc22c43",
+    "val_accuracy": 0.9649122807017544,
+    "val_loss": 0.5702316916825478,
+    "best_epoch": 8,
+    "epochs_run": 8,
+    "training_time_s": 840.0882712
+  },
+  "spread_val_accuracy": 0.06535087719298249,
+  "caveat": "Trials ran for 8 epochs on the benchmark subset - enough to rank configurations, not to produce a final model. Selection is on validation accuracy; the test split is not touched here. With one run per configuration, a gap smaller than the run-to-run noise floor reported in the ablation summary should not be read as a real difference."
+}

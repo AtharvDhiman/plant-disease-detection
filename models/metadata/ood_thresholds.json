@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-09-01T07:05:22.367784+00:00",
+  "model": "efficientnet_b0",
+  "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0__prod__9a259f82.pt",
+  "in_distribution": {
+    "split": "test_bench",
+    "count": 4000,
+    "accuracy": 0.99275
+  },
+  "ood_source": {
+    "kind": "synthetic_proxies",
+    "families": [
+      "noise",
+      "flat",
+      "shuffle",
+      "extreme"
+    ],
+    "count": 1200,
+    "caveat": "Synthetic proxies (uniform noise, flat colour fields, tile-shuffled leaves, heavily degraded leaves) are genuinely out of distribution but are easier to reject than real photographs of unrelated subjects. The detection rates below are therefore an upper bound. Re-run with --ood-dir pointing at a real non-leaf corpus for a tighter estimate."
+  },
+  "selected": {
+    "target_tpr": 0.95,
+    "msp_min": 0.8059374094009399,
+    "entropy_max": 0.2699751074861548,
+    "energy_max": -4.62461519241333,
+    "per_score": {
+      "msp": {
+        "tpr": 0.95,
+        "fpr": 0.06583333333333333,
+        "ood_detection_rate": 0.9341666666666667
+      },
+      "entropy": {
+        "tpr": 0.95,
+        "fpr": 0.0675,
+        "ood_detection_rate": 0.9325
+      },
+      "energy": {
+        "tpr": 0.95,
+        "fpr": 0.27166666666666667,
+        "ood_detection_rate": 0.7283333333333333
+      }
+    },
+    "distributions": {
+      "in_distribution": {
+        "msp_mean": 0.9429515600204468,
+        "entropy_mean": 0.09078096852029086,
+        "energy_mean": -6.554375648498535
+      },
+      "ood": {
+        "msp_mean": 0.40744754672050476,
+        "entropy_mean": 0.6380356209917317,
+        "energy_mean": -4.344792366027832
+      }
+    },
+    "method": "msp+entropy"
+  },
+  "metrics": {
+    "auroc": {
+      "Max softmax probability": 0.9752070833333333,
+      "Normalised entropy": 0.9770039583333333,
+      "Free energy": 0.9414502083333334
+    },
+    "detection_rates": {
+      "Max softmax probability": 0.9341666666666667,
+      "Normalised entropy": 0.9325,
+      "Free energy": 0.7283333333333333
+    },
+    "pipeline": {
+      "sampled_ood": 400,
+      "sampled_in_distribution": 300,
+      "quality_gate_rejects_ood": 0.63,
+      "ood_score_rejects_ood": 0.935,
+      "pipeline_rejects_ood": 0.95,
+      "quality_gate_rejects_real_leaves": 0.02,
+      "per_family": {
+        "extreme": {
+          "count": 100,
+          "quality_gate_rejected": 0.51,
+          "ood_score_rejected": 0.81,
+          "pipeline_rejected": 0.87
+        },
+        "flat": {
+          "count": 100,
+          "quality_gate_rejected": 1.0,
+          "ood_score_rejected": 1.0,
+          "pipeline_rejected": 1.0
+        },
+        "noise": {
+          "count": 100,
+          "quality_gate_rejected": 1.0,
+          "ood_score_rejected": 1.0,
+          "pipeline_rejected": 1.0
+        },
+        "shuffle": {
+          "count": 100,
+          "quality_gate_rejected": 0.01,
+          "ood_score_rejected": 0.93,
+          "pipeline_rejected": 0.93
+        }
+      },
+      "interpretation": "The deployed pipeline runs the image-quality gate before the model, so the end-to-end rejection rate is what a user experiences. The 'quality_gate_rejects_real_leaves' figure is the cost of that gate: the fraction of genuine test photographs it would ask the user to retake."
+    }
+  },
+  "plot": "D:\\Data science projects\\Plant disease detection\\artifacts\\plots\\ood_score_distributions.png",
+  "note": "The serving path enforces the MSP and entropy thresholds. The energy threshold is recorded for reference; it is the least stable of the three across retraining because it depends on the absolute logit scale."
+}

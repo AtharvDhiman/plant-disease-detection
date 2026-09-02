@@ -1,0 +1,225 @@
+@import "tailwindcss";
+
+/*
+  Design system
+  =============
+  An agriculture-inspired palette: a deep leaf green as the primary, a warm
+  clay red for disease/danger states, and a warm neutral ramp so the interface
+  reads as organic rather than clinical. Every colour is declared as a CSS
+  variable in both themes so components never hard-code a hex value.
+*/
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-leaf-50: #f1f8f2;
+  --color-leaf-100: #dcefdf;
+  --color-leaf-200: #bbdfc2;
+  --color-leaf-300: #8fc79b;
+  --color-leaf-400: #5faa71;
+  --color-leaf-500: #3f8c54;
+  --color-leaf-600: #2f7a4d;
+  --color-leaf-700: #26603e;
+  --color-leaf-800: #204d34;
+  --color-leaf-900: #1b402c;
+  --color-leaf-950: #0d2418;
+
+  --color-clay-50: #fdf4f1;
+  --color-clay-100: #fae6df;
+  --color-clay-200: #f5cdc0;
+  --color-clay-300: #eba894;
+  --color-clay-400: #de7a5e;
+  --color-clay-500: #d05a3c;
+  --color-clay-600: #c1553b;
+  --color-clay-700: #a03d29;
+  --color-clay-800: #843426;
+  --color-clay-900: #6e2f23;
+  /* The 950 shade completes the ramp. It was missing while six dark-mode
+     rules across History and ImageUploader referenced bg-clay-950, so those
+     panels fell back to the light background while keeping their light text
+     - readable in neither theme. Undefined custom shades fail silently in
+     Tailwind, which is why it survived so long. */
+  --color-clay-950: #3f1a13;
+
+  --color-amber-soft: #d9a441;
+
+  --radius-card: 1rem;
+}
+
+:root {
+  --surface: #f7f9f6;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eef2ec;
+  --border-subtle: #dfe6dc;
+  --border-strong: #c6d2c2;
+  --text-primary: #17251c;
+  --text-secondary: #4f5f55;
+  --text-muted: #7b8a80;
+  --shadow-card: 0 1px 2px rgb(23 37 28 / 0.05), 0 8px 24px -12px rgb(23 37 28 / 0.18);
+  color-scheme: light;
+}
+
+html.dark {
+  --surface: #0d130f;
+  --surface-raised: #151d18;
+  --surface-sunken: #101711;
+  --border-subtle: #263025;
+  --border-strong: #35422f;
+  --text-primary: #e9f0e9;
+  --text-secondary: #a9b8ac;
+  --text-muted: #7c8b80;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Respect the user's reduced-motion preference everywhere at once. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  ::selection {
+    background-color: var(--color-leaf-200);
+    color: var(--color-leaf-900);
+  }
+
+  html.dark ::selection {
+    background-color: var(--color-leaf-800);
+    color: var(--color-leaf-50);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-leaf-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Slim, theme-aware scrollbars. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 2px solid var(--surface);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-leaf-400);
+  }
+}
+
+@layer components {
+  .surface-card {
+    background-color: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .text-secondary {
+    color: var(--text-secondary);
+  }
+
+  .text-muted {
+    color: var(--text-muted);
+  }
+
+  .surface-sunken {
+    background-color: var(--surface-sunken);
+  }
+}
+
+/* --------------------------------------------------------------- animations */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes scan {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scan {
+  animation: scan 1.8s ease-in-out infinite;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-sunken);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.35),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+html.dark .skeleton::after {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.06),
+    transparent
+  );
+}

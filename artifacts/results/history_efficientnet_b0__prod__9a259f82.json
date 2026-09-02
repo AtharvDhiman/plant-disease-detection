@@ -1,0 +1,106 @@
+{
+  "experiment_id": "efficientnet_b0__prod__9a259f82",
+  "model_name": "efficientnet_b0",
+  "config": {
+    "model_name": "efficientnet_b0",
+    "experiment_id": "efficientnet_b0__prod__9a259f82",
+    "train_split": "train",
+    "val_split": "val",
+    "test_split": "test",
+    "image_size": 224,
+    "batch_size": 16,
+    "num_workers": 2,
+    "augmentation": "medium",
+    "epochs": 6,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "optimizer": "adamw",
+    "scheduler": "cosine",
+    "warmup_epochs": 1,
+    "label_smoothing": 0.05,
+    "grad_clip": 1.0,
+    "two_stage": true,
+    "stage1_epochs": 2,
+    "stage2_lr_scale": 0.15,
+    "unfreeze_last_n": 3,
+    "class_weight_scheme": null,
+    "use_balanced_sampler": false,
+    "use_focal_loss": false,
+    "focal_gamma": 2.0,
+    "amp": false,
+    "seed": 42,
+    "early_stopping_patience": 2,
+    "min_delta": 0.0001,
+    "pretrained": true,
+    "group": "benchmark",
+    "notes": "Model 4 - compound-scaled ImageNet transfer baseline.",
+    "tags": []
+  },
+  "history": {
+    "epoch": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "train_loss": [
+      2.109284,
+      0.924863,
+      0.654087,
+      0.54321,
+      0.511972,
+      0.499862
+    ],
+    "train_acc": [
+      0.612023,
+      0.85815,
+      0.940393,
+      0.971801,
+      0.979704,
+      0.981617
+    ],
+    "val_loss": [
+      0.89777,
+      0.757291,
+      0.508744,
+      0.479533,
+      0.457701,
+      0.455127
+    ],
+    "val_acc": [
+      0.878236,
+      0.908108,
+      0.981792,
+      0.98478,
+      0.990327,
+      0.991892
+    ],
+    "lr": [
+      0.0003,
+      0.00027163902366467965,
+      3.847815000631112e-05,
+      2.2727212424161988e-05,
+      6.974978678557419e-06,
+      4.5e-07
+    ],
+    "epoch_time_s": [
+      562.28,
+      570.25,
+      593.44,
+      529.6,
+      535.76,
+      670.52
+    ],
+    "stage_boundary": 2
+  },
+  "best_val_accuracy": 0.9918918918918919,
+  "best_val_loss": 0.45512738234627126,
+  "best_epoch": 6,
+  "epochs_run": 6,
+  "training_time_s": 3463.121453500001,
+  "total_parameters": 4056226,
+  "model_size_mb": 15.633926391601562,
+  "stopped_early": false
+}

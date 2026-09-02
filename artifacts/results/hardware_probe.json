@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-08-29T08:35:36.783850+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.9",
+  "hardware": {
+    "device": "cuda",
+    "gpu_name": "NVIDIA GeForce GTX 1650",
+    "vram_gb": 4.0,
+    "system_ram_gb": 7.35,
+    "cpu_count": 12,
+    "cpu_name": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+    "supports_amp": false,
+    "torch_version": "2.13.0+cu126",
+    "cuda_version": "12.6",
+    "amp_speedup": 0.241
+  },
+  "recommended_workers": 1,
+  "matmul_throughput": {
+    "fp32": {
+      "ms": 172.933,
+      "tflops": 0.795
+    },
+    "fp16": {
+      "ms": 754.945,
+      "tflops": 0.182
+    }
+  },
+  "training_step_throughput": {
+    "cnn_cbam": {
+      "batch_size": 8,
+      "image_size": 160,
+      "fp32": {
+        "ms_per_step": 103.79,
+        "images_per_second": 77.1
+      },
+      "amp_fp16": {
+        "ms_per_step": 298.23,
+        "images_per_second": 26.8
+      },
+      "amp_speedup": 0.348,
+      "peak_vram_mb": 390.2
+    },
+    "efficientnet_b0": {
+      "batch_size": 8,
+      "image_size": 160,
+      "fp32": {
+        "ms_per_step": 87.26,
+        "images_per_second": 91.7
+      },
+      "amp_fp16": {
+        "ms_per_step": 162.65,
+        "images_per_second": 49.2
+      },
+      "amp_speedup": 0.536,
+      "peak_vram_mb": 424.4
+    }
+  },
+  "verdict": {
+    "median_amp_speedup": 0.536,
+    "amp_recommended": false,
+    "statement": "Mixed precision is 0.54x the speed of full precision on this GPU, so it is DISABLED - enabling it would make training slower."
+  }
+}

@@ -1,0 +1,65 @@
+# Plant Disease Detection - Python dependencies
+#
+# Deep-learning framework note
+# ---------------------------
+# This project uses PyTorch rather than TensorFlow/Keras. On the target platform
+# (Windows + Python 3.13) TensorFlow has no GPU support at all: native-Windows
+# GPU builds stopped at TF 2.10, which requires Python <= 3.10. PyTorch's CUDA
+# wheels work on this configuration and were verified against the GTX 1650 in
+# the development environment. The architecture is framework-agnostic: all model
+# code lives in backend/app/ml/ and is shared by training and serving.
+#
+# Install torch first, from the index matching your CUDA version:
+#   pip install --index-url https://download.pytorch.org/whl/cu126 torch torchvision
+# For CPU-only:
+#   pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+
+# ---- deep learning -------------------------------------------------------
+torch>=2.4
+torchvision>=0.19
+
+# ---- classical ML and image processing -----------------------------------
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.4
+scikit-image>=0.22
+xgboost>=2.0
+opencv-python-headless>=4.9
+Pillow>=10.2
+imagehash>=4.3
+
+# ---- data / plotting -----------------------------------------------------
+pandas>=2.1
+matplotlib>=3.8
+seaborn>=0.13
+
+# ---- experiment tracking -------------------------------------------------
+tensorboard>=2.16
+protobuf>=5.26,<6
+
+# ---- API -----------------------------------------------------------------
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic>=2.7
+pydantic-settings>=2.3
+SQLAlchemy>=2.0
+python-dotenv>=1.0
+
+# ---- dataset -------------------------------------------------------------
+kagglehub>=0.3
+
+# ---- testing -------------------------------------------------------------
+pytest>=8.0
+httpx>=0.27
+
+# ---- optional: portable model export -------------------------------------
+# Only needed for `python training/export_model.py --onnx`. The exporter falls
+# back to the TorchScript-based path when `onnxscript` is absent; `onnx` itself
+# is required to write the file and `onnxruntime` to verify it numerically.
+onnx>=1.16
+onnxruntime>=1.18
+
+# ---- optional: README screenshots ----------------------------------------
+# Only needed for `python scripts/capture_screenshots.py`.
+# playwright>=1.45

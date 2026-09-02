@@ -1,0 +1,64 @@
+# Tooling configuration. The project has no build step - it is run from source -
+# so this file exists purely to configure the linter and test runner.
+
+[tool.ruff]
+# The convention here: code targets ~100 columns and prose wraps at ~79. 120 is
+# the enforced ceiling, reached only by long f-strings and function signatures
+# where wrapping costs more readability than it buys. Docstring width is not
+# machine-enforced because several docstrings contain reference tables that must
+# not be reflowed.
+line-length = 120
+target-version = "py310"
+exclude = ["_kagglehub_cache", "frontend", "notebooks", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # import sorting
+    "B",    # bugbear: likely bugs and design problems
+    "UP",   # pyupgrade
+    "C4",   # comprehension simplifications
+    "SIM",  # simplifications
+    "RET",  # return-statement hygiene
+    "PTH",  # prefer pathlib over os.path
+]
+ignore = [
+    # The training scripts must set the OpenMP env var before importing torch,
+    # which forces module-level imports after code. This is deliberate and
+    # commented at every site.
+    "E402",
+    # Ruff cannot tell a deliberate broad catch from a careless one; every
+    # `except Exception` in this project has a comment explaining why the
+    # failure must not abort a long-running sweep or a user request.
+    "BLE001",
+    # Assigning then returning is often clearer when the name documents intent.
+    "RET504",
+    # `Depends(...)`, `Query(...)` and `File(...)` in parameter defaults are not
+    # a mutable-default bug - they are how FastAPI declares dependencies, and the
+    # framework replaces them before the function body ever runs.
+    "B008",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests deliberately import inside functions to control import order, and use
+# long descriptive assertion messages.
+"tests/*" = ["E501", "PLC0415"]
+# These scripts embed whole documents as string literals - notebook cell source,
+# disease-knowledge prose, generated markdown. Reflowing those lines would change
+# the generated output, so the line limit does not apply to them.
+"scripts/build_notebooks.py" = ["E501"]
+"scripts/build_disease_info.py" = ["E501"]
+"scripts/generate_docs.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+filterwarnings = [
+    # torchvision emits this for every pretrained-weights download.
+    "ignore::UserWarning",
+]

@@ -1,0 +1,51 @@
+# Plant Disease Detection - local / single-node deployment.
+#
+#   docker compose up --build
+#   → frontend  http://localhost:8080
+#   → API docs  http://localhost:8080/docs
+#
+# The trained model is NOT baked into the image. Train first, then the volumes
+# below make models/ and artifacts/ visible to the container. Without them the
+# API still starts and serves the dashboard, but /api/predict returns 503.
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+      args:
+        # Swap for https://download.pytorch.org/whl/cu126 to build a GPU image.
+        TORCH_INDEX: https://download.pytorch.org/whl/cpu
+    environment:
+      PDD_DATABASE_URL: sqlite:////app/data/plant_disease.db
+      PDD_UPLOAD_DIR: /app/uploads
+      PDD_DEVICE: cpu
+      PDD_LOG_LEVEL: INFO
+      # nginx proxies same-origin, so no cross-origin allowance is needed.
+      PDD_CORS_ORIGINS: http://localhost:8080
+    volumes:
+      # Read-only: the API must never modify a trained model or an artefact.
+      - ./models:/app/models:ro
+      - ./artifacts:/app/artifacts:ro
+      - ./data/disease_info.json:/app/data/disease_info.json:ro
+      # Writable: prediction history and stored uploads.
+      - pdd-data:/app/data
+      - pdd-uploads:/app/uploads
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pdd-data:
+  pdd-uploads:

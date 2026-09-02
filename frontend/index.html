@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Detect plant diseases from leaf images using a CNN with a Convolutional Block Attention Module. Calibrated confidence, Grad-CAM explanations and practical disease guidance."
+    />
+    <meta name="theme-color" content="#2f7a4d" />
+    <title>PlantGuard AI — Plant Disease Detection</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f7a4d'/%3E%3Cpath d='M23 8c0 8-5 13-11 13-1 0-2-.2-2-.2S9 11 23 8z' fill='%23fff'/%3E%3Cpath d='M9 24c1-5 4-9 9-11' stroke='%23fff' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Apply the stored theme before first paint so the page never flashes light.
+      (function () {
+        try {
+          var stored = localStorage.getItem('pdd-theme');
+          var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
