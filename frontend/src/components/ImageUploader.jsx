@@ -80,11 +80,13 @@ export default function ImageUploader({ onAnalyse, analysing, disabled }) {
   };
 
   const band = quality?.quality?.band;
+  const hasNotAPlant = quality?.quality?.issues?.some((i) => i.code === 'not_a_plant');
   const bandStyles = {
     good: 'border-leaf-300 bg-leaf-50 text-leaf-900 dark:bg-leaf-950/60 dark:text-leaf-100 dark:border-leaf-800',
     acceptable:
       'border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100 dark:border-amber-800',
     poor: 'border-clay-300 bg-clay-50 text-clay-900 dark:bg-clay-950/60 dark:text-clay-100 dark:border-clay-800',
+    not_a_plant: 'border-red-300 bg-red-50 text-red-900 dark:bg-red-950/60 dark:text-red-100 dark:border-red-800',
   };
 
   return (
@@ -191,16 +193,16 @@ export default function ImageUploader({ onAnalyse, analysing, disabled }) {
           )}
 
           {quality && (
-            <div className={clsx('rounded-xl border p-3.5 text-sm', bandStyles[band])}>
+            <div className={clsx('rounded-xl border p-3.5 text-sm', hasNotAPlant ? bandStyles.not_a_plant : bandStyles[band])}>
               <div className="flex items-start gap-2.5">
-                {band === 'good' ? (
-                  <CheckCircle2 size={17} className="mt-0.5 shrink-0" />
+                {band === 'good' && !hasNotAPlant ? (
+                  <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-leaf-600" />
                 ) : (
-                  <AlertTriangle size={17} className="mt-0.5 shrink-0" />
+                  <AlertTriangle size={17} className={clsx('mt-0.5 shrink-0', hasNotAPlant ? 'text-red-600' : 'text-amber-600')} />
                 )}
                 <div className="min-w-0">
                   <p className="font-medium">
-                    Image quality: {band} ({(quality.quality.score * 100).toFixed(0)}%)
+                    {hasNotAPlant ? 'Validation Warning: No plant leaf detected' : `Image quality: ${band} (${(quality.quality.score * 100).toFixed(0)}%)`}
                   </p>
                   <p className="mt-0.5 opacity-90">{quality.recommendation}</p>
                   {quality.quality.issues.length > 0 && (

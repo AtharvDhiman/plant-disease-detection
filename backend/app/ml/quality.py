@@ -20,9 +20,9 @@ Saturation        Near-grey images are usually documents or screenshots
 Spatial coherence Lag-1 pixel autocorrelation - separates photographs from noise
 ================  ==========================================================
 
-The green-pixel check is a *hint*, not a gate: diseased leaves can be almost
-entirely brown, so a low green fraction lowers the score without rejecting the
-image outright.
+The plant foliage check ensures the uploaded image contains genuine plant or
+leaf tissue: images without vegetation colors are rejected as `not_a_plant`
+to prevent classifying non-plant objects (people, cars, animals, electronics).
 """
 from __future__ import annotations
 
@@ -236,18 +236,18 @@ def analyse_image(image: Image.Image) -> QualityReport:
     else:
         factors.append(1.0)
 
-    if plant_like < 0.12:
+    if (plant_like < 0.10) or (green < 0.008) or (green < 0.02 and plant_like < 0.22):
         issues.append(QualityIssue(
-            "no_plant_detected", "warning",
-            f"Only {plant_like * 100:.0f}% of the image has plant-like colours.",
-            "Fill most of the frame with a single leaf and avoid busy backgrounds.",
+            "not_a_plant", "error",
+            f"No plant or leaf detected. Only {plant_like * 100:.0f}% of the image contains plant foliage or vegetation colors.",
+            "Please upload a clear photograph of a plant leaf from one of the 14 supported crops.",
         ))
-        factors.append(0.5)
-    elif plant_like < 0.3:
+        factors.append(0.05)
+    elif plant_like < 0.28:
         issues.append(QualityIssue(
             "small_leaf_area", "warning",
             f"The leaf appears to cover only {plant_like * 100:.0f}% of the frame.",
-            "Move closer so the leaf fills the frame.",
+            "Move closer so the leaf fills most of the frame.",
         ))
         factors.append(0.8)
     else:

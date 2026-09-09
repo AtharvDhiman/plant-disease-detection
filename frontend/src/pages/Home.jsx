@@ -119,6 +119,16 @@ export default function Home() {
             type: 'warning',
             title: 'Disease detected',
           });
+        } else if (prediction.status === 'not_a_plant') {
+          toast.push('Photo rejected: No plant leaf detected in this image.', {
+            type: 'error',
+            title: 'Not a plant leaf',
+          });
+        } else if (prediction.status === 'out_of_distribution') {
+          toast.push('Photo rejected: Image does not match supported crop leaves.', {
+            type: 'error',
+            title: 'Unrecognized image',
+          });
         } else {
           toast.push(prediction.status_message || 'The result needs review.', {
             type: 'warning',

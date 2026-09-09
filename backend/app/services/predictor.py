@@ -215,6 +215,7 @@ class Predictor:
         verdict = ood.assess(raw_logits, loaded.ood_thresholds)
 
         status, message = self._decide_status(quality, verdict, level)
+        is_rejected = status in ("not_a_plant", "poor_quality", "out_of_distribution")
 
         # 5 ------------------------------------------------- explainability
         explanations: dict = {}
@@ -222,7 +223,7 @@ class Predictor:
         explanation_errors: dict = {}
         channel_profile: list[float] | None = None
         explain_ms = 0.0
-        if explain and status != "poor_quality":
+        if explain and not is_rejected:
             explain_start = time.perf_counter()
             explanations, attention_stats, channel_profile, explanation_errors = self._explain(
                 loaded, tensor, image, int(order[0]), explain_methods, save_dir, file_stem
@@ -230,19 +231,39 @@ class Predictor:
             explain_ms = (time.perf_counter() - explain_start) * 1000
 
         total_ms = (time.perf_counter() - total_start) * 1000
-        info = knowledge_base.get(best.class_name)
+
+        if is_rejected:
+            predicted_class = "Unknown"
+            display_name = "Not Accepted"
+            plant = "Unknown"
+            condition = "Not a recognized plant leaf" if status != "poor_quality" else "Insufficient image quality"
+            is_healthy = False
+            reported_confidence = 0.0
+            reported_level = "low"
+            info = None
+            top_predictions = []
+        else:
+            predicted_class = best.class_name
+            display_name = best.display_name
+            plant = best.plant
+            condition = best.condition
+            is_healthy = best.is_healthy
+            reported_confidence = confidence
+            reported_level = level
+            info = knowledge_base.get(best.class_name)
+            top_predictions = top
 
         return PredictionResult(
-            predicted_class=best.class_name,
-            display_name=best.display_name,
-            plant=best.plant,
-            condition=best.condition,
-            is_healthy=best.is_healthy,
-            confidence=confidence,
-            confidence_level=level,
+            predicted_class=predicted_class,
+            display_name=display_name,
+            plant=plant,
+            condition=condition,
+            is_healthy=is_healthy,
+            confidence=reported_confidence,
+            confidence_level=reported_level,
             status=status,
             status_message=message,
-            top_predictions=top,
+            top_predictions=top_predictions,
             quality=quality,
             ood=verdict,
             model={
@@ -285,6 +306,23 @@ class Predictor:
         reported as a photo problem the user can fix, not as an unrecognised
         subject.
         """
+        # Photographic errors outrank non-plant detection so that dark/blurry shots
+        # are flagged as camera defects to fix:
+        if not quality.passed and any(i.severity == "error" and i.code != "not_a_plant" for i in quality.issues):
+            return "poor_quality", (
+                "Image quality is insufficient for a reliable prediction. "
+                + " ".join(issue.suggestion for issue in quality.issues
+                           if issue.severity == "error")
+            )
+
+        not_a_plant_issue = next((i for i in quality.issues if i.code == "not_a_plant"), None)
+        if not_a_plant_issue:
+            return "not_a_plant", (
+                "Photo rejected: No plant leaf detected. "
+                "This system is trained exclusively to diagnose leaf diseases across 14 crop species. "
+                + not_a_plant_issue.suggestion
+            )
+
         if not quality.passed and any(i.severity == "error" for i in quality.issues):
             return "poor_quality", (
                 "Image quality is insufficient for a reliable prediction. "
@@ -293,8 +331,8 @@ class Predictor:
             )
         if verdict.is_ood:
             return "out_of_distribution", (
-                "Unable to confidently identify this image. It does not resemble the "
-                "leaf photographs this model was trained on. " + " ".join(verdict.reasons)
+                "Unable to identify a plant leaf in this image. It does not resemble the "
+                "crop leaf photographs this model was trained on. " + " ".join(verdict.reasons)
             )
         if level == "low":
             return "low_confidence", CONFIDENCE_MESSAGES["low"]

@@ -18,6 +18,11 @@ import ExplainabilityViewer from './ExplainabilityViewer';
 import { Card, CardHeader, Chip, ProgressBar } from './ui';
 
 const STATUS_BANNERS = {
+  not_a_plant: {
+    icon: AlertTriangle,
+    tone: 'border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/60 dark:text-red-100',
+    title: 'Photo Rejected: Not a recognized plant leaf',
+  },
   poor_quality: {
     icon: AlertTriangle,
     tone: 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100',
@@ -26,7 +31,7 @@ const STATUS_BANNERS = {
   out_of_distribution: {
     icon: HelpCircle,
     tone: 'border-clay-300 bg-clay-50 text-clay-900 dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
-    title: 'Unable to confidently identify this image',
+    title: 'Photo Rejected: Unrecognized subject or non-leaf object',
   },
   low_confidence: {
     icon: AlertTriangle,
@@ -51,18 +56,17 @@ function StatusBanner({ status, message }) {
 }
 
 export default function PredictionResult({ result }) {
-  // A refused analysis must not wear a green "High confidence" chip. The
-  // reported confidence is temperature-scaled, while the reliability decision is
-  // taken on the raw logits the thresholds were measured on - so a leaf can read
-  // 94.7% here and still sit in the lowest 5% of genuine leaves by the
-  // uncalibrated measure that actually governs the verdict. Both numbers are
-  // correct on their own scale; showing them side by side without saying so is
-  // what made the page look self-contradictory.
+  const isRejected =
+    result.status === 'not_a_plant' ||
+    result.status === 'poor_quality' ||
+    result.status === 'out_of_distribution';
+
   const refused = result.status && result.status !== 'ok';
   const confidence = refused
     ? {
-        chip: 'border-clay-300 bg-clay-50 text-clay-900 '
-          + 'dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
+        chip:
+          'border-clay-300 bg-clay-50 text-clay-900 ' +
+          'dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
         dot: 'bg-clay-500',
         label: 'Not accepted',
       }
@@ -81,7 +85,7 @@ export default function PredictionResult({ result }) {
             {original ? (
               <img
                 src={imageUrl(original)}
-                alt="Analysed leaf"
+                alt="Analysed upload"
                 className="mx-auto w-full rounded-xl object-contain"
               />
             ) : (
@@ -92,83 +96,152 @@ export default function PredictionResult({ result }) {
           </div>
 
           <div className="p-5 sm:p-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip className={confidence.chip}>
-                <span className={clsx('h-1.5 w-1.5 rounded-full', confidence.dot)} />
-                {confidence.label}
-              </Chip>
-              {result.is_healthy ? (
-                <Chip className="border-leaf-300 bg-leaf-100 text-leaf-800 dark:border-leaf-800 dark:bg-leaf-900/60 dark:text-leaf-200">
-                  <CheckCircle2 size={12} />
-                  Healthy
-                </Chip>
-              ) : (
-                <Chip className="border-clay-300 bg-clay-100 text-clay-800 dark:border-clay-800 dark:bg-clay-900/60 dark:text-clay-200">
-                  Disease detected
-                </Chip>
-              )}
-            </div>
+            {isRejected ? (
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Chip className="border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-900/60 dark:text-red-200">
+                    <AlertTriangle size={12} />
+                    Photo Rejected
+                  </Chip>
+                  <Chip className="border-clay-300 bg-clay-100 text-clay-800 dark:border-clay-800 dark:bg-clay-900/60 dark:text-clay-200">
+                    No Diagnosis Provided
+                  </Chip>
+                </div>
 
-            <p className="mt-4 text-sm font-medium uppercase tracking-wide text-muted">
-              {result.plant}
-            </p>
-            <h2 className="mt-1 text-3xl font-semibold leading-tight tracking-tight">
-              {result.condition}
-            </h2>
-            <p className="mt-1 font-mono text-xs text-muted">{result.predicted_class}</p>
+                <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-[var(--text-primary)]">
+                  {result.status === 'not_a_plant'
+                    ? 'No Plant Leaf Detected'
+                    : result.status === 'out_of_distribution'
+                    ? 'Unrecognized Plant / Object'
+                    : 'Insufficient Image Quality'}
+                </h2>
 
-            <div className="mt-5">
-              <div className="mb-2 flex items-baseline justify-between">
-                <span className="text-sm text-secondary">Confidence</span>
-                <span className="text-2xl font-semibold tabular-nums">
-                  {percent(result.confidence, 2)}
-                </span>
+                <p className="mt-2 text-sm text-secondary leading-relaxed">
+                  {result.status_message ||
+                    'This image was rejected by our input verification gate. Only genuine leaves of supported agricultural crops are diagnosed.'}
+                </p>
+
+                <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3.5">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                    Supported Agricultural Crops (14 species)
+                  </p>
+                  <p className="mt-1 text-xs text-secondary leading-relaxed">
+                    Apple, Blueberry, Cherry, Corn (Maize), Grape, Orange, Peach, Bell Pepper, Potato,
+                    Raspberry, Soybean, Squash, Strawberry, and Tomato.
+                  </p>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Metric icon={Cpu} label="Model" value={result.model_info.label} small />
+                  <Metric icon={Timer} label="Inference" value={milliseconds(result.timings.inference_ms)} />
+                  <Metric icon={Gauge} label="Total" value={milliseconds(result.timings.total_ms)} />
+                  <Metric icon={ImageIcon} label="Image quality" value={percent(quality.score, 0)} />
+                </div>
               </div>
-              <ProgressBar
-                value={result.confidence}
-                barClassName={confidence.bar}
-                label="Prediction confidence"
-              />
-            </div>
+            ) : (
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Chip className={confidence.chip}>
+                    <span className={clsx('h-1.5 w-1.5 rounded-full', confidence.dot)} />
+                    {confidence.label}
+                  </Chip>
+                  {result.is_healthy ? (
+                    <Chip className="border-leaf-300 bg-leaf-100 text-leaf-800 dark:border-leaf-800 dark:bg-leaf-900/60 dark:text-leaf-200">
+                      <CheckCircle2 size={12} />
+                      Healthy
+                    </Chip>
+                  ) : (
+                    <Chip className="border-clay-300 bg-clay-100 text-clay-800 dark:border-clay-800 dark:bg-clay-900/60 dark:text-clay-200">
+                      Disease detected
+                    </Chip>
+                  )}
+                </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Metric icon={Cpu} label="Model" value={result.model_info.label} small />
-              <Metric icon={Timer} label="Inference" value={milliseconds(result.timings.inference_ms)} />
-              <Metric icon={Gauge} label="Total" value={milliseconds(result.timings.total_ms)} />
-              <Metric icon={ImageIcon} label="Image quality" value={percent(quality.score, 0)} />
-            </div>
+                <p className="mt-4 text-sm font-medium uppercase tracking-wide text-muted">
+                  {result.plant}
+                </p>
+                <h2 className="mt-1 text-3xl font-semibold leading-tight tracking-tight">
+                  {result.condition}
+                </h2>
+                <p className="mt-1 font-mono text-xs text-muted">{result.predicted_class}</p>
+
+                <div className="mt-5">
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <span className="text-sm text-secondary">Confidence</span>
+                    <span className="text-2xl font-semibold tabular-nums">
+                      {percent(result.confidence, 2)}
+                    </span>
+                  </div>
+                  <ProgressBar
+                    value={result.confidence}
+                    barClassName={confidence.bar}
+                    label="Prediction confidence"
+                  />
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Metric icon={Cpu} label="Model" value={result.model_info.label} small />
+                  <Metric icon={Timer} label="Inference" value={milliseconds(result.timings.inference_ms)} />
+                  <Metric icon={Gauge} label="Total" value={milliseconds(result.timings.total_ms)} />
+                  <Metric icon={ImageIcon} label="Image quality" value={percent(quality.score, 0)} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Card>
 
-      {/* -------------------------------------------------- top-k predictions */}
+      {/* -------------------------------------------------- middle section */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader
-            title="Top predictions"
-            subtitle="Calibrated class probabilities"
-            icon={TrendingUp}
-          />
-          <ul className="space-y-3">
-            {result.top_predictions.map((item, index) => (
-              <li key={item.class_name}>
-                <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                  <span className={clsx('truncate text-sm', index === 0 ? 'font-semibold' : 'text-secondary')}>
-                    <span className="mr-2 text-muted tabular-nums">{index + 1}.</span>
-                    {prettyClass(item.class_name)}
-                  </span>
-                  <span className="shrink-0 text-sm font-medium tabular-nums">
-                    {percent(item.probability, 2)}
-                  </span>
-                </div>
-                <ProgressBar
-                  value={item.probability}
-                  barClassName={index === 0 ? confidence.bar : 'bg-[var(--border-strong)]'}
-                />
-              </li>
-            ))}
-          </ul>
-        </Card>
+        {isRejected ? (
+          <Card>
+            <CardHeader
+              title="Verification details"
+              subtitle="Why this photo was refused"
+              icon={AlertTriangle}
+            />
+            <div className="space-y-3 text-sm">
+              <p className="text-secondary leading-relaxed">
+                The model is trained solely to diagnose diseases on leaves of 14 agricultural crops.
+                Arbitrary non-plant images (portraits, cars, landscapes, pets, or non-leaf items) are
+                rejected to prevent dangerous false diagnoses.
+              </p>
+              <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-xs text-secondary space-y-1">
+                <p className="font-medium text-[var(--text-primary)]">To get an accurate result:</p>
+                <p>• Ensure the subject is a leaf of a supported crop.</p>
+                <p>• Fill at least 30–50% of the frame with the leaf.</p>
+                <p>• Avoid blurry, shaky, dark, or heavily back-lit shots.</p>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader
+              title="Top predictions"
+              subtitle="Calibrated class probabilities"
+              icon={TrendingUp}
+            />
+            <ul className="space-y-3">
+              {result.top_predictions.map((item, index) => (
+                <li key={item.class_name}>
+                  <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                    <span className={clsx('truncate text-sm', index === 0 ? 'font-semibold' : 'text-secondary')}>
+                      <span className="mr-2 text-muted tabular-nums">{index + 1}.</span>
+                      {prettyClass(item.class_name)}
+                    </span>
+                    <span className="shrink-0 text-sm font-medium tabular-nums">
+                      {percent(item.probability, 2)}
+                    </span>
+                  </div>
+                  <ProgressBar
+                    value={item.probability}
+                    barClassName={index === 0 ? confidence.bar : 'bg-[var(--border-strong)]'}
+                  />
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
 
         <Card>
           <CardHeader
@@ -179,7 +252,7 @@ export default function PredictionResult({ result }) {
           <dl className="space-y-3 text-sm">
             <CheckRow
               ok={quality.passed}
-              label="Image quality"
+              label="Image quality & plant detection"
               detail={
                 quality.issues.length
                   ? quality.issues.map((issue) => issue.message).join(' ')
@@ -200,7 +273,11 @@ export default function PredictionResult({ result }) {
             <CheckRow
               ok={!refused && result.confidence_level !== 'low'}
               label="Confidence threshold"
-              detail={`${percent(result.confidence, 1)} — classified as ${result.confidence_level}.`}
+              detail={
+                refused
+                  ? 'Analysis refused by validation safety filters.'
+                  : `${percent(result.confidence, 1)} — classified as ${result.confidence_level}.`
+              }
             />
           </dl>
 
@@ -219,8 +296,12 @@ export default function PredictionResult({ result }) {
         </Card>
       </div>
 
-      <ExplainabilityViewer explanation={result.explanation} />
-      <DiseaseInfoPanel info={result.disease_info} />
+      {!isRejected && result.explanation && Object.keys(result.explanation.images || {}).length > 0 && (
+        <ExplainabilityViewer explanation={result.explanation} />
+      )}
+      {!isRejected && result.disease_info && (
+        <DiseaseInfoPanel info={result.disease_info} />
+      )}
     </div>
   );
 }

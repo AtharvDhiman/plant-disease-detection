@@ -420,6 +420,20 @@ def test_quality_report_serialises():
     assert 0.0 <= payload["score"] <= 1.0
 
 
+def test_quality_flags_non_plant_images():
+    # Non-plant solid color / object
+    blue = analyse_image(Image.new("RGB", (256, 256), (30, 100, 220)))
+    assert "not_a_plant" in {i.code for i in blue.issues}
+    assert blue.passed is False
+    assert any(i.severity == "error" and i.code == "not_a_plant" for i in blue.issues)
+
+    # Human skin tone / tan without vegetation green
+    skin = analyse_image(Image.new("RGB", (256, 256), (230, 185, 150)))
+    assert "not_a_plant" in {i.code for i in skin.issues}
+    assert skin.passed is False
+
+
+
 # --------------------------------------------------------------------------- #
 # OOD
 # --------------------------------------------------------------------------- #

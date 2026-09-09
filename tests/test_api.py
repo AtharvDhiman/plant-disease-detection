@@ -212,6 +212,39 @@ def test_poor_quality_image_is_reported_not_classified(client, model_available, 
     assert body["status"] == "poor_quality"
     assert body["reliable"] is False
     assert "insufficient" in body["status_message"].lower()
+    assert body["predicted_class"] == "Unknown"
+    assert body["disease_info"] is None
+    assert body["top_predictions"] == []
+
+
+def test_non_plant_image_is_rejected_without_diagnosis(client, model_available):
+    if not model_available:
+        pytest.skip("No exported model available")
+    import io
+    import numpy as np
+    from PIL import Image
+
+    # A sharp, well-lit non-plant object (e.g. blue striped cloth / wall)
+    arr = np.zeros((256, 256, 3), dtype=np.uint8)
+    arr[:, :, 0] = 50
+    arr[:, :, 2] = 200
+    for i in range(0, 256, 16):
+        arr[i : i + 8, :] = 255
+
+    buf = io.BytesIO()
+    Image.fromarray(arr).save(buf, format="JPEG")
+    response = client.post(
+        "/api/predict", files={"file": ("blue_object.jpg", buf.getvalue(), "image/jpeg")}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "not_a_plant"
+    assert body["reliable"] is False
+    assert body["predicted_class"] == "Unknown"
+    assert body["disease_info"] is None
+    assert body["top_predictions"] == []
+    assert "no plant" in body["status_message"].lower()
+
 
 
 # --------------------------------------------------------------------------- #
