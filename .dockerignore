@@ -2,6 +2,8 @@ _kagglehub_cache/
 artifacts/features/
 artifacts/logs/
 artifacts/_samples/
+artifacts/_benchmark_tmp/
+artifacts/results/predictions/
 models/checkpoints/
 uploads/
 node_modules/

@@ -90,16 +90,18 @@ COPY --from=frontend /build/dist/ ./frontend/dist/
 # this image needs torch to read it.
 COPY models/exported/serving.onnx ./models/exported/serving.onnx
 COPY models/exported/serving.json ./models/exported/serving.json
+COPY models/exported/production.json ./models/exported/production.json
+COPY models/metadata/ ./models/metadata/
 
 # --- content the API serves ------------------------------------------------
 COPY data/disease_info.json ./data/disease_info.json
 COPY data/splits.json ./data/splits.json
-COPY artifacts/results/experiments.json ./artifacts/results/experiments.json
-COPY artifacts/results/summary.json ./artifacts/results/summary.json
-COPY artifacts/results/ablation_summary.json ./artifacts/results/ablation_summary.json
 COPY artifacts/dataset_report.json ./artifacts/dataset_report.json
+COPY artifacts/results/ ./artifacts/results/
+COPY artifacts/plots/ ./artifacts/plots/
+COPY artifacts/confusion_matrices/ ./artifacts/confusion_matrices/
 
-RUN mkdir -p /app/uploads /app/artifacts/plots /app/artifacts/logs \
+RUN mkdir -p /app/uploads /app/data /app/artifacts/plots /app/artifacts/logs \
     && useradd --create-home --uid 10001 appuser \
     && chown -R appuser:appuser /app
 USER appuser
