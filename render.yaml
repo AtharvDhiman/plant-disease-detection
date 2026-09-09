@@ -1,0 +1,64 @@
+# Render blueprint - https://render.com/docs/blueprint-spec
+#
+# One container serving both the API and the React dashboard, running the model
+# through ONNX Runtime so it fits the 512 MB free instance. See
+# docker/render.Dockerfile for the memory reasoning.
+#
+# Before the first deploy, on a machine that has torch:
+#     python scripts/export_serving_onnx.py     # writes models/exported/serving.{onnx,json}
+#     git add models/exported/serving.onnx models/exported/serving.json && git commit
+#
+# The model bundle has to be committed: Render builds the image from this repo,
+# and the image has no torch to read a .pt checkpoint or export a graph. The
+# dashboard does not - the Dockerfile's Node stage builds it during the image
+# build, so frontend/dist stays out of git.
+#
+# Re-run the export and commit again whenever the production model changes,
+# otherwise Render keeps serving the previously committed graph.
+
+services:
+  - type: web
+    name: plant-disease-detection
+    runtime: docker
+    dockerfilePath: ./docker/render.Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+
+    # The app answers this as soon as the ONNX session is warm. Model load is
+    # ~160 ms, so no extended start period is needed.
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: PDD_SERVING_BACKEND
+        value: onnx
+      - key: PDD_DEVICE
+        value: cpu
+      # One thread and one worker. On a shared-CPU free instance more of either
+      # costs memory without buying throughput, and memory is the binding
+      # constraint here, not latency.
+      - key: PDD_ONNX_THREADS
+        value: "1"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+
+      # The free instance has an ephemeral filesystem: uploaded images and the
+      # SQLite prediction history are wiped on every restart, and a free service
+      # restarts whenever it wakes from idle. That is acceptable for a demo but
+      # means the dashboard's history resets. To keep it, either attach a disk
+      # (paid plans only) or point this at a managed Postgres:
+      #   - key: PDD_DATABASE_URL
+      #     fromDatabase:
+      #       name: plant-disease-db
+      #       property: connectionString
+      # Note that Postgres would add psycopg to requirements-serve.txt (~5 MB),
+      # which the 512 MB budget absorbs comfortably.
+      - key: PDD_DATABASE_URL
+        value: sqlite:////app/data/plant_disease.db
+
+      - key: PDD_UPLOAD_DIR
+        value: /app/uploads
+      - key: PDD_LOG_LEVEL
+        value: INFO

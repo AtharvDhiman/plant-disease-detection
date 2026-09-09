@@ -828,22 +828,101 @@ and run the container with `--gpus all`.
 
 ### Cloud hosting
 
-The CPU torch wheels alone are several hundred megabytes, so the backend image
-will exceed the tighter free tiers. It has not been built here (see the
-verification note above), so treat any size figure as an estimate. Practical
-options:
+**The runtime is the footprint, not the model.** Measured on this machine with
+`PDD_DEVICE=cpu`, one serving process:
+
+| stage | resident |
+|---|---|
+| bare interpreter | 20 MB |
+| `import torch` | ~470 MB |
+| `+ torchvision` | ~545 MB |
+| `+ app.main` (routes, FastAPI, SQLAlchemy, OpenCV) | ~614 MB |
+| `+ warm_up()` — weights loaded, one forward pass | **~657 MB** |
+
+The exported weights are **15.6 MB** of that — 2.4%. So compressing the model
+cannot fix a memory limit: serving the smallest benchmark candidate
+(`place_cbam_last2`, 1.26 M parameters) saves about 11 MB of 657 and costs 0.24
+F1 points, and INT8 quantisation saves roughly the same, because EfficientNet-B0
+is 98% convolution and dynamic quantisation only covers linear layers.
+
+What does fix it is replacing the runtime. `import onnxruntime` costs ~35 MB
+where `import torch` costs ~470 MB, executing the same graph.
+
+### The ONNX serving backend
+
+Set `PDD_SERVING_BACKEND=onnx` and the API runs the exported ONNX graph instead
+of PyTorch:
+
+| | PyTorch | ONNX Runtime |
+|---|---|---|
+| resident, model warm | ~657 MB | **~135 MB** |
+| peak, 3 predictions with heat maps | ~750 MB | **~145 MB** |
+| image size | ~1.0 GB | ~450 MB |
+| predictions | — | identical (8/8 classes, worst Δprob 2.2e-06) |
+| Grad-CAM | yes | yes — baked into the graph |
+| Grad-CAM++, integrated gradients, CBAM maps | yes | no (need autograd) |
+
+Predictions are unchanged, not approximated: the graph matches PyTorch's logits
+to 8e-05, and `app/ml/preprocess.py` reproduces the torchvision eval transform
+bit-exactly (asserted in `tests/test_onnx_serving.py`, since silent
+preprocessing drift is the one failure a deployment check would otherwise miss).
+
+Grad-CAM survives because for this architecture it has a closed form. The head is
+global-average-pool → linear, so the Grad-CAM weights reduce algebraically to the
+classifier weights and the method collapses to a plain class activation map,
+which a 1×1 convolution in the graph computes directly. Verified against the
+autograd implementation on real leaf images: worst difference **4.2e-07** in
+PyTorch and **3.2e-05** read back through ONNX Runtime. The exporter checks this
+per model and records `cam_exact`; a model whose head has a different shape falls
+back to occlusion sensitivity rather than serving a map labelled Grad-CAM that
+is not one.
+
+```bash
+python scripts/export_serving_onnx.py     # writes models/exported/serving.{onnx,json}
+PDD_SERVING_BACKEND=onnx uvicorn app.main:app --app-dir backend
+```
+
+The bundle is self-contained — the graph plus a manifest carrying class names,
+temperature and OOD thresholds — so the serving image ships no `.pt` checkpoint
+and installs no torch (`requirements-serve.txt`).
+
+### Deploying to Render
+
+`render.yaml` and `docker/render.Dockerfile` deploy the whole application, API
+and dashboard, as one container on Render's 512 MB free instance — which the
+PyTorch path cannot fit at all.
+
+```bash
+python scripts/export_serving_onnx.py
+git add models/exported/serving.onnx models/exported/serving.json && git commit -m "Update serving bundle"
+```
+
+Then point Render at the repo. The model bundle must be committed because Render
+builds the image from the repository and that image has no torch to export a
+graph itself; the dashboard is built in the Dockerfile's Node stage, so
+`frontend/dist` stays out of git. Re-run the export whenever the production model
+changes, or Render keeps serving the previously committed graph.
+
+Two caveats specific to the free instance: it sleeps after 15 minutes idle, so
+the first request after a pause waits through a cold start; and the filesystem is
+ephemeral, so the SQLite prediction history and stored uploads reset on every
+restart. Point `PDD_DATABASE_URL` at a managed Postgres to keep them.
+
+### Other hosts
 
 | Constraint | Approach |
 |---|---|
-| Image size limits | Use the CPU torch index (already the default); consider `torch --index-url .../cpu` with `--no-deps` and a pruned dependency set |
-| Memory limits | Serve the smallest benchmark model: `python training/export_model.py --criterion smallest` |
-| Cold-start limits | The model loads once at startup; keep one warm instance rather than scaling to zero |
+| Hard memory ceiling (Render free, 512 MB) | `PDD_SERVING_BACKEND=onnx` — the only lever that moves the number |
+| Image size limits | `requirements-serve.txt` drops ~520 MB of training-only packages; note this reduces image size, **not** resident memory |
+| Generous memory (Cloud Run at 2 GiB, HF Spaces at 16 GB) | Either backend works; the PyTorch path keeps every explanation method |
+| Cold-start limits | The model loads once at startup (~160 ms for ONNX); keep one warm instance rather than scaling to zero |
 | No persistent disk | Point `PDD_DATABASE_URL` at managed PostgreSQL and store uploads in object storage |
-| No GPU | Expected — inference is a single forward pass; measured CPU latency is in the benchmark table |
+| No GPU | Expected — measured CPU latency is 31 ms per inference on one thread |
 
-Split deployment works well: the frontend is a static bundle (Netlify, Vercel,
-Cloudflare Pages) pointing `VITE_API_BASE_URL` at a container-hosted API (Fly.io,
-Railway, Render, Cloud Run).
+Split deployment also works: the frontend is a static bundle (Netlify, Vercel,
+Cloudflare Pages) pointing `VITE_API_BASE_URL` at a container-hosted API. Note
+that Vercel hosts only the static frontend — its serverless functions cap at
+250 MB unzipped, so the API needs a container host regardless of backend.
 
 ---
 

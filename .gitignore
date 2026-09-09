@@ -15,6 +15,14 @@ models/checkpoints/**/*.pt
 models/exported/**/*.pt
 models/exported/**/*.onnx
 models/exported/**/*.torchscript.pt
+
+# ...with one deliberate exception. The Render image builds from this repo and
+# has no torch, so it cannot read a .pt checkpoint or export a graph itself.
+# serving.onnx (~16 MB) is therefore the deployed model artefact and has to be
+# versioned, so that what is running is identifiable from the commit. Regenerate
+# it with `python scripts/export_serving_onnx.py`, which also writes the
+# serving.json manifest beside it.
+!models/exported/serving.onnx
 artifacts/features/
 artifacts/logs/
 artifacts/_samples/

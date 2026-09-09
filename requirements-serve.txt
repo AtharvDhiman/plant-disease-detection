@@ -1,0 +1,48 @@
+# Serving-only dependencies for the ONNX backend (PDD_SERVING_BACKEND=onnx).
+#
+# This is the list for a memory-constrained container such as Render's 512 MB
+# free tier. It is deliberately NOT requirements.txt: that file installs the
+# training stack, and the resulting process does not fit.
+#
+# Measured resident memory for one serving process, single request served:
+#
+#     requirements.txt   (PyTorch path)   ~657 MB   -> OOM-killed at 512 MB
+#     this file          (ONNX path)      ~130 MB   -> fits, ~4x headroom
+#
+# The two paths produce identical predictions: the exported graph matches
+# PyTorch's logits to 8e-05 and the torch-free preprocessing in
+# app/ml/preprocess.py matches torchvision's eval transform bit-exactly.
+# Verified on 8 real uploads: 8/8 identical classes, worst probability
+# difference 2.2e-06.
+#
+# Deliberately absent, and why:
+#   torch, torchvision  the entire point - ~530 MB of the footprint
+#   scikit-image        only used by app/ml/features.py, which nothing on the
+#                       serving path imports
+#   pandas, matplotlib, seaborn, scikit-learn, xgboost, tensorboard
+#                       training and analysis only; app/services/research.py
+#                       reads the pre-computed JSON artefacts with the stdlib
+#   kagglehub           dataset download, never needed at serving time
+#   onnx                only the *runtime* is needed to execute a graph; the
+#                       `onnx` package is for writing them, which happens on the
+#                       build machine
+#
+# Build the model bundle before deploying:
+#     python scripts/export_serving_onnx.py
+
+# ---- inference -----------------------------------------------------------
+onnxruntime>=1.18
+numpy>=1.26
+Pillow>=10.2
+# Image-quality analysis (blur, exposure, contrast) in app/ml/quality.py.
+# The headless build has no GUI/GL dependencies, which keeps the image slim.
+opencv-python-headless>=4.9
+
+# ---- API -----------------------------------------------------------------
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic>=2.7
+pydantic-settings>=2.3
+SQLAlchemy>=2.0
+python-dotenv>=1.0

@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from app.core.config import settings
-from app.ml.registry import registry
+from app.ml.serving import registry
 from app.services import research
 from app.services.knowledge import knowledge_base
 

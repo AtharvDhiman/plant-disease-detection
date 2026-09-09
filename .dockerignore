@@ -6,7 +6,11 @@ models/checkpoints/
 uploads/
 node_modules/
 frontend/node_modules/
-frontend/dist/
+# frontend/dist is NOT excluded: docker/cloudrun.Dockerfile and
+# docker/render.Dockerfile both COPY it, because they serve the API and the
+# dashboard from one container and neither image has Node to rebuild it. Adding
+# it back to this list makes those builds fail with "COPY failed: no source
+# files". Build it first: cd frontend && npm run build
 __pycache__/
 *.py[cod]
 .pytest_cache/

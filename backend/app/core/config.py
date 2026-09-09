@@ -44,6 +44,19 @@ class Settings(BaseSettings):
     # Which exported bundle the API serves. ``auto`` resolves via
     # models/exported/production.json written by the export step.
     serving_model: str = "auto"
+    # Which runtime executes the model. ``torch`` is the full-featured path used
+    # in development and for GPU serving. ``onnx`` runs the exported graph
+    # through ONNX Runtime instead, which drops the process from ~610 MB to
+    # ~103 MB resident - the difference between fitting a 512 MB container and
+    # being OOM-killed at startup - at the cost of the gradient-based
+    # explanations. See app/ml/onnx_backend.py.
+    serving_backend: str = "torch"  # torch | onnx
+    # Bundle written by scripts/export_serving_onnx.py; relative paths resolve
+    # against the project root.
+    onnx_bundle: str = "models/exported/serving.json"
+    # One thread by default: a free-tier container gets a fraction of a core, so
+    # extra intra-op threads cost memory and contention without buying speed.
+    onnx_threads: int = 1
     image_size: int = 224
     # ImageNet statistics — used by every backbone we fine-tune.
     normalize_mean: tuple[float, float, float] = (0.485, 0.456, 0.406)

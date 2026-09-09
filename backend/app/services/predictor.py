@@ -23,25 +23,34 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
-import torch
 from PIL import Image
 
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.ml import ood
-from app.ml.explain import (
-    attention_coverage,
-    cbam_channel_profile,
-    cbam_spatial_map,
-    grad_cam,
-    grad_cam_plus_plus,
-    integrated_gradients,
-    overlay_heatmap,
-)
+from app.ml.heatmap import CamResult, attention_coverage, overlay_heatmap
+# One preprocessing implementation for both backends. It is torch-free and
+# bit-identical to build_eval_transform (verified at export time, and again by
+# tests), which is what lets the ONNX path serve the same predictions while
+# keeping torchvision - 77 MB - out of the serving process entirely.
+from app.ml.preprocess import eval_crop, eval_preprocess
 from app.ml.quality import QualityReport, analyse_image, quality_band
-from app.ml.registry import LoadedModel, registry
-from app.ml.transforms import build_eval_transform, resized_rgb
+from app.ml.serving import BACKEND, registry
 from app.services.knowledge import knowledge_base
+
+if BACKEND == "torch":
+    # Imported only on the torch backend. On the ONNX backend neither torch nor
+    # explain.py exists in the image, and importing them is the ~530 MB that
+    # does not fit in a 512 MB container.
+    import torch
+
+    from app.ml.explain import (
+        cbam_channel_profile,
+        cbam_spatial_map,
+        grad_cam,
+        grad_cam_plus_plus,
+        integrated_gradients,
+    )
 
 log = get_logger(__name__)
 
@@ -127,12 +136,18 @@ CONFIDENCE_MESSAGES = {
 
 
 class Predictor:
-    """Stateless service wrapping a :class:`LoadedModel`."""
+    """Stateless service wrapping the loaded model.
+
+    The model comes from whichever registry :mod:`app.ml.serving` selected - a
+    :class:`app.ml.registry.LoadedModel` on the torch backend or an
+    :class:`app.ml.onnx_backend.OnnxModel` on the ONNX one. The two expose the
+    same attributes, so everything below the inference call is shared.
+    """
 
     def __init__(self, model_name: str | None = None) -> None:
         self.model_name = model_name
 
-    def _loaded(self) -> LoadedModel:
+    def _loaded(self):
         return registry.load(self.model_name)
 
     # ---------------------------------------------------------------- main
@@ -156,21 +171,25 @@ class Predictor:
 
         # 2 -------------------------------------------------- preprocessing
         preprocess_start = time.perf_counter()
-        transform = build_eval_transform(loaded.image_size)
-        tensor = transform(image.convert("RGB")).unsqueeze(0).to(loaded.device)
+        batch = eval_preprocess(image, loaded.image_size)
         preprocess_ms = (time.perf_counter() - preprocess_start) * 1000
 
         # 3 ------------------------------------------------------ inference
         # The model is shared across the request threadpool and inference is not
         # read-only (attention blocks cache their gate), so hold the model lock.
         inference_start = time.perf_counter()
-        with loaded.lock, torch.no_grad():
-            logits = loaded.model(tensor)
-            if loaded.device.type == "cuda":
-                torch.cuda.synchronize()
+        if BACKEND == "torch":
+            tensor = torch.from_numpy(batch).to(loaded.device)
+            with loaded.lock, torch.no_grad():
+                logits = loaded.model(tensor)
+                if loaded.device.type == "cuda":
+                    torch.cuda.synchronize()
+            raw_logits = logits.float().cpu().numpy()[0]
+        else:
+            tensor = batch
+            with loaded.lock:
+                raw_logits = loaded.logits(batch)[0]
         inference_ms = (time.perf_counter() - inference_start) * 1000
-
-        raw_logits = logits.float().cpu().numpy()[0]
         # Temperature scaling only rescales the logits, so the argmax - and
         # therefore the predicted class - is unchanged; only confidence moves.
         calibrated = raw_logits / max(loaded.temperature, 1e-6)
@@ -283,10 +302,59 @@ class Predictor:
             return "ok", CONFIDENCE_MESSAGES["medium"]
         return "ok", None
 
+    @staticmethod
+    def _explain_onnx(loaded, batch: np.ndarray, class_index: int,
+                      method: str, errors: dict) -> CamResult | None:
+        """Explanations available without autograd.
+
+        ``grad_cam`` is the real thing, not an approximation: for a head that is
+        global-average-pool then linear, Grad-CAM reduces algebraically to the
+        class activation map, which the exported graph emits directly. The
+        exporter verifies this numerically per model and records ``cam_exact``,
+        so a model whose head does not have that form falls back to occlusion
+        rather than serving a map labelled Grad-CAM that is not one.
+
+        The remaining torch methods need genuine higher-order gradients and have
+        no closed form here. They are reported as unavailable rather than
+        silently substituted, so a missing tab in the UI is explained.
+        """
+        if method == "grad_cam" and getattr(loaded, "cam_exact", False):
+            produced = loaded.grad_cam(batch, class_index)
+            if produced is not None:
+                heatmap, index = produced
+                return CamResult(heatmap, index, "grad_cam")
+
+        if method in ("occlusion", "grad_cam"):
+            # Reached for `occlusion` directly, or for `grad_cam` on a bundle
+            # with no CAM head - occlusion is the honest substitute there.
+            heatmap, index = loaded.occlusion_map(batch, class_index)
+            # Occlusion returns a coarse grid of logit drops; the UI expects a
+            # full-resolution map in [0, 1] like every other method.
+            from app.ml.onnx_backend import _upsample_normalised
+            resized = _upsample_normalised(heatmap, batch.shape[-1])
+            if method == "grad_cam":
+                errors["grad_cam"] = (
+                    "Grad-CAM needs either autograd or a CAM head in the exported "
+                    "graph; neither is present. Showing occlusion sensitivity instead."
+                )
+            return CamResult(resized, index, "occlusion")
+
+        if method in ("grad_cam_plus_plus", "integrated_gradients", "cbam_spatial"):
+            errors[method] = (
+                f"{method} requires a backward pass and is not available on the "
+                "ONNX serving backend. Available here: "
+                f"{', '.join(getattr(loaded, 'explain_methods', ('occlusion',)))}."
+            )
+            return None
+
+        errors[method] = "Unknown explanation method."
+        log.warning("Unknown explanation method", fields={"method": method})
+        return None
+
     def _explain(
         self,
-        loaded: LoadedModel,
-        tensor: torch.Tensor,
+        loaded,
+        tensor,
         original: Image.Image,
         class_index: int,
         methods: tuple[str, ...],
@@ -294,7 +362,7 @@ class Predictor:
         file_stem: str | None,
     ) -> tuple[dict, dict, list[float] | None, dict]:
         """Produce heat maps, overlays, their statistics, and any failures."""
-        base_image = np.asarray(resized_rgb(original, loaded.image_size))
+        base_image = np.asarray(eval_crop(original, loaded.image_size))
         stem = file_stem or uuid.uuid4().hex
         target_dir = save_dir or settings.upload_dir
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -306,7 +374,9 @@ class Predictor:
 
         # Grad-CAM needs gradients w.r.t. activations; the registry disabled
         # requires_grad on the parameters, so re-enable just for this call.
-        needs_grad = {"grad_cam", "grad_cam_plus_plus", "integrated_gradients"} & set(methods)
+        needs_grad = (BACKEND == "torch"
+                      and bool({"grad_cam", "grad_cam_plus_plus", "integrated_gradients"}
+                               & set(methods)))
         # Everything below mutates shared model state - hooks, requires_grad
         # flags, accumulated gradients and the attention blocks' cached gates -
         # so it must not overlap with another request's explanation pass.
@@ -317,22 +387,29 @@ class Predictor:
         try:
             for method in methods:
                 try:
-                    if method == "grad_cam":
-                        result = grad_cam(loaded.model, tensor, loaded.model.feature_layer, class_index)
-                    elif method == "grad_cam_plus_plus":
-                        result = grad_cam_plus_plus(loaded.model, tensor, loaded.model.feature_layer,
-                                                    class_index)
-                    elif method == "cbam_spatial":
-                        result = cbam_spatial_map(loaded.model, tensor, class_index)
+                    if BACKEND == "torch":
+                        if method == "grad_cam":
+                            result = grad_cam(loaded.model, tensor, loaded.model.feature_layer,
+                                              class_index)
+                        elif method == "grad_cam_plus_plus":
+                            result = grad_cam_plus_plus(loaded.model, tensor,
+                                                        loaded.model.feature_layer, class_index)
+                        elif method == "cbam_spatial":
+                            result = cbam_spatial_map(loaded.model, tensor, class_index)
+                            if result is None:
+                                continue
+                            channel_profile = cbam_channel_profile(loaded.model)
+                        elif method == "integrated_gradients":
+                            result = integrated_gradients(loaded.model, tensor, class_index,
+                                                          steps=24)
+                        else:
+                            errors[method] = "Unknown explanation method."
+                            log.warning("Unknown explanation method", fields={"method": method})
+                            continue
+                    else:
+                        result = self._explain_onnx(loaded, tensor, class_index, method, errors)
                         if result is None:
                             continue
-                        channel_profile = cbam_channel_profile(loaded.model)
-                    elif method == "integrated_gradients":
-                        result = integrated_gradients(loaded.model, tensor, class_index, steps=24)
-                    else:
-                        errors[method] = "Unknown explanation method."
-                        log.warning("Unknown explanation method", fields={"method": method})
-                        continue
                 except Exception as exc:  # noqa: BLE001 - never fail a prediction on a heat map
                     # A heat map is an enhancement; losing one must not lose the
                     # diagnosis. But the client is told, so a missing tab reads as
@@ -343,15 +420,15 @@ class Predictor:
                     continue
 
                 overlay = overlay_heatmap(base_image, result.heatmap)
-                filename = f"{stem}_{method}.png"
+                filename = f"{stem}_{result.method}.png"
                 Image.fromarray(overlay).save(target_dir / filename, optimize=True)
-                outputs[method] = filename
-                stats[method] = attention_coverage(result.heatmap)
+                outputs[result.method] = filename
+                stats[result.method] = attention_coverage(result.heatmap)
         finally:
             if needs_grad:
                 for parameter in loaded.model.parameters():
                     parameter.requires_grad_(False)
-            loaded.model.zero_grad(set_to_none=True)
+                loaded.model.zero_grad(set_to_none=True)
             loaded.lock.release()
 
         original_name = f"{stem}_input.png"

@@ -95,7 +95,13 @@ def test_frontend_publishes_a_port_and_backend_does_not(compose):
     assert not compose["services"]["backend"].get("ports")
 
 
-@pytest.mark.parametrize("name", ["backend.Dockerfile", "frontend.Dockerfile"])
+# Every Dockerfile in docker/, not a hand-maintained list: the cloudrun and
+# render images cannot be built on the development machine, so this static parse
+# is the only check they get and it must not silently skip them.
+@pytest.mark.parametrize(
+    "name",
+    sorted(p.name for p in (PROJECT_ROOT / "docker").glob("*.Dockerfile")),
+)
 def test_dockerfile_instructions_are_valid(name):
     path = PROJECT_ROOT / "docker" / name
     assert path.is_file()

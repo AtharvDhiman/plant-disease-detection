@@ -15,21 +15,27 @@ import app.core.runtime  # noqa: F401  (sets OMP env before torch)  # isort:skip
 import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes import dashboard, predictions, research
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.logging import configure_logging, get_logger
-from app.ml.registry import registry
+from app.ml.serving import backend_name, registry
 from app.services.knowledge import knowledge_base
 
 log = get_logger(__name__)
+
+# The built React bundle, when one exists. Defined here rather than beside the
+# static mount because the "/" route below needs it too.
+_FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 DESCRIPTION = """
 AI-powered plant disease detection from leaf images, using a CNN with a
@@ -204,6 +210,9 @@ def health():
         "model_error": getattr(app.state, "model_error", None),
         "production_model": manifest.get("model_name") if manifest else None,
         "device": str(registry.resolve_device()),
+        # Which runtime is executing the model. The ONNX backend serves the same
+        # weights without torch resident, for hosts with a small memory ceiling.
+        "backend": backend_name(),
         "knowledge_base_classes": knowledge_base.metadata.get("class_count", 0),
         "confidence_thresholds": {
             "high": settings.confidence_high,
@@ -218,6 +227,15 @@ def health():
 
 @app.get("/", tags=["System"], include_in_schema=False)
 def root():
+    """The application when a frontend is bundled, the API banner otherwise.
+
+    This route is registered before the catch-all below, so without the check
+    it would claim "/" and hand the JSON banner to anyone opening the site -
+    deep links would render the app while the homepage showed API metadata.
+    """
+    index = _FRONTEND_DIST / "index.html"
+    if index.is_file():
+        return FileResponse(index)
     return {
         "name": settings.api_title,
         "version": settings.api_version,
@@ -229,3 +247,60 @@ def root():
 app.include_router(predictions.router, prefix="/api", tags=["Prediction"])
 app.include_router(research.router, prefix="/api", tags=["Research"])
 app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
+
+
+# --------------------------------------------------------------------------- #
+# Static frontend
+#
+# Mounting the built React bundle here turns two services into one. It is not
+# only convenience: a single origin means no CORS configuration to get wrong,
+# one URL to share, and one container to deploy on hosts that give you exactly
+# one port - which is most free tiers.
+#
+# The mount is registered last, after every API route, because it claims "/" and
+# would otherwise shadow them. It is also optional: in development the Vite dev
+# server serves the frontend with hot reload, and `frontend/dist` may not exist
+# at all, so a missing bundle logs a line rather than refusing to start.
+# --------------------------------------------------------------------------- #
+
+if _FRONTEND_DIST.is_dir() and (_FRONTEND_DIST / "index.html").is_file():
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str):
+        """Serve a built asset, falling back to index.html for client routes.
+
+        A single-page app owns its own routing, so a deep link such as
+        /research?tab=ablation never corresponds to a file on disk. Returning
+        index.html lets the router resolve the path in the browser, which is
+        what makes a refresh on a sub-page work instead of 404ing.
+
+        Paths under /api are excluded so a mistyped endpoint returns a JSON 404
+        from the API rather than silently handing back the HTML shell, which is
+        a genuinely confusing way for a client to fail.
+        """
+        if full_path.startswith(("api/", "docs", "redoc", "openapi.json")):
+            raise StarletteHTTPException(status_code=404, detail="Not Found")
+
+        candidate = (_FRONTEND_DIST / full_path).resolve()
+        # Containment check: a crafted path such as ../../etc/passwd must not
+        # escape the bundle directory.
+        if (
+            full_path
+            and candidate.is_file()
+            and _FRONTEND_DIST.resolve() in candidate.parents
+        ):
+            return FileResponse(candidate)
+        return FileResponse(_FRONTEND_DIST / "index.html")
+
+    app.mount(
+        "/assets",
+        StaticFiles(directory=_FRONTEND_DIST / "assets"),
+        name="assets",
+    )
+    log.info("Serving built frontend", fields={"path": str(_FRONTEND_DIST)})
+else:
+    log.info(
+        "No built frontend found; API only",
+        fields={"looked_in": str(_FRONTEND_DIST),
+                "hint": "run `npm run build` in frontend/ to bundle it"},
+    )
