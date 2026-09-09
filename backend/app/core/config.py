@@ -83,8 +83,8 @@ class Settings(BaseSettings):
 
     # -------------------------------------------------------------- uploads
     max_upload_size: int = 10 * 1024 * 1024  # 10 MiB
-    allowed_extensions: tuple[str, ...] = (".jpg", ".jpeg", ".png", ".webp")
-    allowed_content_types: tuple[str, ...] = (
+    allowed_extensions: tuple[str, ...] | str = (".jpg", ".jpeg", ".png", ".webp")
+    allowed_content_types: tuple[str, ...] | str = (
         "image/jpeg",
         "image/png",
         "image/webp",
@@ -100,7 +100,7 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------ api
     api_title: str = "Plant Disease Detection API"
     api_version: str = "1.0.0"
-    cors_origins: tuple[str, ...] = (
+    cors_origins: tuple[str, ...] | str = (
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:4173",
@@ -109,15 +109,18 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # ---------------------------------------------------------- validators
-    @field_validator("cors_origins", "allowed_extensions", "allowed_content_types", mode="before")
+    @field_validator("cors_origins", "allowed_extensions", "allowed_content_types", mode="after")
     @classmethod
     def _split_csv(cls, value):
         """Accept ``a,b,c`` strings from .env as well as real sequences."""
         if isinstance(value, str):
             if value.strip().startswith("["):
-                return tuple(json.loads(value))
+                try:
+                    return tuple(json.loads(value))
+                except Exception:
+                    pass
             return tuple(part.strip() for part in value.split(",") if part.strip())
-        return value
+        return tuple(value)
 
     # ------------------------------------------------------ derived helpers
     @property
