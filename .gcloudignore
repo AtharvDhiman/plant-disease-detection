@@ -1,0 +1,28 @@
+# Cloud Build uploads this directory as the build context. Without these
+# exclusions it would upload the 3 GB dataset to build a ~1 GB image.
+_kagglehub_cache/
+artifacts/features/
+artifacts/logs/
+artifacts/_samples/
+artifacts/plots/
+artifacts/confusion_matrices/
+artifacts/results/predictions/
+models/checkpoints/
+models/exported/*.onnx
+models/exported/*.torchscript.pt
+uploads/
+deploy/space-build/
+notebooks/
+docs/screenshots/
+node_modules/
+frontend/node_modules/
+frontend/.vite/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.git/
+.venv/
+venv/
+data/*.db
+data/manifests/
+.env
