@@ -67,6 +67,12 @@ const STATUS_BADGES = {
       'border-clay-300 bg-clay-50 text-clay-900 '
       + 'dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
   },
+  not_a_plant: {
+    label: 'Not a plant leaf',
+    className:
+      'border-red-300 bg-red-50 text-red-900 '
+      + 'dark:border-red-800 dark:bg-red-950/60 dark:text-red-100',
+  },
 };
 
 const STATUSES = [
@@ -75,6 +81,7 @@ const STATUSES = [
   { value: 'low_confidence', label: 'Low confidence' },
   { value: 'out_of_distribution', label: 'Not identified' },
   { value: 'poor_quality', label: 'Poor image quality' },
+  { value: 'not_a_plant', label: 'Not a plant leaf' },
 ];
 
 export default function History() {
@@ -342,7 +349,15 @@ export function HistoryDetail() {
     );
   }
 
-  const style = CONFIDENCE_STYLES[data.confidence_level] || CONFIDENCE_STYLES.low;
+  const isRejected = data.status === 'not_a_plant' || data.status === 'poor_quality';
+  const style = isRejected
+    ? {
+        chip:
+          'border-clay-300 bg-clay-50 text-clay-900 '
+          + 'dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
+        label: 'Photo Rejected',
+      }
+    : CONFIDENCE_STYLES[data.confidence_level] || CONFIDENCE_STYLES.low;
   const files = data.explanation_files || {};
   const methods = Object.keys(files).filter((key) => key !== 'original');
 
@@ -379,11 +394,30 @@ export function HistoryDetail() {
             />
           </div>
           <div className="p-5 sm:p-6">
-            <Chip className={style.chip}>{style.label}</Chip>
-            <p className="mt-3 text-sm uppercase tracking-wide text-muted">{data.predicted_plant}</p>
-            <h1 className="mt-1 text-2xl font-semibold">{data.predicted_condition}</h1>
-            <p className="mt-1 font-mono text-xs text-muted">{data.predicted_class}</p>
-            <p className="mt-4 text-3xl font-semibold tabular-nums">{percent(data.confidence, 2)}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip className={style.chip}>{style.label}</Chip>
+              {isRejected && (
+                <Chip className="border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-900/60 dark:text-red-200">
+                  {data.status === 'not_a_plant' ? 'Not a plant leaf' : 'Poor image quality'}
+                </Chip>
+              )}
+            </div>
+            <p className="mt-3 text-sm uppercase tracking-wide text-muted">
+              {isRejected ? 'Subject' : data.predicted_plant}
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold">
+              {isRejected ? 'No Diagnosis Provided' : data.predicted_condition}
+            </h1>
+            {!isRejected ? (
+              <>
+                <p className="mt-1 font-mono text-xs text-muted">{data.predicted_class}</p>
+                <p className="mt-4 text-3xl font-semibold tabular-nums">{percent(data.confidence, 2)}</p>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-secondary leading-relaxed">
+                This image was rejected by our input verification gate. Only genuine leaves of supported agricultural crops are diagnosed.
+              </p>
+            )}
 
             <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <Detail label="Analysed" value={formatDate(data.created_at)} />

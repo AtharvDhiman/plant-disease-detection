@@ -25,6 +25,7 @@ import torch
 import torch.nn.functional as F
 
 from app.ml.attention import SpatialAttention
+
 # Rendering and statistics live in a torch-free module so the ONNX serving
 # backend can use them too; re-exported here so this module's API is unchanged.
 from app.ml.heatmap import (  # noqa: F401
@@ -249,7 +250,8 @@ def integrated_gradients(
         point = (base + (step / steps) * (inputs - base)).detach().requires_grad_(True)
         model.zero_grad(set_to_none=True)
         model(point)[:, index].sum().backward()
-        total = total + point.grad.detach()
+        if point.grad is not None:
+            total = total + point.grad.detach()
 
     attribution = (inputs - base) * total / steps
     saliency = attribution.abs().sum(dim=1)

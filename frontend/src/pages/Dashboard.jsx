@@ -86,7 +86,7 @@ export default function Dashboard() {
     .slice(0, 8)
     .map((row) => ({
       ...row,
-      label: row.label.length > 26 ? `${row.label.slice(0, 25)}…` : row.label,
+      label: (row.label || '').length > 26 ? `${row.label.slice(0, 25)}…` : (row.label || '—'),
     }));
 
   // Ascending F1: the classes the model finds hardest are the useful ones to see.
@@ -119,7 +119,7 @@ export default function Dashboard() {
         <StatCard
           label="Average confidence"
           value={percent(totals.average_confidence, 1)}
-          sub={`${totals.healthy} healthy · ${totals.diseased} diseased`}
+          sub={`${totals.healthy} healthy · ${totals.diseased} diseased${totals.rejected ? ` · ${totals.rejected} refused` : ''}`}
           icon={Gauge}
           tone={totals.average_confidence >= 0.85 ? 'leaf' : 'amber'}
         />

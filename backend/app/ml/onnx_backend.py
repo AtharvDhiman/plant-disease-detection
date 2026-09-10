@@ -57,9 +57,10 @@ def _upsample_normalised(cam: np.ndarray, size: int) -> np.ndarray:
     """
     from PIL import Image
 
+    resample = getattr(Image, "Resampling", Image).BILINEAR
     resized = np.asarray(
         Image.fromarray(np.asarray(cam, dtype=np.float32)).resize(
-            (size, size), Image.BILINEAR),
+            (size, size), resample),
         dtype=np.float32,
     )
     resized = resized - resized.min()

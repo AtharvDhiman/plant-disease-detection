@@ -129,10 +129,24 @@ def analyse_image(image: Image.Image) -> QualityReport:
     """Run every quality check and return a combined report."""
     rgb = np.asarray(image.convert("RGB"))
     height, width = rgb.shape[:2]
+    if height <= 0 or width <= 0:
+        return QualityReport(
+            score=0.0,
+            passed=False,
+            issues=[
+                QualityIssue(
+                    "too_small",
+                    "error",
+                    f"Image has invalid dimensions ({width}x{height}).",
+                    "Upload an image at least 224x224 pixels; phone photos are ideal.",
+                )
+            ],
+            metrics={"width": width, "height": height, "min_side": 0},
+        )
 
     # Normalise the working resolution so thresholds mean the same thing for a
     # 4000 px phone photo and a 256 px thumbnail.
-    scale = 512 / max(height, width)
+    scale = 512 / max(height, width, 1)
     working = cv2.resize(rgb, (max(1, int(width * scale)), max(1, int(height * scale))),
                          interpolation=cv2.INTER_AREA) if scale < 1 else rgb
 
@@ -239,7 +253,8 @@ def analyse_image(image: Image.Image) -> QualityReport:
     if (plant_like < 0.10) or (green < 0.008) or (green < 0.02 and plant_like < 0.22):
         issues.append(QualityIssue(
             "not_a_plant", "error",
-            f"No plant or leaf detected. Only {plant_like * 100:.0f}% of the image contains plant foliage or vegetation colors.",
+            f"No plant or leaf detected. Only {plant_like * 100:.0f}% of the image "
+            "contains plant foliage or vegetation colors.",
             "Please upload a clear photograph of a plant leaf from one of the 14 supported crops.",
         ))
         factors.append(0.05)

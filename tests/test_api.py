@@ -532,3 +532,39 @@ def test_placement_rows_exclude_production_reruns(client):
     labels = [row["label"] for row in placement]
     assert len(labels) == len(set(labels)), f"duplicate placement labels: {labels}"
     assert all(row.get("protocol") != "production" for row in placement)
+
+
+def test_root_sets_no_cache_headers(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    cache_control = response.headers.get("Cache-Control", "")
+    assert "no-cache" in cache_control or "no-store" in cache_control
+
+
+def test_rejected_photo_provides_original_image(client, model_available, dark_bytes):
+    if not model_available:
+        pytest.skip("No exported model available")
+    response = client.post(
+        "/api/predict",
+        files={"file": ("dark.jpg", dark_bytes, "image/jpeg")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "poor_quality"
+    assert "original" in data["explanation"]["images"]
+    assert data["explanation"]["images"]["original"].startswith("/api/images/")
+    img_resp = client.get(data["explanation"]["images"]["original"])
+    assert img_resp.status_code == 200
+
+
+def test_dashboard_separates_rejected_from_diseased(client):
+    response = client.get("/api/dashboard")
+    assert response.status_code == 200
+    totals = response.json()["totals"]
+    assert "rejected" in totals
+    assert totals["healthy"] + totals["diseased"] + totals["rejected"] == totals["predictions"]
+
+
+def test_path_traversal_is_blocked(client):
+    response = client.get("/api/images/%2e%2e%2f%2e%2e%2fapp.log")
+    assert response.status_code in (400, 404)

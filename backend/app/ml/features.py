@@ -94,7 +94,8 @@ def hog_features(gray: np.ndarray) -> np.ndarray:
 
 def extract_features(image: Image.Image, size: int = FEATURE_IMAGE_SIZE) -> np.ndarray:
     """Full feature vector for one PIL image."""
-    rgb = np.asarray(image.convert("RGB").resize((size, size), Image.BILINEAR),
+    resample = getattr(Image, "Resampling", Image).BILINEAR
+    rgb = np.asarray(image.convert("RGB").resize((size, size), resample),
                      dtype=np.float64) / 255.0
     gray = rgb2gray(rgb)
     return np.concatenate([

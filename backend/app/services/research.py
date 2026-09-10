@@ -285,6 +285,6 @@ def plot_path(group: str, filename: str) -> Path | None:
     if root is None:
         return None
     candidate = (root / filename).resolve()
-    if not str(candidate).startswith(str(root.resolve())) or not candidate.is_file():
+    if not candidate.is_relative_to(root.resolve()) or not candidate.is_file():
         return None
     return candidate

@@ -29,6 +29,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.ml import ood
 from app.ml.heatmap import CamResult, attention_coverage, overlay_heatmap
+
 # One preprocessing implementation for both backends. It is torch-free and
 # bit-identical to build_eval_transform (verified at export time, and again by
 # tests), which is what lets the ONNX path serve the same predictions while
@@ -332,7 +333,8 @@ class Predictor:
         if verdict.is_ood:
             return "out_of_distribution", (
                 "Atypical leaf visual pattern or moderate confidence. "
-                "The closest matching diagnosis is shown below -- please review alternative predictions or consult an agronomist. "
+                "The closest matching diagnosis is shown below -- please "
+                "review alternative predictions or consult an agronomist. "
                 + " ".join(verdict.reasons)
             )
         if level == "low":

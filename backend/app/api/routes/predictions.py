@@ -78,8 +78,14 @@ def _image_url(filename: str) -> str:
     return f"/api/images/{filename}"
 
 
-def _serialise(result: PredictionResult, row: Prediction | None) -> dict:
+def _serialise(result: PredictionResult, row: Prediction | None, filename: str | None = None) -> dict:
     """Turn a :class:`PredictionResult` into the API response shape."""
+    images = {k: _image_url(v) for k, v in result.explanations.items()}
+    if "original" not in images and filename:
+        images["original"] = _image_url(filename)
+    elif "original" not in images and row and row.image_filename:
+        images["original"] = _image_url(row.image_filename)
+
     return {
         "id": row.id if row else None,
         "created_at": row.created_at if row else None,
@@ -109,7 +115,7 @@ def _serialise(result: PredictionResult, row: Prediction | None) -> dict:
         "ood": result.ood.to_dict(),
         "explanation": {
             "available": [k for k in result.explanations if k != "original"],
-            "images": {k: _image_url(v) for k, v in result.explanations.items()},
+            "images": images,
             "stats": result.attention_stats,
             "errors": result.explanation_errors,
             "channel_attention": result.channel_attention,
@@ -226,7 +232,7 @@ async def predict(
             "request_ms": round((time.perf_counter() - started) * 1000, 2),
         },
     )
-    return _serialise(result, row)
+    return _serialise(result, row, filename)
 
 
 @router.post(

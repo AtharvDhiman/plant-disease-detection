@@ -32,19 +32,49 @@ def dashboard(
     avg_latency = db.execute(select(func.avg(Prediction.total_ms))).scalar_one()
     avg_inference = db.execute(select(func.avg(Prediction.inference_ms))).scalar_one()
     avg_quality = db.execute(select(func.avg(Prediction.image_quality_score))).scalar_one()
+    rejected_count = db.execute(
+        select(func.count()).select_from(Prediction)
+        .where(
+            Prediction.status.in_(["not_a_plant", "poor_quality"])
+            | (Prediction.predicted_class == "Unknown")
+        )
+    ).scalar_one()
+
     healthy_count = db.execute(
-        select(func.count()).select_from(Prediction).where(Prediction.is_healthy.is_(True))
+        select(func.count()).select_from(Prediction)
+        .where(
+            Prediction.is_healthy.is_(True),
+            Prediction.status.notin_(["not_a_plant", "poor_quality"]),
+            Prediction.predicted_class != "Unknown",
+        )
+    ).scalar_one()
+
+    diseased_count = db.execute(
+        select(func.count()).select_from(Prediction)
+        .where(
+            Prediction.is_healthy.is_(False),
+            Prediction.status.notin_(["not_a_plant", "poor_quality"]),
+            Prediction.predicted_class != "Unknown",
+        )
     ).scalar_one()
 
     by_class = db.execute(
         select(Prediction.predicted_class, func.count().label("n"),
                func.avg(Prediction.confidence))
+        .where(
+            Prediction.status.notin_(["not_a_plant", "poor_quality"]),
+            Prediction.predicted_class != "Unknown",
+        )
         .group_by(Prediction.predicted_class)
         .order_by(func.count().desc())
     ).all()
 
     by_plant = db.execute(
         select(Prediction.predicted_plant, func.count().label("n"))
+        .where(
+            Prediction.status.notin_(["not_a_plant", "poor_quality"]),
+            Prediction.predicted_plant != "Unknown",
+        )
         .group_by(Prediction.predicted_plant)
         .order_by(func.count().desc())
     ).all()
@@ -92,7 +122,8 @@ def dashboard(
             "distinct_classes": len(by_class),
             "distinct_plants": len(by_plant),
             "healthy": healthy_count,
-            "diseased": total - healthy_count,
+            "diseased": diseased_count,
+            "rejected": rejected_count,
             "average_confidence": round(float(avg_confidence or 0), 4),
             "average_quality_score": round(float(avg_quality or 0), 4),
             "average_total_ms": round(float(avg_latency or 0), 2),
@@ -165,7 +196,7 @@ def _empty_dashboard(days: int) -> dict:
     return {
         "totals": {
             "predictions": 0, "distinct_classes": 0, "distinct_plants": 0,
-            "healthy": 0, "diseased": 0, "average_confidence": 0.0,
+            "healthy": 0, "diseased": 0, "rejected": 0, "average_confidence": 0.0,
             "average_quality_score": 0.0, "average_total_ms": 0.0,
             "average_inference_ms": 0.0,
         },

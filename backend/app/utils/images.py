@@ -86,6 +86,12 @@ def decode_image(data: bytes) -> Image.Image:
     except Exception as exc:  # noqa: BLE001
         raise UploadError("corrupt_image", f"The image could not be read: {exc}") from exc
 
+    if width <= 0 or height <= 0:
+        raise UploadError(
+            "corrupt_image",
+            f"Image dimensions are invalid ({width}x{height}).",
+            "Upload a valid JPG, PNG or WEBP photograph.",
+        )
     if fmt not in ALLOWED_PIL_FORMATS:
         raise UploadError(
             "unsupported_image_format",
@@ -122,7 +128,8 @@ def store_image(image: Image.Image, directory: Path, stem: str, max_side: int = 
     directory.mkdir(parents=True, exist_ok=True)
     stored = image.copy()
     if max(stored.size) > max_side:
-        stored.thumbnail((max_side, max_side), Image.LANCZOS)
+        resample = getattr(Image, "Resampling", Image).LANCZOS
+        stored.thumbnail((max_side, max_side), resample)
 
     filename = f"{stem}.jpg"
     path = directory / filename
@@ -134,9 +141,9 @@ def store_image(image: Image.Image, directory: Path, stem: str, max_side: int = 
 
 def resolve_upload_path(filename: str) -> Path:
     """Resolve a stored filename inside the uploads directory, rejecting traversal."""
-    candidate = (settings.upload_dir / filename).resolve()
     root = settings.upload_dir.resolve()
-    if not str(candidate).startswith(str(root)):
+    candidate = (settings.upload_dir / filename).resolve()
+    if not candidate.is_relative_to(root):
         raise UploadError("invalid_path", "Invalid image path.")
     if not candidate.is_file():
         raise UploadError("not_found", f"Image {filename!r} does not exist.")

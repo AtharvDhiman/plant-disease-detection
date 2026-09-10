@@ -235,7 +235,14 @@ def root():
     """
     index = _FRONTEND_DIST / "index.html"
     if index.is_file():
-        return FileResponse(index)
+        return FileResponse(
+            index,
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
     return {
         "name": settings.api_title,
         "version": settings.api_version,

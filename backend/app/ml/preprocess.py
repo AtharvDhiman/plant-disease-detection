@@ -84,7 +84,8 @@ def eval_crop(image: Image.Image, image_size: int | None = None) -> Image.Image:
             new_width, new_height = resize_to, new_long
         else:
             new_width, new_height = new_long, resize_to
-        img = img.resize((new_width, new_height), Image.BILINEAR)
+        resample = getattr(Image, "Resampling", Image).BILINEAR
+        img = img.resize((new_width, new_height), resample)
 
     # torchvision CenterCrop, including its rounding behaviour.
     width, height = img.size
