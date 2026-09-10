@@ -67,9 +67,9 @@ class Settings(BaseSettings):
     confidence_high: float = 0.85
     confidence_medium: float = 0.60
     # Below this the prediction is reported as "unable to confidently identify".
-    ood_confidence_floor: float = 0.45
+    ood_confidence_floor: float = 0.15
     # Normalised predictive entropy above which we flag out-of-distribution.
-    ood_entropy_ceiling: float = 0.55
+    ood_entropy_ceiling: float = 0.85
 
     # ------------------------------------------------------- image quality
     quality_min_side: int = 64

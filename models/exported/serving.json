@@ -58,8 +58,8 @@
     0.225
   ],
   "ood_thresholds": {
-    "msp_min": 0.45,
-    "entropy_max": 0.58,
+    "msp_min": 0.15,
+    "entropy_max": 0.85,
     "energy_max": -4.62461519241333,
     "method": "msp+entropy",
     "calibrated": true,
