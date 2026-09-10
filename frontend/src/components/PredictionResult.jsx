@@ -128,10 +128,10 @@ export default function PredictionResult({ result }) {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Metric icon={Cpu} label="Model" value={result.model_info.label} small />
-                  <Metric icon={Timer} label="Inference" value={milliseconds(result.timings.inference_ms)} />
-                  <Metric icon={Gauge} label="Total" value={milliseconds(result.timings.total_ms)} />
-                  <Metric icon={ImageIcon} label="Image quality" value={percent(quality.score, 0)} />
+                  <Metric icon={Cpu} label="Model" value={result.model_info?.label || 'EfficientNet'} small />
+                  <Metric icon={Timer} label="Inference" value={result.timings?.inference_ms != null ? milliseconds(result.timings.inference_ms) : '—'} />
+                  <Metric icon={Gauge} label="Total" value={result.timings?.total_ms != null ? milliseconds(result.timings.total_ms) : '—'} />
+                  <Metric icon={ImageIcon} label="Image quality" value={quality?.score != null ? percent(quality.score, 0) : '—'} />
                 </div>
               </div>
             ) : (
@@ -176,10 +176,10 @@ export default function PredictionResult({ result }) {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Metric icon={Cpu} label="Model" value={result.model_info.label} small />
-                  <Metric icon={Timer} label="Inference" value={milliseconds(result.timings.inference_ms)} />
-                  <Metric icon={Gauge} label="Total" value={milliseconds(result.timings.total_ms)} />
-                  <Metric icon={ImageIcon} label="Image quality" value={percent(quality.score, 0)} />
+                  <Metric icon={Cpu} label="Model" value={result.model_info?.label || 'EfficientNet'} small />
+                  <Metric icon={Timer} label="Inference" value={result.timings?.inference_ms != null ? milliseconds(result.timings.inference_ms) : '—'} />
+                  <Metric icon={Gauge} label="Total" value={result.timings?.total_ms != null ? milliseconds(result.timings.total_ms) : '—'} />
+                  <Metric icon={ImageIcon} label="Image quality" value={quality?.score != null ? percent(quality.score, 0) : '—'} />
                 </div>
               </div>
             )}
@@ -218,7 +218,7 @@ export default function PredictionResult({ result }) {
               icon={TrendingUp}
             />
             <ul className="space-y-3">
-              {result.top_predictions.map((item, index) => (
+              {(result.top_predictions || []).map((item, index) => (
                 <li key={item.class_name}>
                   <div className="mb-1.5 flex items-baseline justify-between gap-3">
                     <span className={clsx('truncate text-sm', index === 0 ? 'font-semibold' : 'text-secondary')}>
@@ -247,23 +247,21 @@ export default function PredictionResult({ result }) {
           />
           <dl className="space-y-3 text-sm">
             <CheckRow
-              ok={quality.passed}
+              ok={Boolean(quality?.passed)}
               label="Image quality & plant detection"
               detail={
-                quality.issues.length
+                quality?.issues?.length
                   ? quality.issues.map((issue) => issue.message).join(' ')
-                  : `Score ${percent(quality.score, 0)} — sharp, well exposed and plant-like.`
+                  : `Score ${percent(quality?.score ?? 0, 0)} — sharp, well exposed and plant-like.`
               }
             />
             <CheckRow
-              ok={!result.ood.is_out_of_distribution}
+              ok={!result.ood?.is_out_of_distribution}
               label="In-distribution check"
               detail={
-                result.ood.is_out_of_distribution
-                  ? result.ood.reasons.join(' ')
-                  : `Softmax ${percent(result.ood.scores.msp, 1)}, normalised entropy ${result.ood.scores.entropy?.toFixed(
-                      2,
-                    )} — consistent with the training distribution.`
+                result.ood?.is_out_of_distribution
+                  ? (result.ood.reasons || []).join(' ')
+                  : `Softmax ${percent(result.ood?.scores?.msp ?? 0, 1)}, normalised entropy ${result.ood?.scores?.entropy != null ? result.ood.scores.entropy.toFixed(2) : '—'} — consistent with the training distribution.`
               }
             />
             <CheckRow
@@ -277,13 +275,13 @@ export default function PredictionResult({ result }) {
             />
           </dl>
 
-          {quality.issues.length > 0 && (
+          {(quality?.issues || []).length > 0 && (
             <div className="mt-4 rounded-lg bg-[var(--surface-sunken)] p-3">
               <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted">
                 How to improve the photo
               </p>
               <ul className="space-y-1 text-sm text-secondary">
-                {quality.issues.map((issue) => (
+                {(quality?.issues || []).map((issue) => (
                   <li key={issue.code}>• {issue.suggestion}</li>
                 ))}
               </ul>

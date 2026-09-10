@@ -48,9 +48,12 @@ def msp_score(probabilities: np.ndarray) -> np.ndarray:
 
 def normalised_entropy(probabilities: np.ndarray) -> np.ndarray:
     """Shannon entropy scaled to ``[0, 1]``; higher means more uncertain."""
+    num_classes = probabilities.shape[-1]
+    if num_classes <= 1:
+        return np.zeros(probabilities.shape[:-1], dtype=np.float32)
     clipped = np.clip(probabilities, 1e-12, 1.0)
     entropy = -np.sum(clipped * np.log(clipped), axis=-1)
-    return entropy / np.log(probabilities.shape[-1])
+    return entropy / np.log(num_classes)
 
 
 def energy_score(logits: np.ndarray, temperature: float = 1.0) -> np.ndarray:
@@ -58,9 +61,11 @@ def energy_score(logits: np.ndarray, temperature: float = 1.0) -> np.ndarray:
 
     Returned with the paper's sign convention ``E(x) = -T * logsumexp(logits/T)``.
     """
+    if not np.isfinite(temperature) or temperature <= 0:
+        temperature = 1.0
     scaled = logits / temperature
-    shifted = scaled.max(axis=-1)
-    logsumexp = shifted + np.log(np.exp(scaled - shifted[..., None]).sum(axis=-1))
+    shifted = np.where(np.isfinite(scaled.max(axis=-1)), scaled.max(axis=-1), 0.0)
+    logsumexp = shifted + np.log(np.maximum(np.exp(scaled - shifted[..., None]).sum(axis=-1), 1e-12))
     return -temperature * logsumexp
 
 

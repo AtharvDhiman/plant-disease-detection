@@ -5,7 +5,7 @@ import time
 import uuid
 from enum import Enum
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -277,12 +277,12 @@ async def analyze_image(file: UploadFile = File(...)):
 @router.get("/predictions", response_model=PredictionListOut, summary="List prediction history")
 def list_predictions(
     limit: int = Query(20, ge=1, le=200),
-    offset: int = Query(0, ge=0),
-    search: str | None = Query(None, description="Substring match on class, plant or condition."),
-    disease: str | None = Query(None, description="Exact class name filter."),
-    plant: str | None = Query(None),
-    status_filter: str | None = Query(None, alias="status"),
-    confidence_level: str | None = Query(None),
+    offset: int = Query(0, ge=0, le=2_147_483_647),
+    search: str | None = Query(None, max_length=100, description="Substring match on class, plant or condition."),
+    disease: str | None = Query(None, max_length=100, description="Exact class name filter."),
+    plant: str | None = Query(None, max_length=100),
+    status_filter: str | None = Query(None, alias="status", max_length=50),
+    confidence_level: str | None = Query(None, max_length=50),
     sort: str = Query("created_desc",
                       pattern="^(created_desc|created_asc|confidence_desc|confidence_asc)$"),
     db: Session = Depends(get_db),
@@ -324,7 +324,7 @@ def list_predictions(
 
 @router.get("/predictions/{prediction_id}", response_model=PredictionDetailOut,
             summary="Fetch one stored prediction")
-def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
+def get_prediction(prediction_id: int = Path(..., ge=1, le=2_147_483_647), db: Session = Depends(get_db)):
     row = db.get(Prediction, prediction_id)
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found",
@@ -338,14 +338,14 @@ def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/predictions/{prediction_id}", response_model=DeleteOut,
                summary="Delete one stored prediction")
-def delete_prediction(prediction_id: int, db: Session = Depends(get_db)):
+def delete_prediction(prediction_id: int = Path(..., ge=1, le=2_147_483_647), db: Session = Depends(get_db)):
     row = db.get(Prediction, prediction_id)
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "not_found",
                                                      "message": f"Prediction {prediction_id} not found."})
-    _remove_files(row)
     db.delete(row)
     db.commit()
+    _remove_files(row)
     return {"deleted": 1, "message": f"Prediction {prediction_id} deleted."}
 
 
@@ -361,10 +361,10 @@ def clear_predictions(
                     "message": "Pass ?confirm=true to clear the entire history."},
         )
     rows = db.execute(select(Prediction)).scalars().all()
-    for row in rows:
-        _remove_files(row)
     count = db.execute(delete(Prediction)).rowcount
     db.commit()
+    for row in rows:
+        _remove_files(row)
     log.info("history cleared", fields={"deleted": count})
     return {"deleted": count, "message": f"Deleted {count} predictions."}
 

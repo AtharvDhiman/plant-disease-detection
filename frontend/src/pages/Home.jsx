@@ -9,6 +9,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import ImageUploader from '../components/ImageUploader';
 import PredictionResult from '../components/PredictionResult';
@@ -97,6 +98,7 @@ function HeroStats() {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
   const [result, setResult] = useState(null);
   const [analysing, setAnalysing] = useState(false);
   const uploadRef = useRef(null);
@@ -200,7 +202,7 @@ export default function Home() {
                   variant="secondary"
                   icon={Activity}
                   onClick={() => {
-                    window.location.href = '/benchmark';
+                    navigate('/benchmark');
                   }}
                 >
                   See the benchmark

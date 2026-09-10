@@ -18,6 +18,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -128,7 +129,8 @@ async def request_logging(request: Request, call_next):
     Only the method, path, status and duration are logged - never headers,
     bodies or uploaded file contents.
     """
-    request_id = uuid.uuid4().hex[:12]
+    request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex[:12]
+    request.state.request_id = request_id
     started = time.perf_counter()
     try:
         response = await call_next(request)
@@ -164,18 +166,26 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         payload = {"error": {"code": f"http_{exc.status_code}", "message": str(detail)}}
     payload["error"]["status"] = exc.status_code
     payload["error"]["path"] = request.url.path
-    return JSONResponse(status_code=exc.status_code, content=payload,
-                        headers=getattr(exc, "headers", None))
+    headers = getattr(exc, "headers", None) or {}
+    req_id = getattr(request.state, "request_id", None)
+    if req_id and "X-Request-ID" not in headers:
+        headers["X-Request-ID"] = req_id
+    return JSONResponse(status_code=exc.status_code, content=payload, headers=headers)
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    headers = {}
+    req_id = getattr(request.state, "request_id", None)
+    if req_id:
+        headers["X-Request-ID"] = req_id
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"error": {"code": "validation_error",
                            "message": "Request validation failed.",
                            "status": 422, "path": request.url.path,
-                           "details": exc.errors()}},
+                           "details": jsonable_encoder(exc.errors())}},
+        headers=headers,
     )
 
 
@@ -186,12 +196,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     The full traceback goes to the log; the response carries only the request
     path and a stable error code.
     """
-    log.exception("Internal server error", fields={"path": request.url.path})
+    req_id = getattr(request.state, "request_id", None)
+    log.exception("Internal server error", fields={"request_id": req_id, "path": request.url.path})
+    headers = {}
+    if req_id:
+        headers["X-Request-ID"] = req_id
     return JSONResponse(
         status_code=500,
         content={"error": {"code": "internal_error",
                            "message": "An internal error occurred. See the server log.",
                            "status": 500, "path": request.url.path}},
+        headers=headers,
     )
 
 

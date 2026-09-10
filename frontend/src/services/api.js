@@ -47,14 +47,27 @@ async function request(path, options = {}) {
   if (response.status === 204) return null;
 
   const contentType = response.headers.get('content-type') || '';
-  const body = contentType.includes('application/json') ? await response.json() : null;
+  let body = null;
+  if (contentType.includes('application/json')) {
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+  }
 
   if (!response.ok) {
-    const detail = body?.error || {};
-    throw new ApiError(detail.message || `Request failed (${response.status})`, {
-      code: detail.code,
+    const errorPayload = body?.error || body?.detail || {};
+    let message = errorPayload.message;
+    if (!message && Array.isArray(body?.detail)) {
+      message = body.detail.map((d) => d.msg || `${d.loc?.join('.')}: invalid`).join('; ');
+    } else if (!message && typeof errorPayload === 'string') {
+      message = errorPayload;
+    }
+    throw new ApiError(message || `Request failed (${response.status})`, {
+      code: errorPayload.code,
       status: response.status,
-      hint: detail.hint,
+      hint: errorPayload.hint,
     });
   }
   return body;

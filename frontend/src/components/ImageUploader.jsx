@@ -202,12 +202,14 @@ export default function ImageUploader({ onAnalyse, analysing, disabled }) {
                 )}
                 <div className="min-w-0">
                   <p className="font-medium">
-                    {hasNotAPlant ? 'Validation Warning: No plant leaf detected' : `Image quality: ${band} (${(quality.quality.score * 100).toFixed(0)}%)`}
+                    {hasNotAPlant
+                      ? 'Validation Warning: No plant leaf detected'
+                      : `Image quality: ${band} (${quality?.quality?.score != null ? (quality.quality.score * 100).toFixed(0) : 0}%)`}
                   </p>
                   <p className="mt-0.5 opacity-90">{quality.recommendation}</p>
-                  {quality.quality.issues.length > 0 && (
+                  {(quality?.quality?.issues || []).length > 0 && (
                     <ul className="mt-2 space-y-1 text-xs opacity-90">
-                      {quality.quality.issues.map((issue) => (
+                      {(quality.quality.issues || []).map((issue) => (
                         <li key={issue.code}>• {issue.message}</li>
                       ))}
                     </ul>

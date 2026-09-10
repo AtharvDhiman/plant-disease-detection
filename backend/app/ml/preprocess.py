@@ -77,9 +77,11 @@ def eval_crop(image: Image.Image, image_size: int | None = None) -> Image.Image:
 
     # torchvision Resize(int): shorter side -> resize_to, aspect ratio preserved.
     width, height = img.size
+    if width <= 0 or height <= 0:
+        return Image.new("RGB", (size, size), (0, 0, 0))
     short, long_side = min(width, height), max(width, height)
     if short != resize_to:
-        new_long = int(resize_to * long_side / short)
+        new_long = min(int(resize_to * long_side / max(short, 1)), 2048)
         if width <= height:
             new_width, new_height = resize_to, new_long
         else:

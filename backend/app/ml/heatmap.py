@@ -58,7 +58,8 @@ def overlay_heatmap(
         raise ValueError(f"Shape mismatch: image {image.shape[:2]} vs heatmap {heatmap.shape[:2]}")
     colored = colorize(heatmap).astype(np.float32)
     base = image.astype(np.float32)
-    weight = (alpha * np.clip((heatmap - threshold) / (1 - threshold), 0, 1))[..., None]
+    denom = max(1.0 - threshold, 1e-6)
+    weight = (alpha * np.clip((heatmap - threshold) / denom, 0, 1))[..., None]
     return np.clip(base * (1 - weight) + colored * weight, 0, 255).astype(np.uint8)
 
 
