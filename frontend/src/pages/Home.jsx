@@ -125,10 +125,13 @@ export default function Home() {
             title: 'Not a plant leaf',
           });
         } else if (prediction.status === 'out_of_distribution') {
-          toast.push('Photo rejected: Image does not match supported crop leaves.', {
-            type: 'error',
-            title: 'Unrecognized image',
-          });
+          toast.push(
+            `${prediction.display_name} (${percent(prediction.confidence, 1)}) — leaf pattern is atypical or confidence is moderate`,
+            {
+              type: 'warning',
+              title: 'Diagnosis advisory',
+            },
+          );
         } else {
           toast.push(prediction.status_message || 'The result needs review.', {
             type: 'warning',

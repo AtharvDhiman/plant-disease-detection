@@ -215,7 +215,7 @@ class Predictor:
         verdict = ood.assess(raw_logits, loaded.ood_thresholds)
 
         status, message = self._decide_status(quality, verdict, level)
-        is_rejected = status in ("not_a_plant", "poor_quality", "out_of_distribution")
+        is_rejected = status in ("not_a_plant", "poor_quality")
 
         # 5 ------------------------------------------------- explainability
         explanations: dict = {}
@@ -331,8 +331,9 @@ class Predictor:
             )
         if verdict.is_ood:
             return "out_of_distribution", (
-                "Unable to identify a plant leaf in this image. It does not resemble the "
-                "crop leaf photographs this model was trained on. " + " ".join(verdict.reasons)
+                "Atypical leaf visual pattern or moderate confidence. "
+                "The closest matching diagnosis is shown below -- please review alternative predictions or consult an agronomist. "
+                + " ".join(verdict.reasons)
             )
         if level == "low":
             return "low_confidence", CONFIDENCE_MESSAGES["low"]

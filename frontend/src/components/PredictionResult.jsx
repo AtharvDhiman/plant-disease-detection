@@ -30,12 +30,12 @@ const STATUS_BANNERS = {
   },
   out_of_distribution: {
     icon: HelpCircle,
-    tone: 'border-clay-300 bg-clay-50 text-clay-900 dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
-    title: 'Photo Rejected: Unrecognized subject or non-leaf object',
+    tone: 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100',
+    title: 'Advisory: Atypical leaf pattern or moderate confidence',
   },
   low_confidence: {
     icon: AlertTriangle,
-    tone: 'border-clay-300 bg-clay-50 text-clay-900 dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
+    tone: 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100',
     title: 'Low confidence prediction',
   },
 };
@@ -58,11 +58,9 @@ function StatusBanner({ status, message }) {
 export default function PredictionResult({ result }) {
   const isRejected =
     result.status === 'not_a_plant' ||
-    result.status === 'poor_quality' ||
-    result.status === 'out_of_distribution';
+    result.status === 'poor_quality';
 
-  const refused = result.status && result.status !== 'ok';
-  const confidence = refused
+  const confidence = isRejected
     ? {
         chip:
           'border-clay-300 bg-clay-50 text-clay-900 ' +
@@ -111,8 +109,6 @@ export default function PredictionResult({ result }) {
                 <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-[var(--text-primary)]">
                   {result.status === 'not_a_plant'
                     ? 'No Plant Leaf Detected'
-                    : result.status === 'out_of_distribution'
-                    ? 'Unrecognized Plant / Object'
                     : 'Insufficient Image Quality'}
                 </h2>
 
@@ -271,10 +267,10 @@ export default function PredictionResult({ result }) {
               }
             />
             <CheckRow
-              ok={!refused && result.confidence_level !== 'low'}
+              ok={!isRejected && result.confidence_level !== 'low'}
               label="Confidence threshold"
               detail={
-                refused
+                isRejected
                   ? 'Analysis refused by validation safety filters.'
                   : `${percent(result.confidence, 1)} — classified as ${result.confidence_level}.`
               }

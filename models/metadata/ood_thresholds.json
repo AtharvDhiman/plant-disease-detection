@@ -20,8 +20,8 @@
   },
   "selected": {
     "target_tpr": 0.95,
-    "msp_min": 0.8059374094009399,
-    "entropy_max": 0.2699751074861548,
+    "msp_min": 0.45,
+    "entropy_max": 0.58,
     "energy_max": -4.62461519241333,
     "per_score": {
       "msp": {
