@@ -4,4 +4,5 @@ echo "======================================================================"
 echo "  Starting PlantGuard AI Backend Server..."
 echo "======================================================================"
 echo ""
+export KMP_DUPLICATE_LIB_OK=TRUE
 python3 run_server.py --host 0.0.0.0 --port 8000 --reload

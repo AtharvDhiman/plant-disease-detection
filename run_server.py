@@ -24,6 +24,9 @@ if str(ROOT_DIR) not in sys.path:
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+# Process-level runtime fixes that must run before torch/numpy (Intel OpenMP duplicate dll fix)
+import app.core.runtime  # noqa: F401, E402
+
 
 def check_environment() -> dict[str, str | bool]:
     """Check availability of models, frontend bundle, and acceleration libraries."""
@@ -62,21 +65,21 @@ def print_banner(host: str, port: int, reload: bool, env_info: dict[str, str | b
     border = "=" * 68
 
     print(f"\n{border}")
-    print("  🌿  PlantGuard AI — Plant Disease Detection Backend Server")
+    print("  [PlantGuard AI] Plant Disease Detection Backend Server")
     print(border)
-    print(f"  • API Endpoint:     {base_url}/api")
-    print(f"  • Interactive Docs: {base_url}/docs (Swagger UI)")
-    print(f"  • ReDoc Schema:     {base_url}/redoc")
-    print(f"  • Health Probe:     {base_url}/api/health")
+    print(f"  * API Endpoint:     {base_url}/api")
+    print(f"  * Interactive Docs: {base_url}/docs (Swagger UI)")
+    print(f"  * ReDoc Schema:     {base_url}/redoc")
+    print(f"  * Health Probe:     {base_url}/api/health")
     if env_info["has_frontend"]:
-        print(f"  • Web Dashboard:    {base_url}/ (Single-Page App)")
+        print(f"  * Web Dashboard:    {base_url}/ (Single-Page App)")
     else:
-        print("  • Web Dashboard:    [Not built yet - run 'npm run build' in frontend/]")
-    print("--------------------------------------------------------------------")
-    print(f"  • Active Device:    {env_info['device']}")
-    print(f"  • PyTorch:          {'Available' if env_info['torch_available'] else 'Not installed'}")
-    print(f"  • ONNX Runtime:     {'Available' if env_info['onnx_available'] else 'Not installed'}")
-    print(f"  • Auto-reload:      {'Enabled' if reload else 'Disabled'}")
+        print("  * Web Dashboard:    [Not built yet - run 'npm run build' in frontend/]")
+    print("-" * 68)
+    print(f"  * Active Device:    {env_info['device']}")
+    print(f"  * PyTorch:          {'Available' if env_info['torch_available'] else 'Not installed'}")
+    print(f"  * ONNX Runtime:     {'Available' if env_info['onnx_available'] else 'Not installed'}")
+    print(f"  * Auto-reload:      {'Enabled' if reload else 'Disabled'}")
     print(f"{border}\n")
 
 
