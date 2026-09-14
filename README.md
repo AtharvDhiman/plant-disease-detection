@@ -660,6 +660,16 @@ python training/export_model.py --torchscript --onnx
 **Backend** (port 8000):
 
 ```bash
+# Recommended launcher with auto-reload and status banner:
+python run_server.py --reload
+
+# Or shorthand alias:
+python server.py --reload
+
+# On Windows (one-click batch):
+start_backend.bat
+
+# Or direct uvicorn command:
 uvicorn app.main:app --app-dir backend --reload
 ```
 

@@ -333,3 +333,17 @@ else:
         fields={"looked_in": str(_FRONTEND_DIST),
                 "hint": "run `npm run build` in frontend/ to bundle it"},
     )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    backend_dir = Path(__file__).resolve().parent.parent
+    uvicorn.run(
+        "app.main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        app_dir=str(backend_dir),
+    )
+
