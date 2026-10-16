@@ -229,14 +229,341 @@ def headline_block(rows: list[dict], manifest: dict | None, dataset: dict | None
 
 
 # --------------------------------------------------------------------------- #
+# Sections drawn from the other result files
+# --------------------------------------------------------------------------- #
+#
+# Each takes the parsed JSON (or None) and returns markdown lines, or [] when
+# the file has not been produced - a missing measurement is left out rather
+# than shown as a placeholder.
+
+
+def production_experiment(ledger: list[dict], manifest: dict | None) -> dict | None:
+    """The ledger entry of the model the application serves."""
+    if not manifest:
+        return None
+    wanted = manifest.get("experiment_id")
+    return next((e for e in ledger if e.get("experiment_id") == wanted), None)
+
+
+def display_names(dataset_report: dict | None) -> dict:
+    details = get(dataset_report or {}, "classes.details") or {}
+    if isinstance(details, dict):
+        return {raw: info.get("display", raw) for raw, info in details.items()}
+    return {info["raw"]: info.get("display", info["raw"]) for info in details}
+
+
+def dataset_section(report: dict | None) -> list[str]:
+    if not report:
+        return []
+    splits = report.get("splits", {})
+    classes = report.get("classes", {})
+    lines = ["\n## Dataset\n",
+             f"Source: Kaggle `{get(report, 'dataset.kaggle_slug', '—')}` "
+             f"(PlantVillage, augmented). {classes.get('count')} classes across "
+             f"{classes.get('plant_count')} plant species.\n",
+             "| Split | Images | Classes | Smallest class | Largest class | Imbalance |",
+             "|---|---:|---:|---:|---:|---:|"]
+    for name, split in splits.items():
+        counts = list((split.get("class_counts") or {}).values())
+        low, high = (min(counts), max(counts)) if counts else (None, None)
+        ratio = f"{high / low:.2f}×" if low else "—"
+        lines.append(f"| {name} | {num(split.get('num_images'))} | {split.get('num_classes')} | "
+                     f"{num(low)} | {num(high)} | {ratio} |")
+    # The report stores these either as name lists or as plain counts.
+    healthy, diseased = (len(v) if isinstance(v, list) else v
+                         for v in (classes.get("healthy_classes"), classes.get("diseased_classes")))
+    lines += ["",
+              f"- **Healthy classes:** {healthy} · **disease classes:** {diseased}",
+              # Semicolons: one plant is itself called "Pepper, bell".
+              f"- **Plants:** {'; '.join(classes.get('plants', []))}"]
+    dup = report.get("duplicates") or {}
+    if dup:
+        leak = get(dup, "cross_split_leakage.colliding_hashes")
+        lines.append(
+            f"- **Duplicate / leakage check** ({dup.get('method')}, "
+            f"{dup.get('sampled_per_class')} images sampled per class): "
+            f"{get(dup, 'train.duplicate_images', '—')} duplicates in train, "
+            f"{get(dup, 'valid.duplicate_images', '—')} in valid, "
+            f"{leak if leak is not None else '—'} train/valid collisions.")
+    lines.append(
+        "\nThe dataset's own `valid` folder is used as the held-out **test** split; "
+        "validation for early stopping and calibration is carved out of `train` "
+        "(see `data/splits.json`), so no test image influences training or model "
+        "selection.\n")
+    return lines
+
+
+def production_metrics_section(experiment: dict | None) -> list[str]:
+    metrics = get(experiment or {}, "test.metrics")
+    if not metrics:
+        return []
+    calib = get(experiment, "test.calibration") or {}
+    conf = get(experiment, "test.confidence_stats") or {}
+    rows = [
+        ("Test images", num(metrics.get("num_samples"))),
+        ("Accuracy (top-1)", pct(metrics.get("accuracy"))),
+        ("Top-3 accuracy", pct(metrics.get("top3_accuracy"))),
+        ("Top-5 accuracy", pct(metrics.get("top5_accuracy"))),
+        ("Balanced accuracy", pct(metrics.get("balanced_accuracy"))),
+        ("Macro precision", dec(metrics.get("precision_macro"))),
+        ("Macro recall", dec(metrics.get("recall_macro"))),
+        ("Macro F1", dec(metrics.get("f1_macro"))),
+        ("Weighted F1", dec(metrics.get("f1_weighted"))),
+        ("Cohen's kappa", dec(metrics.get("cohen_kappa"))),
+        ("Matthews correlation", dec(metrics.get("matthews_corrcoef"))),
+        ("ROC AUC (macro, one-vs-rest)", dec(metrics.get("roc_auc_macro_ovr"), 5)),
+        ("Expected calibration error (raw)", dec(calib.get("ece"))),
+        ("Brier score", dec(calib.get("brier"))),
+        ("Mean confidence when right / wrong",
+         f"{pct(conf.get('mean_when_correct'), 1)} / {pct(conf.get('mean_when_wrong'), 1)}"),
+        ("Inference, batch 1", f"{dec(get(experiment, 'test.latency.by_batch_size.batch_1.ms_per_image'), 2)} ms "
+                               f"({get(experiment, 'test.latency.device', '—')})"),
+    ]
+    errors = None
+    if metrics.get("num_samples") and metrics.get("accuracy") is not None:
+        errors = round(metrics["num_samples"] * (1 - metrics["accuracy"]))
+    lines = [f"\n## The deployed model: {experiment.get('label')}\n",
+             f"Every metric for the model the application serves "
+             f"(`{experiment.get('experiment_id')}`), on the full held-out test split.\n",
+             "| Metric | Value |", "|---|---:|"]
+    lines += [f"| {name} | {value} |" for name, value in rows]
+    if errors is not None:
+        lines.append(f"\n{num(errors)} of {num(metrics['num_samples'])} test images are "
+                     "misclassified.\n")
+    return lines
+
+
+def per_class_section(experiment: dict | None, names: dict) -> list[str]:
+    per_class = get(experiment or {}, "test.metrics.per_class")
+    if not per_class:
+        return []
+    ordered = sorted(per_class.items(), key=lambda kv: kv[1]["f1"])
+    lines = ["\n## Per-class accuracy (deployed model)\n",
+             "Sorted hardest first. Recall is the per-class accuracy: the share of that "
+             "disease's test images the model gets right.\n",
+             "| # | Class | Recall (accuracy) | Precision | F1 | Test images |",
+             "|---:|---|---:|---:|---:|---:|"]
+    for index, (raw, m) in enumerate(ordered, 1):
+        lines.append(f"| {index} | {names.get(raw, raw)} | {pct(m['recall'])} | "
+                     f"{pct(m['precision'])} | {dec(m['f1'])} | {num(m['support'])} |")
+    perfect = sum(1 for _, m in ordered if m["recall"] >= 1.0)
+    lines.append(f"\n{perfect} of {len(ordered)} classes are recognised with 100% recall; "
+                 f"the hardest is **{names.get(ordered[0][0], ordered[0][0])}** at "
+                 f"{pct(ordered[0][1]['recall'])}.\n")
+    return lines
+
+
+DOMAIN_LABELS = {
+    "original": "Original lab photo",
+    "background": "Leaf on a soil background",
+    "angle": "Photographed off-axis",
+    "distance": "Leaf small in the frame (far away)",
+    "lighting": "Harsh directional sunlight",
+    "compression": "Heavy JPEG compression",
+    "combined": "All of the above (closest to a field photo)",
+}
+
+
+def domain_shift_section(shift: dict | None) -> list[str]:
+    conditions = (shift or {}).get("conditions")
+    if not conditions:
+        return []
+    base = (conditions.get("original") or {}).get("accuracy")
+    lines = ["\n## Accuracy on field-like photos\n",
+             "Every number above comes from laboratory photographs. This measures how "
+             "the full pipeline (quality gate, dust check, model, OOD check) behaves "
+             f"when the same leaves are made to look like field photos - "
+             f"{shift.get('images_per_condition')} disease images per condition, "
+             "produced by `scripts/domain_shift_probe.py`.\n",
+             "| Condition | Correct class | vs lab | Not marked reliable |",
+             "|---|---:|---:|---:|"]
+    for key, entry in conditions.items():
+        acc = entry.get("accuracy")
+        delta = "—" if key == "original" or acc is None or base is None \
+            else f"{(acc - base) * 100:+.1f} pt"
+        lines.append(f"| {DOMAIN_LABELS.get(key, key)} | {pct(acc, 1)} "
+                     f"({entry.get('correct')}/{entry.get('total')}) | {delta} | "
+                     f"{pct(entry.get('refused_rate'), 1)} |")
+    lines += ["",
+              "*Correct class* counts the top prediction even when the app flagged it; "
+              "*not marked reliable* is any outcome other than a plain `ok` - a "
+              "refusal, a low-confidence warning or a provisional result.",
+              ""]
+    single = {k: v.get("accuracy") for k, v in conditions.items()
+              if k not in ("original", "combined") and v.get("accuracy") is not None}
+    if single and min(single, key=single.get) == "distance":
+        lines += ["A small leaf far away in the frame is the dominant failure: the model "
+                  "was trained on leaves that fill the image, so framing matters more "
+                  "than lighting, angle or compression. The app's advice for such photos "
+                  "is to move closer.", ""]
+    if shift.get("caveat"):
+        lines.append(f"> {shift['caveat']}\n")
+    return lines
+
+
+def dust_section(dust: dict | None) -> list[str]:
+    evaluation = (dust or {}).get("evaluation")
+    if not evaluation:
+        return []
+    labels = {
+        "clean": "Clean leaf (lab photo)",
+        "clean_field": "Clean leaf, field-like conditions",
+        "dust_light": "Light dust",
+        "dust_moderate": "Moderate dust",
+        "dust_heavy": "Heavy dust",
+        "dust_light_field": "Light dust, field-like",
+        "dust_moderate_field": "Moderate dust, field-like",
+        "dust_heavy_field": "Heavy dust, field-like",
+    }
+    possible = get(evaluation, "threshold.rates") or {}
+    heavy = get(evaluation, "heavy_threshold.rates") or {}
+    lines = ["\n## Dust, soil and sand detection\n",
+             "PlantVillage has no \"dusty leaf\" class, so a dust film used to be "
+             "classified as a disease (often powdery mildew) or could hide one. A "
+             "small detector in `backend/app/ml/dust.py` flags it before diagnosis. "
+             f"Evaluated on {num(evaluation.get('eval_rows'))} held-out images "
+             f"(AUC **{dec(evaluation.get('auc'), 3)}**; "
+             f"{dec(get(evaluation, 'leave_crops_out.auc'), 3)} on crops withheld from "
+             f"training: {', '.join(get(evaluation, 'leave_crops_out.crops', []))}).\n",
+             "| Image | n | Flagged \"possible dust\" (provisional) | Flagged \"heavy dust\" (withheld) |",
+             "|---|---:|---:|---:|"]
+    for key in labels:
+        if key in possible:
+            lines.append(f"| {labels[key]} | {possible[key]['n']} | "
+                         f"{pct(possible[key]['flagged'], 1)} | "
+                         f"{pct(heavy.get(key, {}).get('flagged'), 1)} |")
+    powdery = evaluation.get("powdery_mildew_false_alarm") or {}
+    lines += ["",
+              f"Rows marked *clean* are false alarms. Genuine powdery-mildew leaves "
+              f"(n={powdery.get('n')}) trip the possible-dust warning "
+              f"{pct(powdery.get('at_threshold'), 1)} of the time and the heavy-dust "
+              f"refusal {pct(powdery.get('at_heavy'), 1)}, because a pale fungal "
+              "coating and dust look alike; that is why the warning says so instead "
+              "of refusing.",
+              ""]
+    if dust.get("caveat"):
+        lines.append(f"> {dust['caveat']}\n")
+    return lines
+
+
+def tuning_section(tuning: dict | None) -> list[str]:
+    trials = (tuning or {}).get("trials")
+    if not trials:
+        return []
+    keys = list(trials[0]["params"])
+    lines = ["\n## Hyperparameter search\n",
+             f"{tuning.get('strategy', '').capitalize()} search over "
+             f"`{tuning.get('model')}`, {len(trials)} trials of "
+             f"{tuning.get('epochs_per_trial')} epochs, ranked by "
+             f"{tuning.get('selection_metric')}.\n",
+             "| Rank | " + " | ".join(keys) + " | Val accuracy | Val loss | Minutes |",
+             "|---:|" + "---:|" * len(keys) + "---:|---:|---:|"]
+    ranked = sorted(trials, key=lambda t: t.get("val_accuracy") or 0, reverse=True)
+    for rank, trial in enumerate(ranked, 1):
+        values = " | ".join(str(trial["params"][k]) for k in keys)
+        lines.append(f"| {rank} | {values} | {pct(trial.get('val_accuracy'))} | "
+                     f"{dec(trial.get('val_loss'))} | "
+                     f"{(trial.get('training_time_s') or 0) / 60:.0f} |")
+    best = ranked[0]
+    lines.append(f"\nBest: {', '.join(f'{k}={v}' for k, v in best['params'].items())} "
+                 f"at {pct(best.get('val_accuracy'))} validation accuracy.")
+    # State the learning-rate finding only if the data actually shows it.
+    if "learning_rate" in keys:
+        top_lr = best["params"]["learning_rate"]
+        same = [t["val_accuracy"] for t in trials if t["params"]["learning_rate"] == top_lr]
+        other = [t["val_accuracy"] for t in trials if t["params"]["learning_rate"] != top_lr]
+        if other and min(same) > max(other):
+            lines.append(f"The learning rate dominates: every trial at {top_lr} beats "
+                         "every trial at any other rate within this short budget.")
+    lines.append("")
+    return lines
+
+
+def serving_section(serving: dict | None) -> list[str]:
+    per_request = (serving or {}).get("per_request")
+    if not per_request:
+        return []
+    stages = {
+        "quality_ms": "Image-quality checks",
+        "preprocess_ms": "Preprocessing",
+        "inference_ms": "Model inference",
+        "explain_ms": "Explanation heat maps",
+        "total_ms": "**Total request**",
+    }
+    measured = (serving.get("generated_at") or "")[:10] or "—"
+    lines = ["\n## Serving latency\n",
+             f"Measured through the running API with `scripts/benchmark_serving.py` on "
+             f"{measured}: {get(serving, 'model.label')} on {get(serving, 'model.device')}, "
+             f"{serving.get('iterations')} requests. Checks added to the quality gate "
+             "after that date are not included; re-run the script to refresh.\n",
+             "| Stage | Median | p95 |", "|---|---:|---:|"]
+    for key, label in stages.items():
+        if key in per_request:
+            lines.append(f"| {label} | {dec(per_request[key]['median_ms'], 1)} ms | "
+                         f"{dec(per_request[key]['p95_ms'], 1)} ms |")
+    lines.append(f"\nThroughput: {dec(serving.get('throughput_requests_per_second'), 2)} "
+                 "requests/s with explanations on. The free Render deployment runs the "
+                 "same model through ONNX Runtime on a shared CPU, so expect slower "
+                 "responses there.\n")
+    return lines
+
+
+def readme_extras(deployed: dict | None, names: dict, extra: dict) -> list[str]:
+    """Short versions of the extra sections, linking to the full tables."""
+    lines: list[str] = []
+    metrics = get(deployed or {}, "test.metrics")
+    if metrics:
+        lines += ["", f"### The deployed model ({deployed.get('label')}) at a glance", "",
+                  "| Accuracy | Top-3 | Macro F1 | Balanced acc. | Cohen's κ | ROC AUC | Test images |",
+                  "|---:|---:|---:|---:|---:|---:|---:|",
+                  f"| **{pct(metrics.get('accuracy'))}** | {pct(metrics.get('top3_accuracy'))} | "
+                  f"{dec(metrics.get('f1_macro'))} | {pct(metrics.get('balanced_accuracy'))} | "
+                  f"{dec(metrics.get('cohen_kappa'))} | {dec(metrics.get('roc_auc_macro_ovr'), 5)} | "
+                  f"{num(metrics.get('num_samples'))} |"]
+        per_class = metrics.get("per_class") or {}
+        if per_class:
+            hardest = sorted(per_class.items(), key=lambda kv: kv[1]["f1"])[:5]
+            lines += ["", "Hardest classes (per-class accuracy = recall):", "",
+                      "| Class | Accuracy | F1 |", "|---|---:|---:|"]
+            lines += [f"| {names.get(raw, raw)} | {pct(m['recall'])} | {dec(m['f1'])} |"
+                      for raw, m in hardest]
+            lines.append("\nAll 38 classes: [`docs/results.md` → Per-class accuracy]"
+                         "(docs/results.md#per-class-accuracy-deployed-model).")
+    conditions = get(extra, "domain_shift.conditions")
+    if conditions:
+        lines += ["", "### Beyond the lab test set", "",
+                  "| Condition | Correct class |", "|---|---:|"]
+        lines += [f"| {DOMAIN_LABELS.get(k, k)} | {pct(v.get('accuracy'), 1)} |"
+                  for k, v in conditions.items()]
+        lines.append("\nLeaves imitated as field photos, through the full live pipeline - "
+                     "[details](docs/results.md#accuracy-on-field-like-photos).")
+    rates = get(extra, "dust.evaluation.threshold.rates")
+    if rates:
+        lines += ["", f"**Dust detection:** flags {pct(get(rates, 'dust_heavy.flagged'), 0)} of "
+                  f"heavily and {pct(get(rates, 'dust_moderate.flagged'), 0)} of moderately "
+                  f"dusted leaves, with false alarms on {pct(get(rates, 'clean.flagged'), 1)} of "
+                  "clean lab photos and "
+                  f"{pct(get(rates, 'clean_field.flagged'), 1)} of clean field-like photos "
+                  "([details](docs/results.md#dust-soil-and-sand-detection))."]
+    return lines
+
+
+# --------------------------------------------------------------------------- #
 # Documents
 # --------------------------------------------------------------------------- #
 
 
-def build_results_doc(ledger, manifest, dataset, ablation, ood, classical) -> str:
+def build_results_doc(ledger, manifest, dataset, ablation, ood, classical,
+                      extra: dict | None = None) -> str:
+    extra = extra or {}
     all_rows = rows_from_ledger(ledger, ("benchmark", "classical", "ablation", "placement"))
-    bench_rows = rows_from_ledger(ledger, ("benchmark", "classical"))
+    # Production rows have their own section below; ranking them inside the
+    # benchmark table put full-data runs among subset runs as if comparable.
+    bench_rows = [r for r in rows_from_ledger(ledger, ("benchmark", "classical"))
+                  if r["protocol"] != "production"]
     production_rows = [r for r in all_rows if r["protocol"] == "production"]
+    deployed = production_experiment(ledger, manifest)
+    names = display_names(extra.get("dataset_report"))
 
     parts = [
         GENERATED_BANNER,
@@ -246,12 +573,15 @@ def build_results_doc(ledger, manifest, dataset, ablation, ood, classical) -> st
         "## Headline\n",
         headline_block(all_rows, manifest, dataset),
         "\n★ marks the proposed CBAM architectures.\n",
+        *dataset_section(extra.get("dataset_report")),
+        *production_metrics_section(deployed),
+        *per_class_section(deployed, names),
         "## Benchmark\n",
         "Every model in the `benchmark` protocol was trained on an identical "
         "fixed-budget subset (300 train / 60 val / 120 test images per class, "
         "160 px, 12 epochs, identical optimiser and seed). Only the architecture "
-        "differs. Rows marked `production` were trained on the full training "
-        "split at 224 px and are **not** directly comparable with the subset rows.\n",
+        "differs. Full-data `production` runs are in their own section below and "
+        "are **not** directly comparable with these subset rows.\n",
         benchmark_table(bench_rows),
         "",
     ]
@@ -377,6 +707,11 @@ def build_results_doc(ledger, manifest, dataset, ablation, ood, classical) -> st
                     "`python training/train_classical.py --models rbf_svm` if the "
                     "comparison is wanted.\n"
                 )
+
+    parts += domain_shift_section(extra.get("domain_shift"))
+    parts += dust_section(extra.get("dust"))
+    parts += tuning_section(extra.get("tuning"))
+    parts += serving_section(extra.get("serving"))
 
     parts += [
         "\n## Reproducing these numbers\n",
@@ -743,13 +1078,21 @@ def main() -> int:
     ablation = load(settings.results_dir / "ablation_summary.json")
     ood = load(settings.metadata_dir / "ood_thresholds.json")
     classical = load(settings.results_dir / "classical_results.json")
+    extra = {
+        "dataset_report": dataset,
+        "domain_shift": load(settings.results_dir / "domain_shift.json"),
+        "dust": load(settings.metadata_dir / "dust_detector.json"),
+        "tuning": load(settings.results_dir / "tuning_results.json"),
+        "serving": load(settings.results_dir / "serving_benchmark.json"),
+    }
 
     docs_dir = PROJECT_ROOT / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
 
     written = []
     for name, content in (
-        ("results.md", build_results_doc(ledger, manifest, dataset_summary, ablation, ood, classical)),
+        ("results.md", build_results_doc(ledger, manifest, dataset_summary, ablation, ood,
+                                         classical, extra)),
         ("model_comparison.md", build_comparison_doc(ledger, manifest)),
         ("ablation_study.md", build_ablation_doc(ablation, ledger)),
     ):
@@ -770,6 +1113,8 @@ def main() -> int:
 
         sections = [
             headline_block(rows, manifest, dataset_summary),
+            *readme_extras(production_experiment(ledger, manifest),
+                           display_names(dataset), extra),
             "",
             "### Benchmark (identical protocol across all architectures)",
             "",

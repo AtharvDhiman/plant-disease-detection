@@ -2,53 +2,53 @@
   "images_per_condition": 30,
   "conditions": {
     "original": {
-      "accuracy": 1.0,
-      "refused_rate": 0.13333333333333333,
-      "correct": 30,
+      "accuracy": 0.9666666666666667,
+      "refused_rate": 0.06666666666666667,
+      "correct": 29,
       "total": 30,
-      "refused": 4
+      "refused": 2
     },
     "background": {
-      "accuracy": 1.0,
-      "refused_rate": 0.3,
-      "correct": 30,
-      "total": 30,
-      "refused": 9
-    },
-    "angle": {
-      "accuracy": 1.0,
-      "refused_rate": 0.13333333333333333,
-      "correct": 30,
-      "total": 30,
-      "refused": 4
-    },
-    "distance": {
-      "accuracy": 0.13333333333333333,
-      "refused_rate": 1.0,
-      "correct": 4,
-      "total": 30,
-      "refused": 30
-    },
-    "lighting": {
       "accuracy": 1.0,
       "refused_rate": 0.03333333333333333,
       "correct": 30,
       "total": 30,
       "refused": 1
     },
-    "compression": {
-      "accuracy": 0.9333333333333333,
-      "refused_rate": 0.23333333333333334,
-      "correct": 28,
+    "angle": {
+      "accuracy": 0.9666666666666667,
+      "refused_rate": 0.03333333333333333,
+      "correct": 29,
       "total": 30,
-      "refused": 7
+      "refused": 1
+    },
+    "distance": {
+      "accuracy": 0.1,
+      "refused_rate": 0.7333333333333333,
+      "correct": 3,
+      "total": 30,
+      "refused": 22
+    },
+    "lighting": {
+      "accuracy": 0.9666666666666667,
+      "refused_rate": 0.03333333333333333,
+      "correct": 29,
+      "total": 30,
+      "refused": 1
+    },
+    "compression": {
+      "accuracy": 0.9,
+      "refused_rate": 0.1,
+      "correct": 27,
+      "total": 30,
+      "refused": 3
     },
     "combined": {
-      "accuracy": 0.8,
-      "refused_rate": 0.7666666666666667,
-      "correct": 24,
+      "accuracy": 0.7666666666666667,
+      "refused_rate": 0.2,
+      "correct": 23,
       "total": 30,
-      "refused": 23
+      "refused": 6
     }
   },
   "caveat": "Transformations imitate field conditions applied to laboratory images. Real photographs additionally bring occlusion, motion blur, overlapping leaves and unseen species, so this is a lower bound on the accuracy drop rather than an estimate of it."

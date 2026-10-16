@@ -4,7 +4,7 @@
 
 # Model comparison
 
-_Generated 2026-09-01 07:05 UTC._
+_Generated 2026-10-16 10:42 UTC._
 
 ## Full metric table
 

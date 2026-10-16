@@ -143,6 +143,40 @@ and must be able to justify itself.
 
 Rows with different protocols are **not** comparable: `benchmark` models were trained on a fixed subset and scored on a 4,560-image split, `production` models on the full data and scored on 17,572 images.
 
+### The deployed model (EfficientNet-B0) at a glance
+
+| Accuracy | Top-3 | Macro F1 | Balanced acc. | Cohen's κ | ROC AUC | Test images |
+|---:|---:|---:|---:|---:|---:|---:|
+| **99.06%** | 99.94% | 0.9904 | 99.04% | 0.9903 | 0.99997 | 17,572 |
+
+Hardest classes (per-class accuracy = recall):
+
+| Class | Accuracy | F1 |
+|---|---:|---:|
+| Tomato - Target Spot | 89.28% | 0.9336 |
+| Corn (maize) - Cercospora leaf spot Gray leaf spot | 93.90% | 0.9542 |
+| Corn (maize) - Northern Leaf Blight | 97.27% | 0.9587 |
+| Tomato - Spider mites Two-spotted spider mite | 99.77% | 0.9666 |
+| Tomato - Early blight | 96.88% | 0.9748 |
+
+All 38 classes: [`docs/results.md` → Per-class accuracy](docs/results.md#per-class-accuracy-deployed-model).
+
+### Beyond the lab test set
+
+| Condition | Correct class |
+|---|---:|
+| Original lab photo | 96.7% |
+| Leaf on a soil background | 100.0% |
+| Photographed off-axis | 96.7% |
+| Leaf small in the frame (far away) | 10.0% |
+| Harsh directional sunlight | 96.7% |
+| Heavy JPEG compression | 90.0% |
+| All of the above (closest to a field photo) | 76.7% |
+
+Leaves imitated as field photos, through the full live pipeline - [details](docs/results.md#accuracy-on-field-like-photos).
+
+**Dust detection:** flags 93% of heavily and 87% of moderately dusted leaves, with false alarms on 0.1% of clean lab photos and 5.9% of clean field-like photos ([details](docs/results.md#dust-soil-and-sand-detection)).
+
 ### Benchmark (identical protocol across all architectures)
 
 Every row below was trained on the same fixed budget and scored on the same held-out subset, so the ranking is meaningful. Absolute numbers are lower than a full-data run would give, by design.
