@@ -427,6 +427,39 @@ on every training curve.
 | **Per-architecture batch caps** | VRAM ceilings scaled by input area, halved without AMP. A CUDA OOM triggers one automatic retry at half the batch. |
 | **Worker budgeting** | Each spawned DataLoader worker reserves ~1 GB of Windows commit charge for torch's CUDA DLLs. Exceeding the limit hangs the run; the count is budgeted against RAM and a spawn failure falls back to in-process loading. |
 
+### Field-condition training
+
+The production models score ~99% on PlantVillage's lab photographs but, through
+the live pipeline, only ~50% when the same leaves are given a soil backdrop,
+harsh sun and heavy JPEG together, and under 10% when the leaf is small in the
+frame. The `field` suite retrains with one change - the `field` augmentation
+preset ([`backend/app/ml/field_augment.py`](backend/app/ml/field_augment.py)),
+which turns lab photos into field-like ones during training:
+
+| Condition | How it is made | Probability |
+|---|---|---:|
+| Field backdrop | Leaf cut out of the grey card (hue-aware mask, holes filled so lesions stay) and pasted on procedural soil, mulch, out-of-focus foliage or stones | 55% |
+| Leaf far away | Leaf shrunk to 35-80% of the frame at a random position | 40% |
+| Directional sun | Brightness ramp at a random angle, sometimes a soft shadow | 35% |
+| Blur / noise / JPEG | Focus error, luminance noise, quality 18-75 re-compression | 20% / 20% / 30% |
+
+30% of images stay untouched so lab accuracy is not traded away, and the leaf's
+hue is never altered - colour is the diagnostic signal. Everything else (data,
+224 px, epoch budget, seed) matches the production protocol, and plain
+EfficientNet-B0 is trained the same way as a control, so a difference is the
+augmentation, and a CBAM-vs-plain difference is CBAM.
+
+```bash
+python scripts/supervise_training.py --suite field     # trains both models
+python scripts/compare_field_models.py --per-class 4   # lab + field-like, full pipeline
+```
+
+`compare_field_models.py` runs every candidate through the serving pipeline on
+identical held-out images and the same OOD thresholds, and counts confident
+wrong answers separately - the harmful outcome. It is not a fully independent
+test for the field-trained models (their augmentation imitates the same kinds
+of condition, through different generators); real field photographs would be.
+
 ---
 
 ## Explainable AI

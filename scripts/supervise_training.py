@@ -48,13 +48,13 @@ SUITE_GROUPS = {
 def expected_models(suite: str, explicit: list[str] | None) -> list[str]:
     if explicit:
         return explicit
-    if suite == "production":
+    if suite not in SUITE_GROUPS:
         # Read the list from run_experiments rather than keeping a second copy
         # here. The two drifted once already: the production suite grew from two
         # models to four and this function still reported two, so the supervisor
         # would have declared the sweep finished with half of it untrained.
         from run_experiments import SUITES
-        return list(SUITES["production"]["models"])
+        return list(SUITES[suite]["models"])
     groups = SUITE_GROUPS[suite]
     return [name for name, spec in MODEL_ZOO.items() if spec.group in groups]
 
@@ -79,7 +79,7 @@ def completed_models(protocol_filter: set[str]) -> set[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite", default="research",
-                        choices=[*SUITE_GROUPS, "production"])
+                        choices=[*SUITE_GROUPS, "production", "field"])
     parser.add_argument("--models", nargs="*", default=None)
     parser.add_argument("--max-attempts", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=None)

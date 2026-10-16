@@ -297,6 +297,28 @@ def test_denormalize_inverts_normalisation():
     assert restored.min() >= 0 and restored.max() <= 1
 
 
+def test_field_augmentation_keeps_shape_and_leaf_colour():
+    """Backdrops and lighting may change; the leaf's hue must not."""
+    import random
+
+    from app.ml.field_augment import FieldConditions, leaf_mask
+
+    random.seed(0)
+    yy, xx = np.mgrid[0:256, 0:256]
+    leaf = ((xx - 128) ** 2 / 100**2 + (yy - 128) ** 2 / 70**2) < 1
+    rgb = np.full((256, 256, 3), (160, 158, 170), dtype=np.uint8)   # lavender card
+    rgb[leaf] = (60, 130, 45)
+    image = Image.fromarray(rgb)
+
+    mask = np.asarray(leaf_mask(image)) > 128
+    assert (mask == leaf).mean() > 0.97
+
+    out = FieldConditions(p=1.0)(image)
+    assert out.size == image.size and out.mode == "RGB"
+    transform = build_train_transform(160, strength="field")
+    assert transform(image).shape == (3, 160, 160)
+
+
 def test_unknown_augmentation_strength_raises():
     with pytest.raises(ValueError, match="Unknown augmentation"):
         build_train_transform(160, strength="extreme")

@@ -82,6 +82,20 @@ SUITES: dict[str, dict] = {
         "protocol": PRODUCTION_PROTOCOL,
         "tag": "prod",
     },
+    "field": {
+        # The production protocol with one change: field-condition augmentation
+        # (app/ml/field_augment.py). Same data, image size, epoch budget and
+        # seed as the production runs, so a difference against them is the
+        # augmentation and nothing else.
+        #
+        #   efficientnet_b0_cbam  the proposed model - can field training make the
+        #                         CBAM model the one worth serving?
+        #   efficientnet_b0       the control: did any gain come from CBAM, or
+        #                         from the augmentation alone?
+        "models": ["efficientnet_b0_cbam", "efficientnet_b0"],
+        "protocol": {**PRODUCTION_PROTOCOL, "augmentation": "field"},
+        "tag": "field",
+    },
 }
 
 
