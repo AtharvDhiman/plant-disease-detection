@@ -129,7 +129,8 @@ class PredictionOut(BaseModel):
     confidence_level: str = Field(..., description="high | medium | low")
     confidence_percent: float
 
-    status: str = Field(..., description="ok | low_confidence | out_of_distribution | poor_quality | not_a_plant")
+    status: str = Field(..., description=(
+        "ok | low_confidence | out_of_distribution | dusty_leaf | poor_quality | not_a_plant"))
     status_message: str | None = None
     reliable: bool = Field(..., description="True when the result is safe to act on.")
 

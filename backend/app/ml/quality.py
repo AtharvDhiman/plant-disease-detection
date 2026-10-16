@@ -18,6 +18,9 @@ Contrast          Standard deviation of luminance
 Colour            Fraction of pixels in a plant-like hue range
 Saturation        Near-grey images are usually documents or screenshots
 Spatial coherence Lag-1 pixel autocorrelation - separates photographs from noise
+Soil / sand       Earth-coloured frame with no vegetation - named, not generic
+Dust film         Small trained detector (app/ml/dust.py) - dust hides disease
+                  and mimics powdery mildew, so it is reported, not diagnosed
 ================  ==========================================================
 
 The plant foliage check ensures the uploaded image contains genuine plant or
@@ -123,6 +126,67 @@ def _plant_like_fraction(hsv: np.ndarray) -> float:
     green = (hue >= 25) & (hue <= 95)
     lesion = (hue >= 5) & (hue < 25)          # brown/orange necrosis
     return float(((green | lesion) & (sat >= 30) & (val >= 25)).mean())
+
+
+def _soil_fraction(hsv: np.ndarray) -> float:
+    """Fraction of pixels coloured like soil, sand or dry ground.
+
+    Warm hues (brown, tan, ochre) at low-to-moderate saturation, plus the pale
+    near-grey of dry sand. Only consulted once the image has already failed the
+    vegetation check, to say *what* it is instead of a generic "not a plant".
+    """
+    hue = hsv[:, :, 0].astype(np.int32)
+    sat = hsv[:, :, 1].astype(np.int32)
+    val = hsv[:, :, 2].astype(np.int32)
+    warm = (hue >= 3) & (hue <= 32) & (sat >= 15) & (sat <= 190) & (val >= 35)
+    sand = (sat < 15) & (val >= 90) & (val <= 235)
+    return float((warm | sand).mean())
+
+
+def _grain(gray: np.ndarray) -> float:
+    """Median absolute high-pass response: pixel-scale texture such as sand grain."""
+    values = gray.astype(np.float32)
+    return float(np.median(np.abs(values - cv2.blur(values, (5, 5)))))
+
+
+def _dust_check(working: np.ndarray, metrics: dict) -> QualityIssue | None:
+    """Run the trained dust-film detector; see :mod:`app.ml.dust`."""
+    # Imported here so a missing or stale detector file can never break the
+    # module that every upload passes through.
+    from app.ml.dust import load_detector
+
+    try:
+        detector = load_detector()
+    except (ValueError, KeyError, OSError):
+        return None
+    if detector is None:
+        return None
+    verdict = detector.assess(working)
+    metrics["dust_probability"] = verdict.probability
+    metrics["dust_level"] = verdict.level
+    if verdict.level == "heavy":
+        return QualityIssue(
+            "dusty_leaf", "error",
+            "The leaf looks heavily covered in dust or soil "
+            f"(dust score {verdict.probability * 100:.0f}%). A film this thick hides "
+            "disease symptoms and can also look like powdery mildew, so no diagnosis "
+            "is given.",
+            "Rinse the leaf gently with water or wipe it with a damp cloth, let it "
+            "dry, and photograph it again. Dust and powdery mildew can look alike in "
+            "a photo: if a pale coating is still there after cleaning, upload that "
+            "photo.",
+        )
+    if verdict.level == "possible":
+        return QualityIssue(
+            "dusty_leaf", "warning",
+            "The leaf may be covered in dust or soil "
+            f"(dust score {verdict.probability * 100:.0f}%). Dust can hide disease "
+            "spots or be mistaken for a pale coating such as powdery mildew, so treat "
+            "this result as provisional.",
+            "For a reliable result, rinse or wipe the leaf gently, let it dry, and "
+            "retake the photo.",
+        )
+    return None
 
 
 def analyse_image(image: Image.Image) -> QualityReport:
@@ -250,12 +314,55 @@ def analyse_image(image: Image.Image) -> QualityReport:
     else:
         factors.append(1.0)
 
-    if (plant_like < 0.10) or (green < 0.008) or (green < 0.02 and plant_like < 0.22):
+    no_vegetation = (plant_like < 0.10) or (green < 0.008) or (green < 0.02 and plant_like < 0.22)
+    soil = _soil_fraction(hsv)
+    metrics["soil_fraction"] = soil
+    # Sand is tan, and tan overlaps both the brown "lesion" band and the yellow
+    # end of the green band, so a sand photo passes the vegetation check by
+    # colour alone. This catches it: an almost entirely earth-coloured frame
+    # with only a trace of green.
+    #
+    # From colour statistics, bare sand and a leaf buried under a thick soil
+    # film are the same image (both ~100% earth-coloured, ~2% green), and so is
+    # a small leaf far away on bare ground; the message names all three rather
+    # than guessing. Measured on PlantVillage validation leaves: fires on 0/950
+    # clean leaves, 2/950 leaves on a soil backdrop, and 44/950 leaves shrunk to
+    # 40% of the frame on soil - for which "move closer" is the right advice.
+    #
+    # A frame with no vegetation at all needs one more cue, because skin, card
+    # and painted walls share soil's colour: grain. Sand and soil are granular
+    # at the pixel scale (median high-pass ~2-9 grey levels on test frames);
+    # skin and flat surfaces are smooth (~0.2). Without grain the frame stays
+    # the generic `not_a_plant` - calling a face "sand" would be wrong.
+    grain = _grain(gray)
+    metrics["grain"] = grain
+    earth_only = soil >= 0.9 and green < 0.05 and (not no_vegetation or grain >= 1.5)
+    if earth_only:
+        # Ahead of blur/contrast: sand is naturally low in texture, and "hold
+        # the camera steady" is the wrong advice for a photo with no leaf in it.
+        issues.append(QualityIssue(
+            "soil_or_sand", "error",
+            f"This looks like soil, sand or bare ground: {soil * 100:.0f}% of the image "
+            f"is earth-coloured and only {green * 100:.0f}% is green leaf. Either there is "
+            "no leaf in the photo, the leaf is completely coated in soil or dust, or it "
+            "is too small in the frame.",
+            "Photograph a single leaf up close so it fills most of the frame. If the "
+            "leaf itself is covered in soil or dust, rinse it gently with water, let it "
+            "dry, and retake the photo.",
+        ))
+        factors.append(0.05)
+    elif no_vegetation:
+        earthy = soil >= 0.6
         issues.append(QualityIssue(
             "not_a_plant", "error",
             f"No plant or leaf detected. Only {plant_like * 100:.0f}% of the image "
-            "contains plant foliage or vegetation colors.",
-            "Please upload a clear photograph of a plant leaf from one of the 14 supported crops.",
+            "contains plant foliage or vegetation colors."
+            + (f" Most of the image ({soil * 100:.0f}%) is earth-coloured - if this is "
+               "soil, sand, or a leaf coated in dust, no leaf surface is visible."
+               if earthy else ""),
+            "Please upload a clear photograph of a plant leaf from one of the 14 supported crops."
+            + (" If the leaf is covered in soil or dust, rinse it gently and let it dry first."
+               if earthy else ""),
         ))
         factors.append(0.05)
     elif plant_like < 0.28:
@@ -267,6 +374,14 @@ def analyse_image(image: Image.Image) -> QualityReport:
         factors.append(0.8)
     else:
         factors.append(1.0)
+
+    # Dust only means something on a leaf; on a rejected image the dust score
+    # would just describe the background.
+    if not (no_vegetation or earth_only):
+        dust_issue = _dust_check(working, metrics)
+        if dust_issue is not None:
+            issues.append(dust_issue)
+            factors.append(0.2 if dust_issue.severity == "error" else 0.7)
 
     score = float(np.prod(factors))
     has_error = any(issue.severity == "error" for issue in issues)

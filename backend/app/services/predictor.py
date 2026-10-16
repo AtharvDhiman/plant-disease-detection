@@ -237,7 +237,15 @@ class Predictor:
             predicted_class = "Unknown"
             display_name = "Not Accepted"
             plant = "Unknown"
-            condition = "Not a recognized plant leaf" if status != "poor_quality" else "Insufficient image quality"
+            codes = {issue.code for issue in quality.issues}
+            if "soil_or_sand" in codes:
+                condition = "Soil or sand - no leaf found"
+            elif status == "poor_quality" and "dusty_leaf" in codes:
+                condition = "Leaf covered in dust or soil"
+            elif status == "poor_quality":
+                condition = "Insufficient image quality"
+            else:
+                condition = "Not a recognized plant leaf"
             is_healthy = False
             reported_confidence = 0.0
             reported_level = "low"
@@ -307,6 +315,22 @@ class Predictor:
         reported as a photo problem the user can fix, not as an unrecognised
         subject.
         """
+        issues = {issue.code: issue for issue in quality.issues}
+
+        # Bare soil or sand outranks the photographic checks: such a photo is
+        # naturally low in texture, so "hold the camera steady" would be the
+        # wrong advice when the real problem is that there is no leaf in it.
+        soil = issues.get("soil_or_sand")
+        if soil:
+            return "not_a_plant", f"Photo rejected: {soil.message} {soil.suggestion}"
+
+        # A leaf under a thick dust film: the classifier would still answer, and
+        # on dusted test leaves it answered wrongly with high confidence (a
+        # blighted leaf as "healthy"), so no diagnosis is given.
+        dust = issues.get("dusty_leaf")
+        if dust and dust.severity == "error":
+            return "poor_quality", f"{dust.message} {dust.suggestion}"
+
         # Photographic errors outrank non-plant detection so that dark/blurry shots
         # are flagged as camera defects to fix:
         if not quality.passed and any(i.severity == "error" and i.code != "not_a_plant" for i in quality.issues):
@@ -330,6 +354,13 @@ class Predictor:
                 + " ".join(issue.suggestion for issue in quality.issues
                            if issue.severity == "error")
             )
+        if dust:
+            # Possible dust: the diagnosis is shown, but marked provisional and
+            # with the specific reason, whatever the confidence says - a
+            # confident answer through a dust film is exactly the failure case.
+            extra = (" The model also found this leaf atypical: " + " ".join(verdict.reasons)
+                     if verdict.is_ood else "")
+            return "dusty_leaf", f"{dust.message} {dust.suggestion}{extra}"
         if verdict.is_ood:
             return "out_of_distribution", (
                 "Atypical leaf visual pattern or moderate confidence. "

@@ -61,6 +61,12 @@ const STATUS_BADGES = {
       'border-clay-300 bg-clay-50 text-clay-900 '
       + 'dark:border-clay-800 dark:bg-clay-950/60 dark:text-clay-100',
   },
+  dusty_leaf: {
+    label: 'Dusty leaf - provisional',
+    className:
+      'border-amber-300 bg-amber-50 text-amber-900 '
+      + 'dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100',
+  },
   poor_quality: {
     label: 'Poor image quality',
     className:
@@ -80,6 +86,7 @@ const STATUSES = [
   { value: 'ok', label: 'Analysed' },
   { value: 'low_confidence', label: 'Low confidence' },
   { value: 'out_of_distribution', label: 'Not identified' },
+  { value: 'dusty_leaf', label: 'Dusty leaf' },
   { value: 'poor_quality', label: 'Poor image quality' },
   { value: 'not_a_plant', label: 'Not a plant leaf' },
 ];

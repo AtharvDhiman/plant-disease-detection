@@ -118,6 +118,37 @@ def real_leaf_bytes() -> bytes:
 
 
 @pytest.fixture
+def dusty_bytes(real_leaf_bytes) -> bytes:
+    """The real leaf under a tan dust film with grains - a seeded, fixed recipe."""
+    import numpy as np
+    from PIL import Image, ImageFilter
+
+    rgb = np.asarray(Image.open(io.BytesIO(real_leaf_bytes)).convert("RGB")).astype(float)
+    rng = np.random.default_rng(4)
+    dust = np.array([176.0, 158.0, 128.0])
+    out = rgb * 0.45 + dust * 0.55
+    grains = rng.random(out.shape[:2]) < 0.05
+    out[grains] = dust * 1.1
+    image = Image.fromarray(np.clip(out, 0, 255).astype("uint8"))
+    return _encode(image.filter(ImageFilter.GaussianBlur(0.6)))
+
+
+@pytest.fixture
+def sand_bytes() -> bytes:
+    """A frame of fine sand: tan, grainy, no leaf."""
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    rng = np.random.default_rng(8)
+    # Grain varies in brightness, not hue: one shared field for all channels.
+    grain = cv2.GaussianBlur(rng.normal(0, 1, (256, 256)), (0, 0), 0.9)
+    grain /= grain.std()
+    sand = np.array([194.0, 170.0, 128.0]) * (1 + 0.09 * grain[..., None])
+    return _encode(Image.fromarray(np.clip(sand, 0, 255).astype("uint8")))
+
+
+@pytest.fixture
 def blurred_bytes(real_leaf_bytes) -> bytes:
     from PIL import Image, ImageFilter
 

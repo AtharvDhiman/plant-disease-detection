@@ -146,6 +146,7 @@ export const STATUS_STYLES = {
   ok: { label: 'Analysed', tone: 'leaf' },
   low_confidence: { label: 'Low confidence', tone: 'clay' },
   out_of_distribution: { label: 'Not identified', tone: 'clay' },
+  dusty_leaf: { label: 'Dusty leaf', tone: 'amber' },
   poor_quality: { label: 'Poor image quality', tone: 'amber' },
 };
 

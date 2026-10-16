@@ -38,9 +38,36 @@ const STATUS_BANNERS = {
     tone: 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100',
     title: 'Low confidence prediction',
   },
+  dusty_leaf: {
+    icon: AlertTriangle,
+    tone: 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100',
+    title: 'Dust or soil detected on the leaf - this result is provisional',
+  },
 };
 
-function StatusBanner({ status, message }) {
+/**
+ * The quality issue behind a rejection, when it is more specific than the
+ * status. Soil/sand and dust get their own heading: "poor image quality" is the
+ * wrong thing to tell someone whose photo is sharp but shows a dusty leaf.
+ */
+function rejectionReason(result) {
+  const codes = new Set((result.quality?.issues || []).map((issue) => issue.code));
+  if (codes.has('soil_or_sand')) {
+    return {
+      banner: 'Soil or sand detected - no leaf surface visible',
+      heading: 'Soil or Sand, Not a Leaf',
+    };
+  }
+  if (result.status === 'poor_quality' && codes.has('dusty_leaf')) {
+    return {
+      banner: 'Leaf covered in dust or soil - diagnosis withheld',
+      heading: 'Leaf Covered in Dust or Soil',
+    };
+  }
+  return null;
+}
+
+function StatusBanner({ status, message, titleOverride }) {
   const config = STATUS_BANNERS[status];
   if (!config) return null;
   const Icon = config.icon;
@@ -48,7 +75,7 @@ function StatusBanner({ status, message }) {
     <div className={clsx('flex items-start gap-3 rounded-xl border p-4', config.tone)}>
       <Icon size={19} className="mt-0.5 shrink-0" />
       <div>
-        <p className="font-semibold">{config.title}</p>
+        <p className="font-semibold">{titleOverride || config.title}</p>
         {message && <p className="mt-1 text-sm opacity-90">{message}</p>}
       </div>
     </div>
@@ -71,10 +98,15 @@ export default function PredictionResult({ result }) {
     : CONFIDENCE_STYLES[result.confidence_level] || CONFIDENCE_STYLES.low;
   const original = result.explanation?.images?.original;
   const quality = result.quality;
+  const reason = rejectionReason(result);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <StatusBanner status={result.status} message={result.status_message} />
+      <StatusBanner
+        status={result.status}
+        message={result.status_message}
+        titleOverride={reason?.banner}
+      />
 
       {/* ------------------------------------------------------ headline card */}
       <Card className="overflow-hidden p-0">
@@ -107,9 +139,10 @@ export default function PredictionResult({ result }) {
                 </div>
 
                 <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-[var(--text-primary)]">
-                  {result.status === 'not_a_plant'
-                    ? 'No Plant Leaf Detected'
-                    : 'Insufficient Image Quality'}
+                  {reason?.heading
+                    || (result.status === 'not_a_plant'
+                      ? 'No Plant Leaf Detected'
+                      : 'Insufficient Image Quality')}
                 </h2>
 
                 <p className="mt-2 text-sm text-secondary leading-relaxed">

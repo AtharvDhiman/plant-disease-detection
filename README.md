@@ -447,6 +447,22 @@ leaves asked for a retake. Current figures are in
 [`docs/results.md`](docs/results.md); when first measured on the from-scratch CNN
 baseline they were 39% → 76% at a 3.3% false-rejection cost.
 
+**Dust, soil and sand.** PlantVillage has no "dusty leaf" class, so before
+this check the classifier answered anyway, and badly: a tan dust film hid
+late blight as "healthy" at 85% and turned a clean apple leaf into "powdery
+mildew". A small detector (`backend/app/ml/dust.py`, 30 haze/colour/texture
+features → 32-unit network, numpy only) now names the problem. Possible dust
+marks the diagnosis *provisional* (`dusty_leaf`); heavy dust withholds it;
+a frame that is almost all earth-coloured with granular texture is reported as
+soil or sand, not as a generic non-plant. On 380 validation leaves × 3 dust
+strengths, confident wrong diagnoses fell from 5–18% to 0.3%; on clean leaves
+correct confident answers went from 95.0% to 94.5% (lab) and from 67.6% to
+63.7% (field-like transforms). Caveat: the dust is synthetic, because no
+dataset of photographed dusty leaves exists. 11% of genuine powdery-mildew
+leaves trip the *possible-dust* warning, which is why that warning says the
+two look alike instead of refusing. Retrain with
+`python training/train_dust_detector.py`.
+
 **Out-of-distribution** then runs on the model's own outputs using maximum
 softmax probability, normalised entropy and free energy, with thresholds
 calibrated to retain a 95% true-positive rate on real leaves.

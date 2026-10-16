@@ -250,9 +250,14 @@ async def analyze_image(file: UploadFile = File(...)):
     report = analyse_image(image)
     band = quality_band(report.score)
 
-    not_a_plant_issue = next((i for i in report.issues if i.code == "not_a_plant"), None)
-    if not_a_plant_issue:
+    codes = {i.code: i for i in report.issues}
+    if "soil_or_sand" in codes:
+        recommendation = (f"{codes['soil_or_sand'].message} "
+                          f"{codes['soil_or_sand'].suggestion}")
+    elif "not_a_plant" in codes:
         recommendation = "No plant leaf detected. Please upload a clear photograph of a plant leaf."
+    elif "dusty_leaf" in codes:
+        recommendation = f"{codes['dusty_leaf'].message} {codes['dusty_leaf'].suggestion}"
     elif band == "good":
         recommendation = "This image is suitable for analysis."
     elif band == "acceptable":

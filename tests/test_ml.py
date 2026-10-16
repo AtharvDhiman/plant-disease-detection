@@ -47,7 +47,7 @@ from app.ml.ood import (
     select_thresholds,
     softmax,
 )
-from app.ml.quality import analyse_image
+from app.ml.quality import QualityIssue, QualityReport, analyse_image
 from app.ml.transforms import build_eval_transform, build_train_transform, denormalize
 
 # --------------------------------------------------------------------------- #
@@ -630,6 +630,102 @@ def test_status_precedence(quality_passed, severities, is_ood, level, expected):
     assert status == expected
     if status != "ok" or level == "medium":
         assert message, f"{status} must explain itself to the user"
+
+
+def _issue_report(*issues, passed=None):
+    has_error = any(issue.severity == "error" for issue in issues)
+    return QualityReport(score=0.2 if has_error else 0.7,
+                         passed=(not has_error) if passed is None else passed,
+                         issues=list(issues))
+
+
+def test_soil_outranks_photographic_errors():
+    """Sand is low-texture by nature; "hold the camera steady" is the wrong advice."""
+    from app.services.predictor import Predictor
+
+    report = _issue_report(
+        QualityIssue("blurry", "error", "blurry", "Hold the camera steady."),
+        QualityIssue("soil_or_sand", "error", "This looks like soil.", "Photograph a leaf."),
+    )
+    status, message = Predictor._decide_status(report, _verdict(False), "high")
+    assert status == "not_a_plant"
+    assert "soil" in message.lower()
+    assert "steady" not in message.lower()
+
+
+def test_heavy_dust_withholds_the_diagnosis():
+    from app.services.predictor import Predictor
+
+    report = _issue_report(QualityIssue("dusty_leaf", "error", "Heavily dusty.", "Rinse it."))
+    status, message = Predictor._decide_status(report, _verdict(False), "high")
+    assert status == "poor_quality"
+    assert "dusty" in message.lower()
+
+
+@pytest.mark.parametrize("is_ood,level", [(False, "high"), (False, "low"), (True, "high")])
+def test_possible_dust_marks_any_diagnosis_provisional(is_ood, level):
+    """A confident answer through a dust film is the failure case, so confidence
+    alone must not clear a dust warning."""
+    from app.services.predictor import Predictor
+
+    report = _issue_report(QualityIssue("dusty_leaf", "warning", "May be dusty.", "Rinse it."))
+    status, message = Predictor._decide_status(report, _verdict(is_ood), level)
+    assert status == "dusty_leaf"
+    assert "dusty" in message.lower()
+
+
+def test_dust_detector_is_trained_and_consistent():
+    from app.ml.dust import FEATURE_NAMES, load_detector
+
+    detector = load_detector()
+    assert detector is not None, "run training/train_dust_detector.py"
+    assert detector.mean.shape == (len(FEATURE_NAMES),)
+    assert detector.layers[0][0].shape[0] == len(FEATURE_NAMES)
+    assert 0 < detector.threshold < detector.heavy_threshold < 1
+
+
+def test_dust_features_are_finite_for_degenerate_images():
+    from app.ml.dust import FEATURE_NAMES, dust_features
+
+    for colour in ((0, 0, 0), (255, 255, 255), (90, 140, 70)):
+        vector = dust_features(np.full((64, 64, 3), colour, dtype=np.uint8))
+        assert vector.shape == (len(FEATURE_NAMES),)
+        assert np.isfinite(vector).all()
+
+
+def test_dust_film_raises_the_dust_score():
+    """Same leaf, with and without a film: the film must score far higher."""
+    from app.ml.dust import load_detector
+
+    rng = np.random.default_rng(1)
+    yy, xx = np.mgrid[0:256, 0:256]
+    leaf = ((xx - 128) ** 2 / 110**2 + (yy - 128) ** 2 / 80**2) < 1
+    rgb = np.full((256, 256, 3), (150, 150, 145), dtype=np.float64)
+    rgb[leaf] = (55, 125, 40)
+    rgb[leaf & (np.abs(yy - 128) < 2)] = (95, 160, 70)            # midrib
+    rgb += rng.normal(0, 6, rgb.shape)
+    clean = np.clip(rgb, 0, 255).astype(np.uint8)
+    dusty = rgb * 0.45 + np.array([176, 158, 128]) * 0.55
+    dusty[rng.random((256, 256)) < 0.05] = (194, 174, 141)
+    dusty = np.clip(dusty, 0, 255).astype(np.uint8)
+
+    detector = load_detector()
+    assert detector.probability(dusty) > detector.threshold
+    assert detector.probability(dusty) > detector.probability(clean) + 0.3
+
+
+def test_sand_is_named_but_flat_skin_tone_is_not():
+    import cv2
+
+    rng = np.random.default_rng(8)
+    # Sand grain varies in brightness, not hue: one shared field for all channels.
+    grain = cv2.GaussianBlur(rng.normal(0, 1, (256, 256)), (0, 0), 0.9)
+    grain /= grain.std()
+    sand = np.clip(np.array([194.0, 170.0, 128.0]) * (1 + 0.09 * grain[..., None]), 0, 255)
+    codes = {i.code for i in analyse_image(Image.fromarray(sand.astype(np.uint8))).issues}
+    assert "soil_or_sand" in codes
+    skin = analyse_image(Image.new("RGB", (256, 256), (230, 185, 150)))
+    assert "soil_or_sand" not in {i.code for i in skin.issues}
 
 
 def test_confidence_bands_follow_the_configured_thresholds():

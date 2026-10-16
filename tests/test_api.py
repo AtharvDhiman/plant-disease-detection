@@ -202,6 +202,44 @@ def test_prediction_can_skip_explanations(client, model_available, real_leaf_byt
     assert body["timings"]["explain_ms"] == 0
 
 
+def test_dusty_leaf_is_named_and_not_confidently_diagnosed(client, model_available, dusty_bytes):
+    """Dust hid blight as "healthy" at 85% on the live site; it must be named instead."""
+    if not model_available:
+        pytest.skip("No exported model available")
+    body = client.post(
+        "/api/predict?save=false&explain=false",
+        files={"file": ("dusty.jpg", dusty_bytes, "image/jpeg")},
+    ).json()
+    assert body["status"] in {"dusty_leaf", "poor_quality", "not_a_plant"}
+    assert body["status"] != "ok"
+    message = body["status_message"].lower()
+    assert "dust" in message or "soil" in message
+    assert {"dusty_leaf", "soil_or_sand"} & {i["code"] for i in body["quality"]["issues"]}
+
+
+def test_sand_photo_is_called_soil_or_sand(client, model_available, sand_bytes):
+    if not model_available:
+        pytest.skip("No exported model available")
+    body = client.post(
+        "/api/predict?save=false&explain=false",
+        files={"file": ("sand.jpg", sand_bytes, "image/jpeg")},
+    ).json()
+    assert body["status"] == "not_a_plant"
+    assert body["top_predictions"] == []
+    message = body["status_message"].lower()
+    assert "sand" in message or "soil" in message
+
+
+def test_clean_leaf_is_not_flagged_as_dusty(client, model_available, real_leaf_bytes):
+    if not model_available:
+        pytest.skip("No exported model available")
+    body = client.post(
+        "/api/predict?save=false&explain=false",
+        files={"file": ("leaf.jpg", real_leaf_bytes, "image/jpeg")},
+    ).json()
+    assert not {"dusty_leaf", "soil_or_sand"} & {i["code"] for i in body["quality"]["issues"]}
+
+
 def test_poor_quality_image_is_reported_not_classified(client, model_available, dark_bytes):
     if not model_available:
         pytest.skip("No exported model available")
