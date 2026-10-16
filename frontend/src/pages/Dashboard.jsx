@@ -36,6 +36,7 @@ import {
   percent,
   prettyClass,
   relativeTime,
+  STATUS_STYLES,
 } from '../utils/format';
 
 export default function Dashboard() {
@@ -307,6 +308,12 @@ export default function Dashboard() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {data.recent.map((item) => {
                 const style = CONFIDENCE_STYLES[item.confidence_level] || CONFIDENCE_STYLES.low;
+                // A refused photo has no class; "Unknown - unknown, 0.0%" read
+                // like a failed diagnosis rather than a deliberate refusal.
+                const rejected = item.status === 'not_a_plant' || item.status === 'poor_quality';
+                const title = rejected
+                  ? STATUS_STYLES[item.status]?.label || 'Not accepted'
+                  : item.display_name;
                 return (
                   <Link
                     key={item.id}
@@ -316,19 +323,19 @@ export default function Dashboard() {
                     <div className="aspect-[4/3] overflow-hidden bg-[var(--surface-sunken)]">
                       <img
                         src={imageUrl(item.image_url)}
-                        alt={item.display_name}
+                        alt={title}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
                     <div className="p-3">
-                      <p className="truncate text-sm font-medium">{item.display_name}</p>
+                      <p className="truncate text-sm font-medium">{title}</p>
                       <div className="mt-1.5 flex items-center justify-between gap-2">
                         <span className="text-xs text-muted">{relativeTime(item.created_at)}</span>
                         <span className={`inline-flex h-1.5 w-1.5 rounded-full ${style.dot}`} />
                       </div>
                       <p className="mt-1 text-xs tabular-nums text-secondary">
-                        {percent(item.confidence, 1)}
+                        {rejected ? 'No diagnosis' : percent(item.confidence, 1)}
                       </p>
                     </div>
                   </Link>

@@ -357,6 +357,16 @@ export function HistoryDetail() {
   }
 
   const isRejected = data.status === 'not_a_plant' || data.status === 'poor_quality';
+  // Name the specific reason when the gate recorded one: "poor image quality"
+  // is the wrong label for a sharp photo of a dusty leaf.
+  const issueCodes = new Set(
+    (data.quality_issues || []).map((issue) => (typeof issue === 'string' ? issue : issue.code)),
+  );
+  let rejectionLabel = data.status === 'not_a_plant' ? 'Not a plant leaf' : 'Poor image quality';
+  if (issueCodes.has('soil_or_sand')) rejectionLabel = 'Soil or sand';
+  else if (data.status === 'poor_quality' && issueCodes.has('dusty_leaf')) {
+    rejectionLabel = 'Leaf covered in dust or soil';
+  }
   const style = isRejected
     ? {
         chip:
@@ -405,7 +415,7 @@ export function HistoryDetail() {
               <Chip className={style.chip}>{style.label}</Chip>
               {isRejected && (
                 <Chip className="border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-900/60 dark:text-red-200">
-                  {data.status === 'not_a_plant' ? 'Not a plant leaf' : 'Poor image quality'}
+                  {rejectionLabel}
                 </Chip>
               )}
             </div>

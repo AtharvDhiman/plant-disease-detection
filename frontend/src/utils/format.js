@@ -148,6 +148,7 @@ export const STATUS_STYLES = {
   out_of_distribution: { label: 'Not identified', tone: 'clay' },
   dusty_leaf: { label: 'Dusty leaf', tone: 'amber' },
   poor_quality: { label: 'Poor image quality', tone: 'amber' },
+  not_a_plant: { label: 'Not a plant leaf', tone: 'clay' },
 };
 
 /** Categorical palette for charts; kept in one place so every chart agrees. */
