@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="title desc">
+  <title id="title">PlantGuard AI</title>
+  <desc id="desc">Plant disease detection using a CNN with CBAM attention: 99.06% test accuracy, 38 classes across 14 crops, Grad-CAM explanations.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f2e1d"/>
+      <stop offset="0.55" stop-color="#16432a"/>
+      <stop offset="1" stop-color="#1f5c38"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.5" r="0.45">
+      <stop offset="0" stop-color="#5fbf7f" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#5fbf7f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7fd393"/>
+      <stop offset="1" stop-color="#2f8a4e"/>
+    </linearGradient>
+    <radialGradient id="heat" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#d7263d" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#f46036" stop-opacity="0.8"/>
+      <stop offset="0.65" stop-color="#f6d743" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#2e86ab" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="leafClip">
+      <path d="M940 330 C 860 290 820 190 860 100 C 900 40 1010 30 1090 60 C 1150 150 1120 280 1030 320 C 1000 333 965 338 940 330 Z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1280" height="400" fill="url(#bg)"/>
+  <rect width="1280" height="400" fill="url(#glow)"/>
+
+  <!-- faint vein pattern -->
+  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="2" fill="none">
+    <path d="M0 360 C 200 300 360 330 560 250"/>
+    <path d="M0 300 C 160 250 300 270 470 190"/>
+    <path d="M0 240 C 120 200 240 210 380 140"/>
+  </g>
+
+  <!-- leaf with a Grad-CAM style heat map -->
+  <g>
+    <path d="M940 330 C 860 290 820 190 860 100 C 900 40 1010 30 1090 60 C 1150 150 1120 280 1030 320 C 1000 333 965 338 940 330 Z" fill="url(#leaf)"/>
+    <g clip-path="url(#leafClip)">
+      <ellipse cx="1000" cy="170" rx="95" ry="80" fill="url(#heat)"/>
+      <ellipse cx="925" cy="255" rx="55" ry="45" fill="url(#heat)" opacity="0.7"/>
+    </g>
+    <path d="M940 330 C 980 250 1020 160 1085 65" stroke="#0f2e1d" stroke-opacity="0.45" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <g stroke="#0f2e1d" stroke-opacity="0.3" stroke-width="2.5" fill="none" stroke-linecap="round">
+      <path d="M968 270 C 940 250 905 240 878 236"/>
+      <path d="M990 225 C 960 195 925 180 890 168"/>
+      <path d="M1012 185 C 990 150 960 125 925 105"/>
+      <path d="M985 245 C 1020 240 1060 230 1095 205"/>
+      <path d="M1010 200 C 1045 190 1080 170 1110 140"/>
+    </g>
+    <!-- attention focus ring -->
+    <circle cx="1000" cy="170" r="60" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="6 7"/>
+  </g>
+
+  <!-- diagnosis chip next to the leaf -->
+  <g transform="translate(1105 262)">
+    <rect width="150" height="62" rx="12" fill="#ffffff" fill-opacity="0.95"/>
+    <text x="14" y="25" font-family="Segoe UI, -apple-system, Helvetica, Arial, sans-serif" font-size="13" fill="#4a5a50">Late blight</text>
+    <text x="14" y="48" font-family="Segoe UI, -apple-system, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#16432a">99.95%</text>
+  </g>
+
+  <!-- title block -->
+  <g font-family="Segoe UI, -apple-system, Helvetica, Arial, sans-serif">
+    <rect x="72" y="70" width="58" height="58" rx="14" fill="#2f8a4e"/>
+    <path d="M88 112 C 88 92 102 82 116 82 C 117 98 108 112 92 113 Z" fill="#ffffff"/>
+    <path d="M90 114 L 108 94" stroke="#2f8a4e" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="148" y="113" font-size="48" font-weight="700" fill="#ffffff">PlantGuard AI</text>
+    <text x="74" y="172" font-size="24" fill="#cfe9d6">Plant disease detection with a CNN + CBAM attention</text>
+    <text x="74" y="204" font-size="18" fill="#9cc9a9">Calibrated confidence · Grad-CAM explanations · refuses photos it can't trust</text>
+
+    <!-- stat pills -->
+    <g transform="translate(74 248)">
+      <rect width="196" height="76" rx="14" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15"/>
+      <text x="18" y="34" font-size="28" font-weight="700" fill="#ffffff">99.06%</text>
+      <text x="18" y="58" font-size="15" fill="#9cc9a9">test accuracy</text>
+    </g>
+    <g transform="translate(286 248)">
+      <rect width="196" height="76" rx="14" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15"/>
+      <text x="18" y="34" font-size="28" font-weight="700" fill="#ffffff">38 classes</text>
+      <text x="18" y="58" font-size="15" fill="#9cc9a9">across 14 crops</text>
+    </g>
+    <g transform="translate(498 248)">
+      <rect width="196" height="76" rx="14" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15"/>
+      <text x="18" y="34" font-size="28" font-weight="700" fill="#ffffff">17,572</text>
+      <text x="18" y="58" font-size="15" fill="#9cc9a9">held-out test images</text>
+    </g>
+  </g>
+</svg>

@@ -1,14 +1,113 @@
+<div align="center">
+
+<img src="docs/assets/banner.svg" alt="PlantGuard AI - plant disease detection with a CNN and CBAM attention" width="100%">
+
 # PlantGuard AI — Plant Disease Detection Using CNN with Attention Mechanism
 
-Detect plant diseases from leaf images using a convolutional neural network with
-a **Convolutional Block Attention Module (CBAM)**, with calibrated confidence,
-visual explanations of every decision, and an explicit refusal to answer when the
-image does not warrant one.
+**Upload a leaf photo → get the disease, a calibrated confidence, a heat map of what the model looked at, and what to do about it.**
+**And when the photo can't be trusted — blurry, dusty, sand, not a leaf — it says so instead of guessing.**
+
+<p>
+  <a href="https://plant-disease-detection-x3y4.onrender.com/"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-online-2f8a4e?style=for-the-badge&logo=render&logoColor=white"></a>
+  <a href="docs/results.md"><img alt="Test accuracy 99.06%" src="https://img.shields.io/badge/test%20accuracy-99.06%25-16432a?style=for-the-badge"></a>
+  <a href="docs/results.md#per-class-accuracy-deployed-model"><img alt="38 classes, 14 crops" src="https://img.shields.io/badge/classes-38%20%C2%B7%2014%20crops-1f5c38?style=for-the-badge"></a>
+</p>
+<p>
+  <img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white">
+  <img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?logo=pytorch&logoColor=white">
+  <img alt="ONNX Runtime" src="https://img.shields.io/badge/ONNX%20Runtime-serving-005CED?logo=onnx&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white">
+  <img alt="React + Vite" src="https://img.shields.io/badge/React%20%2B%20Vite-frontend-61DAFB?logo=react&logoColor=black">
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwindcss&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white">
+</p>
+
+**[▶ Try it live](https://plant-disease-detection-x3y4.onrender.com/)** ·
+[Results](docs/results.md) ·
+[How it works](#architecture) ·
+[Quick start](#quick-start) ·
+[Ablation study](docs/ablation_study.md) ·
+[Viva Q&A](docs/viva_questions.md)
+
+<sub>The free host sleeps when idle — the first visit can take ~1 minute to wake up.</sub>
+
+</div>
+
+---
+
+## See it in action
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/result-diagnosis.png" alt="Diagnosis: tomato late blight at 99.95% with top-5 alternatives and reliability checks"></td>
+    <td width="50%"><img src="docs/screenshots/result-gradcam.png" alt="Grad-CAM heat map over the lesion"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Diagnosis</b> — calibrated confidence, top-5 alternatives, and the three checks run before answering</td>
+    <td align="center"><b>Explanation</b> — Grad-CAM shows the evidence came from the lesion, not the background</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/result-dusty.png" alt="A dusty leaf is refused with cleaning advice instead of a wrong diagnosis"></td>
+    <td width="50%"><img src="docs/screenshots/home.png" alt="Landing page with uploader"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Knows when not to answer</b> — a dusty leaf is named, not misdiagnosed as mildew</td>
+    <td align="center"><b>Upload</b> — drag and drop, browse, or the phone camera</td>
+  </tr>
+</table>
+
+<details>
+<summary><b>More screenshots</b> — dashboard, benchmark, research, disease library, history, mobile</summary>
+<br>
+
+| Dashboard | Model benchmark |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Benchmark](docs/screenshots/benchmark.png) |
+| **Research — attention ablation** | **Research — calibration** |
+| ![Ablation](docs/screenshots/research-ablation.png) | ![Calibration](docs/screenshots/research-calibration.png) |
+| **Disease library** | **Prediction history** |
+| ![Library](docs/screenshots/library.png) | ![History](docs/screenshots/history.png) |
+
+<p align="center"><img src="docs/screenshots/mobile.png" alt="Mobile layout" width="320"></p>
+</details>
+
+## Highlights
+
+| | |
+|---|---|
+| 🎯 **99.06% test accuracy** | On 17,572 held-out images, 38 classes across 14 crops — every number generated from the experiment ledger, none hard-coded |
+| 🧠 **CBAM attention, tested properly** | A controlled ablation (none / channel / spatial / SE / CBAM) and 18 trained configurations against classical ML and 7 other deep architectures, with a measured noise floor |
+| 🔍 **Explains every answer** | Grad-CAM, Grad-CAM++ and the learned CBAM attention map, with the caveat that heat maps are not lesion segmentation |
+| 📏 **Confidence you can read literally** | Temperature-scaled probabilities, banded HIGH / MEDIUM / LOW, with reliability diagrams before and after |
+| 🛑 **Refuses what it can't trust** | Quality gate (blur, exposure, noise), dust / soil / sand detector, and out-of-distribution scoring — a confident wrong answer costs a season's crop |
+| 🌱 **Disease guidance** | Symptoms, spread, conditions, prevention and management for every class, from extension-service sources |
+| 🚀 **Deployed for free** | One container serves API + dashboard through ONNX Runtime in ~130 MB, inside Render's 512 MB free tier |
 
 ```
-Upload  →  quality gate  →  preprocess  →  CNN + CBAM  →  calibrated confidence
+Upload  →  quality gate  →  dust / soil check  →  preprocess  →  CNN + CBAM  →  calibrated confidence
         →  out-of-distribution check  →  Grad-CAM / attention  →  disease guidance
 ```
+
+## Quick start
+
+**Run the app with the included model** — no GPU, no dataset, no training. The
+exported model (`models/exported/serving.onnx`, 16 MB) is in the repo:
+
+```bash
+git clone https://github.com/AtharvDhiman/plant-disease-detection.git
+cd plant-disease-detection
+pip install -r requirements-serve.txt
+cd frontend && npm install && npm run build && cd ..
+PDD_SERVING_BACKEND=onnx python run_server.py      # → http://127.0.0.1:8000
+```
+
+<sub>On Windows PowerShell, set the variable first: `$env:PDD_SERVING_BACKEND="onnx"`.</sub>
+
+**Retrain everything** (all 18 configurations, ablation, calibration, docs) —
+install `requirements.txt` with the PyTorch wheel for your hardware, then
+`python scripts/run_pipeline.py`. Details: [Installation](#installation) ·
+[Reproducing the results](#reproducing-the-results).
 
 ---
 
@@ -1040,8 +1139,13 @@ If you already have the servers running, capture directly against them instead:
 python scripts/capture_screenshots.py
 ```
 
+The gallery is at the [top of this page](#see-it-in-action).
+
 | View | Path |
 |---|---|
+| Diagnosis result | `docs/screenshots/result-diagnosis.png` |
+| Grad-CAM explanation | `docs/screenshots/result-gradcam.png` |
+| Dusty leaf refused | `docs/screenshots/result-dusty.png` |
 | Landing page and uploader | `docs/screenshots/home.png` |
 | Dashboard | `docs/screenshots/dashboard.png` |
 | Model benchmark | `docs/screenshots/benchmark.png` |
@@ -1049,6 +1153,13 @@ python scripts/capture_screenshots.py
 | Disease library | `docs/screenshots/library.png` |
 | Prediction history | `docs/screenshots/history.png` |
 | Mobile layout | `docs/screenshots/mobile.png` |
+
+The three result screens need an upload, so they come from
+`scripts/capture_result_screenshots.py`, which drives a real one:
+
+```bash
+python scripts/capture_result_screenshots.py --image leaf.jpg --out docs/screenshots/result.png
+```
 
 See [`docs/screenshots/README.md`](docs/screenshots/README.md) for the capture
 details (theme is set before first paint; 2× device pixel ratio; the mobile shot

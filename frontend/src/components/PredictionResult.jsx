@@ -56,16 +56,47 @@ function rejectionReason(result) {
     return {
       banner: 'Soil or sand detected - no leaf surface visible',
       heading: 'Soil or Sand, Not a Leaf',
+      explanation:
+        'Almost the whole photo is earth-coloured, with very little green leaf visible. '
+        + 'That happens with bare ground, with a leaf completely coated in soil, or with a '
+        + 'leaf that is too small in the frame - in every case there is too little leaf '
+        + 'surface to diagnose.',
+      tips: [
+        'Photograph a single leaf up close so it fills most of the frame.',
+        'If the leaf is coated in soil or dust, rinse it gently and let it dry first.',
+        'Hold the leaf against a plain background if the ground is the same colour.',
+      ],
     };
   }
   if (result.status === 'poor_quality' && codes.has('dusty_leaf')) {
     return {
       banner: 'Leaf covered in dust or soil - diagnosis withheld',
       heading: 'Leaf Covered in Dust or Soil',
+      explanation:
+        'A film of dust or soil washes out the leaf\'s colour and adds pale grains. Those are '
+        + 'the same cues the model reads as disease - dust can look like powdery mildew - and '
+        + 'the film can hide real lesions. Rather than guess, no diagnosis is given.',
+      tips: [
+        'Rinse the leaf gently with water or wipe it with a damp cloth, then let it dry.',
+        'Photograph it in even light, with the leaf filling most of the frame.',
+        'If a pale coating is still there after cleaning, upload that photo - it may be a disease.',
+      ],
     };
   }
   return null;
 }
+
+const DEFAULT_REJECTION = {
+  explanation:
+    'The model is trained solely to diagnose diseases on leaves of 14 agricultural crops. '
+    + 'Arbitrary non-plant images (portraits, cars, landscapes, pets, or non-leaf items) are '
+    + 'rejected to prevent dangerous false diagnoses.',
+  tips: [
+    'Ensure the subject is a leaf of a supported crop.',
+    'Fill at least 30–50% of the frame with the leaf.',
+    'Avoid blurry, shaky, dark, or heavily back-lit shots.',
+  ],
+};
 
 function StatusBanner({ status, message, titleOverride }) {
   const config = STATUS_BANNERS[status];
@@ -231,15 +262,13 @@ export default function PredictionResult({ result }) {
             />
             <div className="space-y-3 text-sm">
               <p className="text-secondary leading-relaxed">
-                The model is trained solely to diagnose diseases on leaves of 14 agricultural crops.
-                Arbitrary non-plant images (portraits, cars, landscapes, pets, or non-leaf items) are
-                rejected to prevent dangerous false diagnoses.
+                {(reason || DEFAULT_REJECTION).explanation}
               </p>
               <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-xs text-secondary space-y-1">
                 <p className="font-medium text-[var(--text-primary)]">To get an accurate result:</p>
-                <p>• Ensure the subject is a leaf of a supported crop.</p>
-                <p>• Fill at least 30–50% of the frame with the leaf.</p>
-                <p>• Avoid blurry, shaky, dark, or heavily back-lit shots.</p>
+                {(reason || DEFAULT_REJECTION).tips.map((tip) => (
+                  <p key={tip}>• {tip}</p>
+                ))}
               </div>
             </div>
           </Card>
