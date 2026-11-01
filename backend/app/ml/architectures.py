@@ -230,8 +230,9 @@ class TransferModel(nn.Module):
 
         # DenseNet's `features` ends with a BatchNorm but no ReLU; without one the
         # pooled descriptor mixes signed activations and the head trains poorly.
-        # Not in-place: Grad-CAM registers a backward hook on `features[-1]`, and
-        # modifying that hook's output tensor in place is an autograd error.
+        # Not in-place: Grad-CAM registers a backward hook on `feature_layer` (the
+        # trunk's last block, or the attention output), and modifying that hook's
+        # output tensor in place is an autograd error.
         self.post = nn.ReLU(inplace=False) if backbone.startswith("densenet") else nn.Identity()
 
         self.attention = build_attention(attention, self.feature_channels)
@@ -248,7 +249,17 @@ class TransferModel(nn.Module):
 
     @property
     def feature_layer(self) -> nn.Module:
-        """Last block of the convolutional trunk - the Grad-CAM target."""
+        """The feature map the classifier pools - the Grad-CAM target.
+
+        Without attention that is the last trunk block. With attention it is the
+        attention module's output: that refined map is what the head averages,
+        so it is the layer whose activations the prediction is a function of.
+        Targeting the trunk block instead would explain the pre-attention
+        features and differentiate through the attention gate, which is a
+        different (and for the exported ONNX graph, non-reproducible) quantity.
+        """
+        if self.attention_kind != "none":
+            return self.attention
         return self.features[-1]
 
     def set_backbone_trainable(self, trainable: bool, last_n: int | None = None) -> None:

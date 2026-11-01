@@ -130,6 +130,11 @@ def rows_from_ledger(ledger: list[dict], groups: tuple[str, ...]) -> list[dict]:
     return sorted(out, key=lambda r: -(r["accuracy"] or 0))
 
 
+def is_field(protocol) -> bool:
+    """Field-augmentation rounds (field, field_long) are reported separately."""
+    return str(protocol).startswith("field")
+
+
 def marker(row: dict) -> str:
     return "**★**" if row["proposed"] else ""
 
@@ -223,8 +228,8 @@ def headline_block(rows: list[dict], manifest: dict | None, dataset: dict | None
     lines.append("")
     lines.append("Rows with different protocols are **not** comparable: `benchmark` "
                  "models were trained on a fixed subset and scored on a 4,560-image "
-                 "split, `production` models on the full data and scored on 17,572 "
-                 "images.")
+                 "split; `production`, `field` and `field_long` models were trained on "
+                 "the full data and scored on 17,572 images.")
     return "\n".join(lines)
 
 
@@ -385,17 +390,20 @@ def domain_shift_section(shift: dict | None) -> list[str]:
                      f"({entry.get('correct')}/{entry.get('total')}) | {delta} | "
                      f"{pct(entry.get('refused_rate'), 1)} |")
     lines += ["",
-              "*Correct class* counts the top prediction even when the app flagged it; "
-              "*not marked reliable* is any outcome other than a plain `ok` - a "
-              "refusal, a low-confidence warning or a provisional result.",
+              "*Correct class* counts the top prediction when the app gave one, including "
+              "a provisional or low-confidence answer. A refusal (poor quality, not a "
+              "plant, heavy dust) produces no class and counts as not correct - which is "
+              "why even the unmodified photos score below the model's lab test accuracy: "
+              "the pipeline's own checks refuse a few percent of clean laboratory photos. "
+              "*Not marked reliable* is any outcome other than a plain `ok`.",
               ""]
     single = {k: v.get("accuracy") for k, v in conditions.items()
               if k not in ("original", "combined") and v.get("accuracy") is not None}
-    if single and min(single, key=single.get) == "distance":
-        lines += ["A small leaf far away in the frame is the dominant failure: the model "
-                  "was trained on leaves that fill the image, so framing matters more "
-                  "than lighting, angle or compression. The app's advice for such photos "
-                  "is to move closer.", ""]
+    if single:
+        hardest = min(single, key=single.get)
+        lines += [f"The hardest single condition is **{DOMAIN_LABELS.get(hardest, hardest).lower()}** "
+                  f"({pct(single[hardest], 1)}). When the leaf is small in the frame the app "
+                  "advises moving closer.", ""]
     if shift.get("caveat"):
         lines.append(f"> {shift['caveat']}\n")
     return lines
@@ -494,8 +502,8 @@ def serving_section(serving: dict | None) -> list[str]:
     lines = ["\n## Serving latency\n",
              f"Measured through the running API with `scripts/benchmark_serving.py` on "
              f"{measured}: {get(serving, 'model.label')} on {get(serving, 'model.device')}, "
-             f"{serving.get('iterations')} requests. Checks added to the quality gate "
-             "after that date are not included; re-run the script to refresh.\n",
+             f"{serving.get('iterations')} requests, with the dust/soil check included in "
+             "the quality stage. Re-run the script after changing the model or the gate.\n",
              "| Stage | Median | p95 |", "|---|---:|---:|"]
     for key, label in stages.items():
         if key in per_request:
@@ -505,6 +513,151 @@ def serving_section(serving: dict | None) -> list[str]:
                  "requests/s with explanations on. The free Render deployment runs the "
                  "same model through ONNX Runtime on a shared CPU, so expect slower "
                  "responses there.\n")
+    return lines
+
+
+def field_training_section(ledger: list[dict], manifest: dict | None, extra: dict) -> list[str]:
+    """The field-augmentation experiment: lab scores, field-like scores, the caveats."""
+    runs = [r for r in ledger
+            if r.get("model_name") in ("efficientnet_b0", "efficientnet_b0_cbam")
+            and (r.get("protocol") == "production" or is_field(r.get("protocol")))
+            and get(r, "test.metrics.accuracy") is not None]
+    if not any(is_field(r.get("protocol")) for r in runs):
+        return []
+    order = {"production": 0, "field": 1, "field_long": 2}
+    runs.sort(key=lambda r: (order.get(r["protocol"], 9), r["model_name"]))
+    serving = (manifest or {}).get("experiment_id")
+
+    lines = ["\n## Field-condition training\n",
+             "Every score above comes from PlantVillage's laboratory photographs, and "
+             "the first measurement through the full pipeline showed the gap: the "
+             "model trained on lab photos fell to about 70% when the same leaves were "
+             "given a soil backdrop, harsh sun and heavy JPEG together, and to under "
+             "10% when the leaf was small in the frame. Two training rounds added "
+             "**field-condition augmentation** "
+             "(`backend/app/ml/field_augment.py`: leaf cut-outs on soil, mulch, "
+             "foliage and stone backdrops, small-in-frame placement, directional "
+             "light, blur, noise, JPEG - the leaf's hue is never altered).\n",
+             "| Model | Protocol | Epochs run | Augmentation | Test accuracy | Macro F1 | "
+             "Test errors | Serving |",
+             "|---|---|---:|---|---:|---:|---:|:---:|"]
+    for r in runs:
+        m = get(r, "test.metrics")
+        epochs = f"{r.get('epochs_run')}/{get(r, 'config.epochs')}"
+        errors = round(m["num_samples"] * (1 - m["accuracy"]))
+        flag = " †" if r.get("interrupted") else ""
+        lines.append(f"| {r['label']} | {r['protocol']} | {epochs}{flag} | "
+                     f"{get(r, 'config.augmentation')} | {pct(m['accuracy'])} | "
+                     f"{dec(m['f1_macro'])} | {num(errors)} | "
+                     f"{'✔' if r.get('experiment_id') == serving else ''} |")
+    lines += ["",
+              "`production`: standard augmentation, last 3 blocks fine-tuned, 6 epochs. "
+              "`field`: field augmentation on 70% of images, otherwise the same schedule. "
+              "`field_long`: field augmentation on 50% of images, **the whole network "
+              "fine-tuned**, 10 epochs. All scored on the same 17,572-image test split.",
+              ""]
+    if any(r.get("interrupted") for r in runs):
+        lines += ["† The `field_long` run was interrupted by a machine restart during "
+                  "epoch 10 of 10. The trainer saves the best-so-far checkpoint whenever "
+                  "validation improves and tests that file at the end, so the epoch-9 "
+                  "checkpoint on disk is the model a finished run would have been tested "
+                  "on (unless the unfinished epoch improved on it, at a learning rate near "
+                  "zero). `scripts/recover_interrupted_run.py` evaluated it exactly as a "
+                  "normal run is, and the ledger record is flagged `interrupted`. Its "
+                  "history is reconstructed from the training log to four decimals.",
+                  ""]
+
+    comparison = (extra or {}).get("field_comparison") or {}
+    results = comparison.get("results") or {}
+    if results:
+        conditions = list(DOMAIN_LABELS)
+        header = " | ".join(DOMAIN_LABELS[c] for c in conditions)
+        lines += ["### Behaviour on field-like photos\n",
+                  f"The same {comparison.get('disease_classes')} disease classes x "
+                  f"{comparison.get('per_class')} held-out leaves, put through each field "
+                  "condition once and scored by every model identically - through the full "
+                  "serving pipeline (quality gate, dust check, classifier, OOD check) with "
+                  "one set of OOD thresholds for all, so a difference is the network. "
+                  "Cells show the share classified correctly, with the number of "
+                  "confident wrong answers (status `ok` but wrong) in brackets.\n",
+                  f"| Model | Lab test | {header} |",
+                  "|---|---:|" + "---:|" * len(conditions)]
+
+        def sort_key(item):
+            alias = item[0]
+            model, _, protocol = alias.partition("@")
+            return (order.get(protocol, 9), model)
+
+        for alias, result in sorted(results.items(), key=sort_key):
+            cells = []
+            for condition in conditions:
+                s = result["conditions"][condition]
+                cells.append(f"{s['correct'] / s['n'] * 100:.1f}% ({s['ok_wrong']})")
+            model, _, protocol = alias.partition("@")
+            marker = " **←**" if result.get("experiment_id") == serving else ""
+            lines.append(f"| {result['label']}{marker} | "
+                         f"{pct(result['lab_test_accuracy'])} | " + " | ".join(cells) + " |")
+        n = next(iter(results.values()))["conditions"]["original"]["n"]
+        lines += ["",
+                  f"n = {n} images per condition. A refusal produces no class and counts "
+                  "as not correct. The row marked **←** is the model the application serves.",
+                  ""]
+
+    if get(manifest or {}, "protocol") and is_field(manifest.get("protocol")):
+        lines += ["### Why this model serves\n",
+                  "The serving model is chosen by macro F1 on the 17,572-image test split "
+                  "among all full-data runs (`training/export_model.py`), and the field "
+                  "comparison above was checked against two conditions before switching: "
+                  "it had to beat the previous model on the field-like photos, and stay "
+                  "within 0.5 points of its lab accuracy. It does both.\n"]
+    lines += ["### Reading these results honestly\n",
+              "* **Not independent of the training.** The augmentation imitates the same "
+              "kinds of condition the field-like test applies (through different "
+              "generators), so the field-like scores flatter the field-trained models. "
+              "Real field photographs are the independent test, and none were used.",
+              "* **The gain cannot be attributed to CBAM.** Round one trained plain "
+              "EfficientNet-B0 and EfficientNet-B0 + CBAM identically and they tied "
+              "(98.32% vs 98.25%). Round two trained only the CBAM model, with a longer "
+              "schedule, the whole network unfrozen and milder augmentation changed "
+              "together, so it can't separate the contribution of any one of those "
+              "changes either - and no plain-EfficientNet control was run on that "
+              "schedule. The earlier `production` models used a shorter, shallower "
+              "schedule (6 epochs, last 3 blocks fine-tuned), so some of the gain may "
+              "simply be that the original models were not trained as far as they could be.",
+              "* **Round one cost lab accuracy** (about 0.7 points); the milder, longer "
+              "round two more than recovered it.",
+              ""]
+
+    points = ((extra or {}).get("ood_points") or {}).get("points")
+    if points and "calibrated_95tpr" in points and "in_force" in points:
+        lines += ["### Out-of-distribution operating point\n",
+                  "The OOD thresholds calibrated to keep 95% of *laboratory* leaves are "
+                  f"strict (top-class probability at least {points['calibrated_95tpr']['msp_min']:.2f}); "
+                  "a field photograph is less confident than a lab one, so that setting "
+                  "refuses photographs the model gets right. The application is served "
+                  f"with the permissive setting it has used since commit 26882f4 "
+                  f"(at least {points['in_force']['msp_min']:.2f}), recorded explicitly by "
+                  "`scripts/set_ood_operating_point.py`. Measured through the full "
+                  "pipeline on the same photos (`scripts/ood_operating_points.py`):\n",
+                  "| Condition | Calibrated: right | wrong | not identified | "
+                  "In force: right | wrong | not identified |",
+                  "|---|---:|---:|---:|---:|---:|---:|"]
+        for condition in DOMAIN_LABELS:
+            cells = []
+            for name in ("calibrated_95tpr", "in_force"):
+                t = points[name]["conditions"][condition]
+                n = t["n"]
+                cells += [pct(t.get("ok_right", 0) / n, 0), pct(t.get("ok_wrong", 0) / n, 0),
+                          pct(t.get("not_identified", 0) / n, 0)]
+            lines.append(f"| {DOMAIN_LABELS[condition]} | " + " | ".join(cells) + " |")
+        lines += ["",
+                  "*Right* and *wrong* are answers shown with status `ok`; *not identified* "
+                  "is flagged out-of-distribution (the closest match is still shown, with a "
+                  "warning). The strict setting removes most confident wrong answers but "
+                  "refuses many correct photos; the permissive one shows more correct "
+                  "diagnoses at the price of a few confident wrong ones. Choose with the "
+                  "table, not by default.",
+                  ""]
     return lines
 
 
@@ -557,11 +710,13 @@ def build_results_doc(ledger, manifest, dataset, ablation, ood, classical,
                       extra: dict | None = None) -> str:
     extra = extra or {}
     all_rows = rows_from_ledger(ledger, ("benchmark", "classical", "ablation", "placement"))
-    # Production rows have their own section below; ranking them inside the
-    # benchmark table put full-data runs among subset runs as if comparable.
+    # Full-data runs (production and field-augmented) have their own section
+    # below; ranking them inside the benchmark table put full-data runs among
+    # subset runs as if comparable.
     bench_rows = [r for r in rows_from_ledger(ledger, ("benchmark", "classical"))
-                  if r["protocol"] != "production"]
-    production_rows = [r for r in all_rows if r["protocol"] == "production"]
+                  if r["protocol"] != "production" and not is_field(r["protocol"])]
+    production_rows = [r for r in all_rows
+                       if r["protocol"] == "production" or is_field(r["protocol"])]
     deployed = production_experiment(ledger, manifest)
     names = display_names(extra.get("dataset_report"))
 
@@ -580,15 +735,20 @@ def build_results_doc(ledger, manifest, dataset, ablation, ood, classical,
         "Every model in the `benchmark` protocol was trained on an identical "
         "fixed-budget subset (300 train / 60 val / 120 test images per class, "
         "160 px, 12 epochs, identical optimiser and seed). Only the architecture "
-        "differs. Full-data `production` runs are in their own section below and "
-        "are **not** directly comparable with these subset rows.\n",
+        "differs. Full-data runs (`production` and `field`) are in their own "
+        "section below and are **not** directly comparable with these subset rows.\n",
         benchmark_table(bench_rows),
         "",
     ]
 
     if production_rows:
         parts += [
-            "\n## Full-data production runs\n",
+            "\n## Full-data runs\n",
+            "Trained on the complete training split at 224 px and scored on the full "
+            "17,572-image test set, so these rows are comparable with each other. The "
+            "`production` protocol uses standard augmentation; `field` and `field_long` "
+            "add field-condition augmentation (see "
+            "[Field-condition training](#field-condition-training)).\n",
             benchmark_table(production_rows),
             "",
         ]
@@ -708,6 +868,7 @@ def build_results_doc(ledger, manifest, dataset, ablation, ood, classical,
                     "comparison is wanted.\n"
                 )
 
+    parts += field_training_section(ledger, manifest, extra)
     parts += domain_shift_section(extra.get("domain_shift"))
     parts += dust_section(extra.get("dust"))
     parts += tuning_section(extra.get("tuning"))
@@ -797,7 +958,8 @@ def build_comparison_doc(ledger, manifest) -> str:
 
 
 def build_ablation_doc(ablation, ledger) -> str:
-    placement = rows_from_ledger(ledger, ("placement",))
+    placement = [r for r in rows_from_ledger(ledger, ("placement",))
+                 if r["protocol"] != "production" and not is_field(r["protocol"])]
     parts = [
         GENERATED_BANNER,
         "# Ablation study\n",
@@ -1084,6 +1246,8 @@ def main() -> int:
         "dust": load(settings.metadata_dir / "dust_detector.json"),
         "tuning": load(settings.results_dir / "tuning_results.json"),
         "serving": load(settings.results_dir / "serving_benchmark.json"),
+        "field_comparison": load(settings.results_dir / "field_comparison.json"),
+        "ood_points": load(settings.results_dir / "ood_operating_points.json"),
     }
 
     docs_dir = PROJECT_ROOT / "docs"
@@ -1108,8 +1272,9 @@ def main() -> int:
         # together put a production model above a benchmark one on a difference
         # that is entirely an artefact of the evaluation set.
         all_rows = rows_from_ledger(ledger, ("benchmark", "classical"))
-        bench_rows = [r for r in all_rows if r["protocol"] != "production"]
-        prod_rows = [r for r in all_rows if r["protocol"] == "production"]
+        full_data = lambda r: r["protocol"] == "production" or is_field(r["protocol"])  # noqa: E731
+        bench_rows = [r for r in all_rows if not full_data(r)]
+        prod_rows = [r for r in all_rows if full_data(r)]
 
         sections = [
             headline_block(rows, manifest, dataset_summary),
@@ -1127,13 +1292,15 @@ def main() -> int:
         if prod_rows:
             sections += [
                 "",
-                "### Full-data production runs",
+                "### Full-data runs",
                 "",
                 "Trained on the complete training split at 224px and scored on the "
                 "full test split. **These numbers cannot be compared with the "
                 "benchmark table above** - a different training budget and a "
                 "different, larger test set. They are what the deployed system "
-                "actually achieves.",
+                "actually achieves. `field` and `field_long` add field-condition "
+                "augmentation; see [Field-condition training]"
+                "(docs/results.md#field-condition-training).",
                 "",
                 benchmark_table(prod_rows),
             ]

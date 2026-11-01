@@ -279,16 +279,21 @@ def main() -> int:
 
     tracker = ExperimentTracker(settings.results_dir)
     records = [r for r in tracker.records if r.get("group") in {"benchmark", "ablation", "placement"}
-               or r.get("protocol") == "production"]
+               or r.get("protocol") == "production"
+               or str(r.get("protocol")).startswith("field")]
     if args.protocol:
         records = [r for r in records if r.get("protocol") == args.protocol]
     if not records:
         raise SystemExit("No experiment records to export from. Run training/run_experiments.py.")
 
-    # Prefer full-data production runs when any exist: a model trained on 63k
-    # images is the right thing to ship even if a benchmark-subset run happens
-    # to score higher on the smaller subset test split.
-    production_records = [r for r in records if r.get("protocol") == "production"]
+    # Prefer full-data runs when any exist: a model trained on 63k images is the
+    # right thing to ship even if a benchmark-subset run happens to score higher
+    # on the smaller subset test split. "Full-data" is the production protocol
+    # plus every field-augmentation round (field, field_long): same training
+    # split, same 17,572-image test split, so their scores are comparable.
+    production_records = [r for r in records
+                          if r.get("protocol") == "production"
+                          or str(r.get("protocol")).startswith("field")]
     pool = production_records or records
     if production_records and not args.protocol:
         log.info("Selecting from full-data production runs",

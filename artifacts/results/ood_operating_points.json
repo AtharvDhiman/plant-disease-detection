@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-11-01T12:21:24.491729+00:00",
+  "model": "efficientnet_b0_cbam",
+  "images_per_condition": 152,
+  "seed": 7,
+  "points": {
+    "calibrated_95tpr": {
+      "msp_min": 0.8946114182472229,
+      "entropy_max": 0.1895107265746073,
+      "conditions": {
+        "original": {
+          "n": 152,
+          "ok_right": 136,
+          "other": 7,
+          "ok_wrong": 2,
+          "not_identified": 7
+        },
+        "background": {
+          "n": 152,
+          "ok_right": 125,
+          "not_identified": 17,
+          "other": 9,
+          "ok_wrong": 1
+        },
+        "angle": {
+          "n": 152,
+          "not_identified": 7,
+          "other": 5,
+          "ok_right": 139,
+          "ok_wrong": 1
+        },
+        "distance": {
+          "n": 152,
+          "not_identified": 57,
+          "ok_right": 67,
+          "other": 28
+        },
+        "lighting": {
+          "n": 152,
+          "not_identified": 10,
+          "other": 3,
+          "ok_right": 137,
+          "ok_wrong": 2
+        },
+        "compression": {
+          "n": 152,
+          "ok_right": 125,
+          "other": 16,
+          "not_identified": 11
+        },
+        "combined": {
+          "n": 152,
+          "ok_right": 106,
+          "not_identified": 26,
+          "other": 20
+        }
+      }
+    },
+    "in_force": {
+      "msp_min": 0.15,
+      "entropy_max": 0.85,
+      "conditions": {
+        "original": {
+          "n": 152,
+          "ok_right": 143,
+          "other": 7,
+          "ok_wrong": 2
+        },
+        "background": {
+          "n": 152,
+          "ok_right": 140,
+          "other": 9,
+          "ok_wrong": 3
+        },
+        "angle": {
+          "n": 152,
+          "ok_right": 146,
+          "other": 5,
+          "ok_wrong": 1
+        },
+        "distance": {
+          "n": 152,
+          "ok_right": 116,
+          "other": 30,
+          "ok_wrong": 6
+        },
+        "lighting": {
+          "n": 152,
+          "ok_right": 147,
+          "other": 3,
+          "ok_wrong": 2
+        },
+        "compression": {
+          "n": 152,
+          "ok_right": 134,
+          "other": 17,
+          "ok_wrong": 1
+        },
+        "combined": {
+          "n": 152,
+          "ok_right": 127,
+          "other": 21,
+          "ok_wrong": 4
+        }
+      }
+    }
+  },
+  "caveat": "Transformations imitate field conditions applied to laboratory images; the model was trained with augmentation of the same kinds, so this is not a fully independent test. 'other' groups dust, quality, not-a-plant and low-confidence outcomes, which do not depend on the OOD thresholds."
+}

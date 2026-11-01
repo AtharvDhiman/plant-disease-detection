@@ -1,0 +1,106 @@
+{
+  "experiment_id": "efficientnet_b0_cbam__field__576cde9b",
+  "model_name": "efficientnet_b0_cbam",
+  "config": {
+    "model_name": "efficientnet_b0_cbam",
+    "experiment_id": "efficientnet_b0_cbam__field__576cde9b",
+    "train_split": "train",
+    "val_split": "val",
+    "test_split": "test",
+    "image_size": 224,
+    "batch_size": 16,
+    "num_workers": 6,
+    "augmentation": "field",
+    "epochs": 6,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "optimizer": "adamw",
+    "scheduler": "cosine",
+    "warmup_epochs": 1,
+    "label_smoothing": 0.05,
+    "grad_clip": 1.0,
+    "two_stage": true,
+    "stage1_epochs": 2,
+    "stage2_lr_scale": 0.15,
+    "unfreeze_last_n": 3,
+    "class_weight_scheme": null,
+    "use_balanced_sampler": false,
+    "use_focal_loss": false,
+    "focal_gamma": 2.0,
+    "amp": false,
+    "seed": 42,
+    "early_stopping_patience": 2,
+    "min_delta": 0.0001,
+    "pretrained": true,
+    "group": "benchmark",
+    "notes": "Model 8 - transfer learning combined with CBAM.",
+    "tags": []
+  },
+  "history": {
+    "epoch": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "train_loss": [
+      2.543582,
+      1.424266,
+      0.936318,
+      0.752996,
+      0.699272,
+      0.681545
+    ],
+    "train_acc": [
+      0.466347,
+      0.696115,
+      0.841173,
+      0.902662,
+      0.917662,
+      0.924001
+    ],
+    "val_loss": [
+      1.127419,
+      0.876316,
+      0.578494,
+      0.525382,
+      0.511331,
+      0.50621
+    ],
+    "val_acc": [
+      0.83357,
+      0.87596,
+      0.967568,
+      0.978947,
+      0.98037,
+      0.980085
+    ],
+    "lr": [
+      0.0003,
+      0.00027163902366467965,
+      3.847815000631112e-05,
+      2.2727212424161988e-05,
+      6.974978678557419e-06,
+      4.5e-07
+    ],
+    "epoch_time_s": [
+      663.74,
+      568.32,
+      504.11,
+      420.65,
+      423.08,
+      472.07
+    ],
+    "stage_boundary": 2
+  },
+  "best_val_accuracy": 0.9803698435277383,
+  "best_val_loss": 0.511331154984736,
+  "best_epoch": 5,
+  "epochs_run": 6,
+  "training_time_s": 3052.8362319,
+  "total_parameters": 4261124,
+  "model_size_mb": 16.415550231933594,
+  "stopped_early": false
+}

@@ -175,7 +175,9 @@ def verify_cam(model: torch.nn.Module, onnx_path: Path, image_size: int,
     if len(session.get_outputs()) < 2:
         return float("nan")
 
-    target_layer = model.features[-1]
+    # The same layer the application's torch backend explains, so this checks the
+    # graph against what the app would otherwise have computed.
+    target_layer = model.feature_layer
     worst = 0.0
     for seed in range(trials):
         generator = torch.Generator().manual_seed(1000 + seed)

@@ -319,6 +319,29 @@ def test_field_augmentation_keeps_shape_and_leaf_colour():
     assert transform(image).shape == (3, 160, 160)
 
 
+def test_field_mild_alters_fewer_images_than_field():
+    """field_mild exists to lose less lab accuracy: it must leave more images untouched."""
+    first = {s: build_train_transform(160, strength=s).transforms[0] for s in ("field", "field_mild")}
+    assert first["field"].p == 0.7
+    assert first["field_mild"].p == 0.5
+    image = Image.fromarray(np.full((256, 256, 3), (60, 130, 45), dtype=np.uint8))
+    assert build_train_transform(160, strength="field_mild")(image).shape == (3, 160, 160)
+
+
+def test_field_suites_are_kept_out_of_fixed_budget_analysis():
+    """Field rounds are full-data runs; letting them into the benchmark analysis
+    inflated the measured noise floor once already (production runs did)."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "training"))
+    from analyse_results import fixed_budget
+
+    rows = [{"protocol": p} for p in ("benchmark", "ablation", "placement", "production",
+                                      "field", "field_long")]
+    assert [r["protocol"] for r in fixed_budget(rows)] == ["benchmark", "ablation", "placement"]
+
+
 def test_unknown_augmentation_strength_raises():
     with pytest.raises(ValueError, match="Unknown augmentation"):
         build_train_transform(160, strength="extreme")

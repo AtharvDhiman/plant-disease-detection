@@ -9,7 +9,7 @@
 
 <p>
   <a href="https://plant-disease-detection-x3y4.onrender.com/"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-online-2f8a4e?style=for-the-badge&logo=render&logoColor=white"></a>
-  <a href="docs/results.md"><img alt="Test accuracy 99.06%" src="https://img.shields.io/badge/test%20accuracy-99.06%25-16432a?style=for-the-badge"></a>
+  <a href="docs/results.md"><img alt="Test accuracy 99.68%" src="https://img.shields.io/badge/test%20accuracy-99.68%25-16432a?style=for-the-badge"></a>
   <a href="docs/results.md#per-class-accuracy-deployed-model"><img alt="38 classes, 14 crops" src="https://img.shields.io/badge/classes-38%20%C2%B7%2014%20crops-1f5c38?style=for-the-badge"></a>
 </p>
 <p>
@@ -76,7 +76,8 @@
 
 | | |
 |---|---|
-| 🎯 **99.06% test accuracy** | On 17,572 held-out images, 38 classes across 14 crops — every number generated from the experiment ledger, none hard-coded |
+| 🎯 **99.68% test accuracy** | On 17,572 held-out images, 38 classes across 14 crops — every number generated from the experiment ledger, none hard-coded |
+| 🌾 **Trained for field photos** | Field-condition augmentation (soil backdrops, small leaves, harsh light, JPEG): on photos made to look like field shots it keeps 88–99%, where the lab-trained model fell to 7–70% ([details](docs/results.md#field-condition-training)) |
 | 🧠 **CBAM attention, tested properly** | A controlled ablation (none / channel / spatial / SE / CBAM) and 18 trained configurations against classical ML and 7 other deep architectures, with a measured noise floor |
 | 🔍 **Explains every answer** | Grad-CAM, Grad-CAM++ and the learned CBAM attention map, with the caveat that heat maps are not lesion segmentation |
 | 📏 **Confidence you can read literally** | Temperature-scaled probabilities, banded HIGH / MEDIUM / LOW, with reliability diagrams before and after |
@@ -232,31 +233,31 @@ and must be able to justify itself.
 <!-- RESULTS:START -->
 | Result | Model | Protocol | Value |
 |---|---|---|---|
-| Best accuracy | ResNet50 + CBAM | benchmark | **99.14%** |
-| Best macro F1 | ResNet50 + CBAM | benchmark | **0.9914** |
+| Best accuracy | EfficientNet-B0 + CBAM | field_long | **99.68%** |
+| Best macro F1 | EfficientNet-B0 + CBAM | field_long | **0.9967** |
 | Fastest inference | Logistic Regression (hand-crafted features) | classical | 0.02 ms/image |
 | Smallest model | Ablation A: CNN | ablation | 4.8 MB |
-| Best proposed (CBAM) model | EfficientNet-B0 + CBAM | production | 99.00% accuracy, 0.9898 macro F1 |
-| Serving in the application | EfficientNet-B0 | production | selected by `f1_macro` |
+| Best proposed (CBAM) model | EfficientNet-B0 + CBAM | field_long | 99.68% accuracy, 0.9967 macro F1 |
+| Serving in the application | EfficientNet-B0 + CBAM | field_long | selected by `f1_macro` |
 | Evaluated on | held-out test split | — | 17,572 images, 38 classes |
 
-Rows with different protocols are **not** comparable: `benchmark` models were trained on a fixed subset and scored on a 4,560-image split, `production` models on the full data and scored on 17,572 images.
+Rows with different protocols are **not** comparable: `benchmark` models were trained on a fixed subset and scored on a 4,560-image split; `production`, `field` and `field_long` models were trained on the full data and scored on 17,572 images.
 
-### The deployed model (EfficientNet-B0) at a glance
+### The deployed model (EfficientNet-B0 + CBAM) at a glance
 
 | Accuracy | Top-3 | Macro F1 | Balanced acc. | Cohen's κ | ROC AUC | Test images |
 |---:|---:|---:|---:|---:|---:|---:|
-| **99.06%** | 99.94% | 0.9904 | 99.04% | 0.9903 | 0.99997 | 17,572 |
+| **99.68%** | 99.98% | 0.9967 | 99.67% | 0.9967 | 0.99994 | 17,572 |
 
 Hardest classes (per-class accuracy = recall):
 
 | Class | Accuracy | F1 |
 |---|---:|---:|
-| Tomato - Target Spot | 89.28% | 0.9336 |
-| Corn (maize) - Cercospora leaf spot Gray leaf spot | 93.90% | 0.9542 |
-| Corn (maize) - Northern Leaf Blight | 97.27% | 0.9587 |
-| Tomato - Spider mites Two-spotted spider mite | 99.77% | 0.9666 |
-| Tomato - Early blight | 96.88% | 0.9748 |
+| Corn (maize) - Cercospora leaf spot Gray leaf spot | 95.12% | 0.9642 |
+| Corn (maize) - Northern Leaf Blight | 97.90% | 0.9669 |
+| Tomato - Target Spot | 97.37% | 0.9834 |
+| Tomato - Spider mites Two-spotted spider mite | 99.77% | 0.9909 |
+| Tomato - Late blight | 99.35% | 0.9946 |
 
 All 38 classes: [`docs/results.md` → Per-class accuracy](docs/results.md#per-class-accuracy-deployed-model).
 
@@ -264,13 +265,13 @@ All 38 classes: [`docs/results.md` → Per-class accuracy](docs/results.md#per-c
 
 | Condition | Correct class |
 |---|---:|
-| Original lab photo | 96.7% |
+| Original lab photo | 94.2% |
 | Leaf on a soil background | 100.0% |
-| Photographed off-axis | 96.7% |
-| Leaf small in the frame (far away) | 10.0% |
-| Harsh directional sunlight | 96.7% |
-| Heavy JPEG compression | 90.0% |
-| All of the above (closest to a field photo) | 76.7% |
+| Photographed off-axis | 99.0% |
+| Leaf small in the frame (far away) | 88.5% |
+| Harsh directional sunlight | 99.0% |
+| Heavy JPEG compression | 92.3% |
+| All of the above (closest to a field photo) | 95.2% |
 
 Leaves imitated as field photos, through the full live pipeline - [details](docs/results.md#accuracy-on-field-like-photos).
 
@@ -297,15 +298,18 @@ Every row below was trained on the same fixed budget and scored on the same held
 |  | Linear SVM (hand-crafted features) | classical | 87.96% | 0.8785 | 0.8796 | 0.8778 | 96.01% | — | — | 0.09 | — |
 |  | Logistic Regression (hand-crafted features) | classical | 87.24% | 0.8726 | 0.8724 | 0.8719 | 97.15% | — | — | 0.02 | — |
 
-### Full-data production runs
+### Full-data runs
 
-Trained on the complete training split at 224px and scored on the full test split. **These numbers cannot be compared with the benchmark table above** - a different training budget and a different, larger test set. They are what the deployed system actually achieves.
+Trained on the complete training split at 224px and scored on the full test split. **These numbers cannot be compared with the benchmark table above** - a different training budget and a different, larger test set. They are what the deployed system actually achieves. `field` and `field_long` add field-condition augmentation; see [Field-condition training](docs/results.md#field-condition-training).
 
 | | Model | Protocol | Accuracy | Precision | Recall | Macro F1 | Top-3 | Params | Size | ms/img | ECE |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **★** | EfficientNet-B0 + CBAM | field_long | 99.68% | 0.9968 | 0.9967 | 0.9967 | 99.98% | 4.26M | 16.4 MB | 18.82 | 0.0437 |
 |  | EfficientNet-B0 | production | 99.06% | 0.9906 | 0.9904 | 0.9904 | 99.94% | 4.06M | 15.6 MB | 18.50 | 0.0500 |
 | **★** | EfficientNet-B0 + CBAM | production | 99.00% | 0.9900 | 0.9898 | 0.9898 | 99.94% | 4.26M | 16.4 MB | 13.17 | 0.0500 |
 | **★** | Custom CNN + CBAM | production | 98.42% | 0.9845 | 0.9842 | 0.9842 | 99.90% | 1.26M | 4.8 MB | 7.41 | 0.0245 |
+|  | EfficientNet-B0 | field | 98.32% | 0.9833 | 0.9829 | 0.9828 | 99.87% | 4.06M | 15.6 MB | 18.07 | 0.0501 |
+| **★** | EfficientNet-B0 + CBAM | field | 98.25% | 0.9828 | 0.9822 | 0.9821 | 99.87% | 4.26M | 16.4 MB | 13.92 | 0.0497 |
 
 ### Attention ablation
 
@@ -633,14 +637,24 @@ two look alike instead of refusing. Retrain with
 softmax probability, normalised entropy and free energy, with thresholds
 calibrated to retain a 95% true-positive rate on real leaves.
 
-Stand-alone AUROC of these scores against the synthetic proxies is 0.975 for
-maximum softmax probability, 0.977 for normalised entropy and 0.942 for free
-energy, measured on the production model. That is far stronger than the 0.62–0.63
+Stand-alone AUROC of these scores against the synthetic proxies is 0.974 for
+maximum softmax probability, 0.973 for normalised entropy and 0.968 for free
+energy, measured on the deployed model. That is far stronger than the 0.62–0.63
 first measured on the from-scratch CNN baseline — better calibration on the
 pretrained backbone is most of the difference — but it is still an *upper bound*,
 because the proxies (uniform noise, flat colour fields, tile-shuffled and heavily
 degraded leaves) are easier to reject than a photograph of an unrelated real
 subject. That is why the pipeline does not rely on the score alone.
+
+**Operating point.** Thresholds calibrated to keep 95% of *laboratory* leaves
+are strict for field photographs, which are naturally less confident. The site
+is served with a more permissive setting (top-class probability at least 0.15,
+set explicitly by `scripts/set_ood_operating_point.py`, with the calibrated
+values stored beside it). `scripts/ood_operating_points.py` measures the
+trade-off through the full pipeline: on a leaf far away in the frame the strict
+setting shows 44% right and 0% wrong but flags 38% "not identified", where the
+permissive one shows 76% right and 4% wrong. Neither is free; the table is in
+[`docs/results.md`](docs/results.md#out-of-distribution-operating-point).
 
 ---
 
@@ -1284,9 +1298,10 @@ against a measured noise floor rather than against zero.
   ML through transfer learning with CBAM — are trained under one protocol, with
   the full configuration and hardware profile recorded per run.
 * An **end-to-end reliability pipeline** measured as a pipeline, not as isolated
-  parts. On the production model the quality gate alone rejects 63% of the OOD
-  proxies and the OOD score alone 93.5%; together they reach **95.0%, at a 2.0%
-  cost in genuine leaves asked for a retake**. The same measurement on the
+  parts. On the deployed model, at the calibrated thresholds, the quality gate
+  alone rejects 66.5% of the OOD proxies and the OOD score alone 94.2%; together
+  they reach **96.2%, at a 3.0% cost in genuine leaves asked for a retake**
+  (the served, more permissive operating point rejects fewer; see above). The same measurement on the
   from-scratch baseline gave 76% at 3.3%, so the gain came from the model, not
   from re-tuning the gate — which is the kind of attribution that only a
   pipeline-level measurement can make.

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import base64
 import json
+from datetime import datetime
 from pathlib import Path
 import sys
 
@@ -51,15 +52,99 @@ def generate_report():
     dataset_report = load_json(PROJECT_ROOT / "artifacts/dataset_report.json", {})
     splits = load_json(PROJECT_ROOT / "data/splits.json", {})
     domain_shift = load_json(PROJECT_ROOT / "artifacts/results/domain_shift.json", {})
+    field_comparison = load_json(PROJECT_ROOT / "artifacts/results/field_comparison.json", {})
+    ood_points = load_json(PROJECT_ROOT / "artifacts/results/ood_operating_points.json", {})
+    footprint = load_json(PROJECT_ROOT / "artifacts/results/serving_footprint.json", {})
+    manifest = load_json(PROJECT_ROOT / "models/exported/production.json", {})
+
+    # Everything below describes the model the application serves, read from its
+    # manifest so the report cannot quote a model that is no longer deployed.
+    deployed = serving_json.get("test_metrics", {})
+    dep_label = serving_json.get("label", "the deployed model")
+    dep_protocol = manifest.get("protocol", "production")
+    dep_id = manifest.get("experiment_id", "")
+    dep_acc = f"{deployed.get('accuracy', 0) * 100:.2f}%"
+    dep_f1 = f"{deployed.get('f1_macro', 0):.4f}"
+    dep_f1_pct = f"{deployed.get('f1_macro', 0) * 100:.2f}%"
+    dep_top3 = f"{deployed.get('top3_accuracy', 0) * 100:.2f}%"
+    dep_ece_raw = f"{deployed.get('ece', 0) * 100:.2f}%"
+    dep_ece_cal = f"{deployed.get('ece_after_temperature', 0) * 100:.2f}%"
+    dep_ece_gain = (f"{deployed['ece'] / deployed['ece_after_temperature']:.0f}"
+                    if deployed.get("ece_after_temperature") else "—")
+    dep_t = f"{serving_json.get('temperature', 1):.4f}"
+    dep_size = f"{serving_json.get('size_mb', 0):.1f}"
+    dep_params = f"{serving_json.get('parameters', 0) / 1e6:.2f}M"
+    publication_date = datetime.now().strftime("%B %Y")
+    dep_latency = f"{manifest.get('inference_ms', 0):.1f}"
+    dep_msp = serving_json.get("ood_thresholds", {}).get("msp_min")
+    dep_entropy = serving_json.get("ood_thresholds", {}).get("entropy_max")
+    inference_ms = f"{footprint.get('inference_ms_median', 0):.0f}"
+    pipeline_ms = f"{footprint.get('pipeline_ms_median_no_explain', 0):.0f}"
+    resident_mb = f"{footprint.get('resident_mb_after_requests', 0):.0f}"
+
+    def pct1(value):
+        return "—" if value is None else f"{value * 100:.1f}%"
+
+    # Behaviour on field-like photos, from the measured files.
+    shift_labels = {
+        "original": ("Original Clean", "Lab control condition"),
+        "background": ("Field Background", "Procedural soil, mulch and clutter backdrop"),
+        "angle": ("Camera Angle", "Rotation and perspective squash"),
+        "lighting": ("Harsh Lighting", "Directional sun gradient and contrast"),
+        "compression": ("Compression Artifacts", "Severe JPEG quantisation (Q 14-24)"),
+        "distance": ("Distance / Scale", "Leaf at about a third of the frame"),
+        "combined": ("Combined Field Simulation", "Background + angle + lighting + JPEG"),
+    }
+    shift_rows = ""
+    for key, (name, how) in shift_labels.items():
+        entry = (domain_shift.get("conditions") or {}).get(key)
+        if not entry:
+            continue
+        shade = ' style="background-color: #fff1f2;"' if key == "combined" else ""
+        shift_rows += (f"<tr{shade}><td><strong>{name}</strong></td><td>{how}</td>"
+                       f"<td class='numeric'>{pct1(entry.get('accuracy'))}</td>"
+                       f"<td class='numeric'>{pct1(entry.get('refused_rate'))}</td></tr>\n")
+    shift_n = domain_shift.get("images_per_condition", "—")
+
+    comparison_rows = ""
+    comparison_order = {"production": 0, "field": 1, "field_long": 2}
+    for alias, result in sorted(
+            (field_comparison.get("results") or {}).items(),
+            key=lambda kv: (comparison_order.get(kv[0].partition("@")[2], 9), kv[0])):
+        cells = ""
+        for key in shift_labels:
+            c = result["conditions"][key]
+            cells += f"<td class='numeric'>{c['correct'] / c['n'] * 100:.0f}% ({c['ok_wrong']})</td>"
+        serving_row = result.get("experiment_id") == dep_id
+        shade = ' style="background-color: #ecfdf5; font-weight: 600;"' if serving_row else ""
+        comparison_rows += (f"<tr{shade}><td>{result['label']}{' (serving)' if serving_row else ''}</td>"
+                            f"<td class='numeric'>{result['lab_test_accuracy'] * 100:.2f}%</td>{cells}</tr>\n")
+    comparison_n = next(iter((field_comparison.get("results") or {}).values()), {}) \
+        .get("conditions", {}).get("original", {}).get("n", "—")
+
+    ood_rows = ""
+    for key, (name, _) in shift_labels.items():
+        try:
+            strict = ood_points["points"]["calibrated_95tpr"]["conditions"][key]
+            loose = ood_points["points"]["in_force"]["conditions"][key]
+        except KeyError:
+            continue
+        cell = lambda t, k: f"{t.get(k, 0) / t['n'] * 100:.0f}%"  # noqa: E731
+        ood_rows += (f"<tr><td>{name}</td><td class='numeric'>{cell(strict, 'ok_right')}</td>"
+                     f"<td class='numeric'>{cell(strict, 'ok_wrong')}</td>"
+                     f"<td class='numeric'>{cell(strict, 'not_identified')}</td>"
+                     f"<td class='numeric'>{cell(loose, 'ok_right')}</td>"
+                     f"<td class='numeric'>{cell(loose, 'ok_wrong')}</td>"
+                     f"<td class='numeric'>{cell(loose, 'not_identified')}</td></tr>\n")
 
     # Collect images as base64
     img_compare_acc = image_to_base64(PROJECT_ROOT / "artifacts/plots/compare_accuracy.png")
     img_ablation = image_to_base64(PROJECT_ROOT / "artifacts/plots/ablation.png")
     img_placement = image_to_base64(PROJECT_ROOT / "artifacts/plots/cbam_placement.png")
     img_tradeoff = image_to_base64(PROJECT_ROOT / "artifacts/plots/tradeoff_size_accuracy.png")
-    img_reliability = image_to_base64(PROJECT_ROOT / "artifacts/plots/efficientnet_b0__prod__9a259f82_reliability.png")
+    img_reliability = image_to_base64(PROJECT_ROOT / "artifacts/plots" / f"{dep_id}_reliability.png")
     img_dist_train = image_to_base64(PROJECT_ROOT / "artifacts/plots/class_distribution_train.png")
-    img_cm = image_to_base64(PROJECT_ROOT / "artifacts/confusion_matrices/efficientnet_b0__prod__9a259f82_test.png")
+    img_cm = image_to_base64(PROJECT_ROOT / "artifacts/confusion_matrices" / f"{dep_id}_test.png")
     
     img_home = image_to_base64(PROJECT_ROOT / "docs/screenshots/home.png")
     img_dashboard = image_to_base64(PROJECT_ROOT / "docs/screenshots/dashboard.png")
@@ -349,22 +434,22 @@ def generate_report():
 
     <div class="cover-metrics">
       <div class="metric-card">
-        <span class="val">99.06%</span>
+        <span class="val">{dep_acc}</span>
         <span class="lbl">Test Accuracy</span>
         <span class="sub">17,572 held-out images</span>
       </div>
       <div class="metric-card">
-        <span class="val">0.9904</span>
+        <span class="val">{dep_f1}</span>
         <span class="lbl">Macro F1 Score</span>
         <span class="sub">38 balanced classes</span>
       </div>
       <div class="metric-card">
-        <span class="val">0.22%</span>
+        <span class="val">{dep_ece_cal}</span>
         <span class="lbl">Calibrated ECE</span>
-        <span class="sub">T=0.5072 scaling</span>
+        <span class="sub">T={dep_t} scaling</span>
       </div>
       <div class="metric-card">
-        <span class="val">~115 MB</span>
+        <span class="val">~{resident_mb} MB</span>
         <span class="lbl">Serving Footprint</span>
         <span class="sub">ONNX Runtime (512MB RAM)</span>
       </div>
@@ -380,7 +465,7 @@ def generate_report():
     </div>
     <div style="text-align: right;">
       <strong>Target Platform:</strong> Render Cloud (Docker Multi-Stage)<br>
-      <strong>Date of Publication:</strong> September 2026
+      <strong>Date of Publication:</strong> {publication_date}
     </div>
   </div>
 </div>
@@ -403,15 +488,15 @@ This project develops an <strong>end-to-end, trustworthy, production-grade deep 
 <ul>
   <li><strong>Image Quality Validation Gate:</strong> Automatically inspects uploaded images for motion blur, severe underexposure, overexposure, and lack of biological plant material before executing neural inference.</li>
   <li><strong>State-of-the-Art Deep Vision:</strong> Evaluates 18 architectures comprising handcrafted classical machine learning, custom convolutional neural networks with <strong>Convolutional Block Attention Modules (CBAM)</strong>, and modern transfer learning backbones (EfficientNet, ResNet, DenseNet, MobileNet).</li>
-  <li><strong>Trust & Statistical Calibration:</strong> Incorporates post-hoc Temperature Scaling to align predictive probabilities with empirical error rates, dropping Expected Calibration Error (ECE) from <strong>5.00% to 0.22%</strong>.</li>
+  <li><strong>Trust & Statistical Calibration:</strong> Incorporates post-hoc Temperature Scaling to align predictive probabilities with empirical error rates, dropping Expected Calibration Error (ECE) from <strong>{dep_ece_raw} to {dep_ece_cal}</strong>.</li>
   <li><strong>Out-of-Distribution (OOD) Rejection:</strong> Calculates joint metrics (Max Softmax Probability, Predictive Entropy, and Free Energy) calibrated to a 95% True Positive Rate, ensuring non-leaf or unrecognizable subjects are safely refused rather than hallucinating high-confidence misdiagnoses.</li>
   <li><strong>Explainable AI (XAI):</strong> Generates visual saliency maps via Grad-CAM, Grad-CAM++, and forward-pass Occlusion Sensitivity, pinpointing the specific pathological lesions that drove the prediction.</li>
-  <li><strong>Resource-Constrained Cloud Deployment:</strong> Engineered specifically to operate within <strong>Render's 512 MB Free Tier</strong> by exporting PyTorch checkpoints to ONNX Runtime graphs, reducing memory footprint by ~78% (from 657 MB to ~115 MB).</li>
+  <li><strong>Resource-Constrained Cloud Deployment:</strong> Engineered specifically to operate within <strong>Render's 512 MB Free Tier</strong> by exporting PyTorch checkpoints to ONNX Runtime graphs, reducing memory footprint by ~78% (from 657 MB to ~{resident_mb} MB).</li>
 </ul>
 
 <div class="callout callout-blue avoid-break">
   <div class="callout-title">Key Architectural Achievement</div>
-  The production model achieves <strong>99.06% overall accuracy, 99.04% Macro F1, and 99.94% Top-3 accuracy</strong> across 17,572 held-out test images while executing in ~31 ms per sample on commodity single-core CPU hardware without requiring dedicated GPUs.
+  The deployed model ({dep_label}, trained with field-condition augmentation) achieves <strong>{dep_acc} overall accuracy, {dep_f1_pct} Macro F1, and {dep_top3} Top-3 accuracy</strong> across 17,572 held-out test images, running the model in ~{inference_ms} ms per image (~{pipeline_ms} ms for the whole pipeline) on a single CPU thread without a GPU. On photographs made to look like field shots it keeps most of that accuracy, where the previous laboratory-trained model fell to about 70% (Section 10).
 </div>
 
 <!-- ========================================================================= -->
@@ -517,12 +602,12 @@ The application enforces strict decoupling between <strong>Offline Training/Rese
 
   <div class="flow-step">
     <strong>Stage 4: ONNX Runtime Engine Forward Pass</strong><br>
-    Feeds the (1, 3, 224, 224) tensor through the optimized ONNX session with 1 intra-op thread, computing raw uncalibrated class logits in ~31 ms.
+    Feeds the (1, 3, 224, 224) tensor through the optimized ONNX session with 1 intra-op thread, computing raw uncalibrated class logits in ~{inference_ms} ms.
   </div>
 
   <div class="flow-step">
     <strong>Stage 5: Temperature-Scaled Calibration & OOD Scoring</strong><br>
-    Scales raw logits by calibrated parameter <i>T = 0.5072</i> and computes softmax probabilities. Simultaneously evaluates raw logits against calibrated Out-of-Distribution thresholds (Max Softmax Probability &ge; 0.806, Predictive Entropy &le; 0.270, Energy &le; -4.625).
+    Scales raw logits by calibrated parameter <i>T = {dep_t}</i> and computes softmax probabilities. Simultaneously evaluates the raw logits against the Out-of-Distribution operating point in force (Max Softmax Probability &ge; {dep_msp}, Predictive Entropy &le; {dep_entropy}). This is deliberately more permissive than the thresholds calibrated on laboratory leaves; Section 10 measures the trade-off.
   </div>
 
   <div class="flow-step">
@@ -677,7 +762,18 @@ All 18 models were evaluated under an identical, controlled benchmark subset pro
     </thead>
     <tbody>
       <tr style="background-color: #ecfdf5; font-weight: 600;">
-        <td><strong>EfficientNet-B0 (Production)</strong></td>
+        <td><strong>{dep_label} (field-trained, serving)</strong></td>
+        <td><span class="tag tag-green">{dep_protocol}</span></td>
+        <td class="numeric"><strong>{dep_acc}</strong></td>
+        <td class="numeric"><strong>{dep_f1}</strong></td>
+        <td class="numeric">{dep_top3}</td>
+        <td class="numeric">{dep_params}</td>
+        <td class="numeric">{dep_size} MB</td>
+        <td class="numeric">{dep_latency} ms</td>
+        <td class="numeric">{deployed.get('ece', 0):.4f}*</td>
+      </tr>
+      <tr style="background-color: #f0fdf4;">
+        <td>EfficientNet-B0 (Production)</td>
         <td><span class="tag tag-green">Production</span></td>
         <td class="numeric"><strong>99.06%</strong></td>
         <td class="numeric"><strong>0.9904</strong></td>
@@ -877,7 +973,7 @@ All 18 models were evaluated under an identical, controlled benchmark subset pro
     </tbody>
   </table>
   <div style="font-size: 7.5pt; color: #64748b; font-style: italic;">
-    *Note: The production EfficientNet-B0 ECE drops from 0.0500 down to 0.0022 (0.22%) following post-hoc Temperature Scaling.
+    *Note: The deployed {dep_label} ECE drops from {deployed.get('ece', 0):.4f} to {deployed.get('ece_after_temperature', 0):.4f} ({dep_ece_cal}) following post-hoc Temperature Scaling. The other rows show their uncalibrated ECE.
   </div>
 </div>
 
@@ -1006,7 +1102,7 @@ A deployable agricultural diagnostic system cannot afford overconfident hallucin
     <i>p&#770;<sub>i</sub></i> = exp(<i>z<sub>i</sub> / T</i>) / &sum;<sub>j</sub> exp(<i>z<sub>j</sub> / T</i>)
   </div>
   <p>
-  For the production EfficientNet-B0 model, the optimal temperature was fitted at <strong><i>T</i> = 0.5072</strong>. Because a scalar divisor does not change the argmax ranking of the logits, classification accuracy remains completely unchanged, but Expected Calibration Error (ECE) plummeted from <strong>5.00% down to 0.22%</strong> (a 22&times; calibration precision improvement).
+  For the deployed {dep_label} model, the optimal temperature was fitted at <strong><i>T</i> = {dep_t}</strong>. Because a scalar divisor does not change the argmax ranking of the logits, classification accuracy remains completely unchanged, but Expected Calibration Error (ECE) fell from <strong>{dep_ece_raw} down to {dep_ece_cal}</strong> (about a {dep_ece_gain}&times; calibration precision improvement).
   </p>
 </div>
 
@@ -1183,7 +1279,7 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
 <div class="avoid-break">
   <h3>The Laboratory Bias & Domain Shift Probe</h3>
   <p>
-  A critical engineering limitation of the PlantVillage dataset is that images were captured under controlled laboratory conditions (single detached leaves laid flat against plain gray or black backgrounds under studio lighting). To quantify how the model degrades when transitioning to real-world agricultural fields, we developed a systematic <strong>Domain Shift Probe</strong> applying 6 realistic environmental transformations across test samples:
+  A critical engineering limitation of the PlantVillage dataset is that images were captured under controlled laboratory conditions (single detached leaves laid flat against plain gray or black backgrounds under studio lighting). To quantify how a model degrades when transitioning to real-world agricultural fields, a <strong>Domain Shift Probe</strong> (<code>scripts/domain_shift_probe.py</code>) applies six environmental transformations to {shift_n} held-out disease leaves per condition and sends each through the complete serving pipeline. The table below is for the <strong>deployed, field-trained model</strong>. A refusal produces no class and counts as not correct, which is why even the unmodified photographs score below the laboratory test accuracy: the pipeline's own checks refuse a few percent of clean laboratory photographs.
   </p>
 
   <table>
@@ -1191,68 +1287,70 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
       <tr>
         <th>Environmental Condition</th>
         <th>Applied Transformation</th>
-        <th>Accuracy</th>
-        <th>Refusal Rate</th>
-        <th>Failure Mode Analysis</th>
+        <th>Correct class</th>
+        <th>Not marked reliable</th>
       </tr>
     </thead>
     <tbody>
+      {shift_rows}
+    </tbody>
+  </table>
+</div>
+
+<div class="avoid-break">
+  <h3>Closing the Gap: Field-Condition Training</h3>
+  <p>
+  The first version of the production model was trained on laboratory photographs only. Measured through the same pipeline it kept ~96% on clean photographs but fell to about 70% with all field effects combined and to under 10% when the leaf was small in the frame. Two further training rounds added <strong>field-condition augmentation</strong> (<code>backend/app/ml/field_augment.py</code>): leaf cut-outs placed on procedural soil, mulch, foliage and stone backdrops, small-in-frame placement, directional light and shadow, blur, sensor noise and JPEG compression. The leaf's hue is never altered, because colour is the diagnostic signal. Round one applied it to 70% of images with the original schedule; round two applied it to 50%, fine-tuned the <em>whole</em> network instead of the last three blocks, and trained for ten epochs. The table compares every model through the identical pipeline on the same {comparison_n} held-out leaves per condition, with the number of confident wrong answers in brackets:
+  </p>
+  <table>
+    <thead>
       <tr>
-        <td><strong>Original Clean</strong></td>
-        <td>Lab control condition</td>
-        <td class="numeric">100.0%</td>
-        <td class="numeric">13.3%</td>
-        <td>High confidence identification.</td>
+        <th>Model</th>
+        <th class="numeric">Lab test</th>
+        <th class="numeric">Original</th>
+        <th class="numeric">Background</th>
+        <th class="numeric">Angle</th>
+        <th class="numeric">Lighting</th>
+        <th class="numeric">Compression</th>
+        <th class="numeric">Distance</th>
+        <th class="numeric">Combined</th>
       </tr>
-      <tr>
-        <td><strong>Field Background</strong></td>
-        <td>Synthetic soil, weeds & mulch insertion</td>
-        <td class="numeric">100.0%</td>
-        <td class="numeric">30.0%</td>
-        <td>Non-leaf clutter triggers conservative OOD refusal.</td>
-      </tr>
-      <tr>
-        <td><strong>Camera Angle</strong></td>
-        <td>Affine perspective tilt & perspective warp</td>
-        <td class="numeric">100.0%</td>
-        <td class="numeric">13.3%</td>
-        <td>Model is largely invariant to moderate pitch/roll.</td>
-      </tr>
-      <tr>
-        <td><strong>Harsh Lighting</strong></td>
-        <td>Specular solar glare & shadows</td>
-        <td class="numeric">100.0%</td>
-        <td class="numeric">3.3%</td>
-        <td>Color saturation shifts slightly increase certainty.</td>
-      </tr>
-      <tr>
-        <td><strong>Compression Artifacts</strong></td>
-        <td>Severe JPEG quantization (Q=20)</td>
-        <td class="numeric">93.3%</td>
-        <td class="numeric">23.3%</td>
-        <td>Blocky artifacts obscure subtle fungal spore textures.</td>
-      </tr>
-      <tr>
-        <td><strong>Distance / Scale</strong></td>
-        <td>Full plant zoom-out (small leaf area)</td>
-        <td class="numeric"><strong>13.3%</strong></td>
-        <td class="numeric"><strong>100.0%</strong></td>
-        <td>Low leaf pixel density causes complete refusal.</td>
-      </tr>
-      <tr style="background-color: #fff1f2;">
-        <td><strong>Combined Field Simulation</strong></td>
-        <td>Clutter + Angle + Lighting + Distance</td>
-        <td class="numeric">80.0%</td>
-        <td class="numeric">76.7%</td>
-        <td>Safety gate correctly refuses 76.7% of noisy field shots.</td>
-      </tr>
+    </thead>
+    <tbody>
+      {comparison_rows}
     </tbody>
   </table>
 </div>
 
 <div class="callout callout-amber avoid-break">
-  <div class="callout-title">Key Finding on Real-World Field Deployment</div>
-  When leaf scale and background clutter diverge from laboratory training images, the raw model accuracy drops drastically. However, <strong>our safety pipeline successfully refuses 76.7% to 100% of these corrupted shots</strong> rather than making catastrophic false diagnoses. This validates the absolute necessity of our Image Quality Gate and OOD filter.
+  <div class="callout-title">Reading These Results Honestly</div>
+  <strong>Not independent.</strong> The augmentation imitates the same kinds of condition the probe applies (through different generators), so the probe flatters the field-trained models; real field photographs are the independent test, and none were used. <strong>Not attributable to CBAM.</strong> In round one, plain EfficientNet-B0 and EfficientNet-B0 + CBAM tied (98.32% vs 98.25%). Round two trained only the CBAM model with three changes at once (longer schedule, whole network, milder augmentation), so the gain over the earlier models cannot be assigned to any single one of them, and no plain EfficientNet was run on that schedule. The round-two run was also interrupted by a machine restart during its final epoch; its best checkpoint (epoch 9 of 10) was evaluated exactly as a finished run would have been.
+</div>
+
+<div class="avoid-break">
+  <h3>Out-of-Distribution Operating Point</h3>
+  <p>
+  Thresholds calibrated to keep 95% of <em>laboratory</em> leaves are strict for field photographs, which are naturally less confident. The application is served with a more permissive setting (top-class probability at least {dep_msp}), in force since real-world uploads were being refused. Through the full pipeline on the same photographs, the two settings trade correct diagnoses against confident wrong ones:
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2">Condition</th>
+        <th colspan="3" style="text-align:center;">Calibrated (strict)</th>
+        <th colspan="3" style="text-align:center;">In force (permissive)</th>
+      </tr>
+      <tr>
+        <th class="numeric">right</th><th class="numeric">wrong</th><th class="numeric">not identified</th>
+        <th class="numeric">right</th><th class="numeric">wrong</th><th class="numeric">not identified</th>
+      </tr>
+    </thead>
+    <tbody>
+      {ood_rows}
+    </tbody>
+  </table>
+  <div style="font-size: 7.5pt; color: #64748b; font-style: italic;">
+    <em>right</em>/<em>wrong</em>: answers shown with status ok. <em>not identified</em>: flagged out-of-distribution, with the closest match still shown. The strict setting removes most confident wrong answers but refuses many correct photographs.
+  </div>
 </div>
 
 <div class="avoid-break">
@@ -1261,7 +1359,7 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
     <li><strong>Two-Stage Object Detection (YOLOv10 / RT-DETR):</strong> Incorporate an upstream bounding-box detector to crop individual leaves out of messy canopy photographs before classification.</li>
     <li><strong>In-Field Active Learning:</strong> Deploy mobile edge instances allowing farmers to flag inaccurate predictions and upload verified field images to periodically fine-tune the backbone.</li>
     <li><strong>Multi-Lingual Farmer Interface:</strong> Expand disease advisory content in Hindi, Spanish, Swahili, and regional agricultural dialects.</li>
-    <li><strong>On-Device Mobile Deployment (TFLite / ONNX Mobile):</strong> Quantize the 15.6 MB ONNX model to 8-bit integer weights (INT8 ~4 MB) to run directly inside offline native mobile applications.</li>
+    <li><strong>On-Device Mobile Deployment (TFLite / ONNX Mobile):</strong> Quantize the {dep_size} MB ONNX model to 8-bit integer weights (INT8 ~4 MB) to run directly inside offline native mobile applications.</li>
   </ul>
 </div>
 
@@ -1275,8 +1373,8 @@ This project demonstrates that deploying deep learning vision models for agricul
 </p>
 <ol>
   <li><strong>Controlled Scientific Rigor:</strong> 18 benchmark architectures, ablation study with noise-floor benchmarking, and 3-way split protocol.</li>
-  <li><strong>Pareto-Optimal Selection:</strong> EfficientNet-B0 achieving <strong>99.06% accuracy, 99.04% Macro F1</strong> with small size (15.6 MB) and fast CPU inference (19.5 ms).</li>
-  <li><strong>Production Safety & Trust:</strong> Image quality filtering, 95% TPR Out-of-Distribution rejection, and post-hoc temperature scaling achieving an unprecedented <strong>0.22% Expected Calibration Error</strong>.</li>
+  <li><strong>Measured Model Selection:</strong> {dep_label} achieving <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1</strong> with small size ({dep_size} MB) and fast CPU inference (~{inference_ms} ms), trained with field-condition augmentation so that it holds up on field-style photographs.</li>
+  <li><strong>Production Safety & Trust:</strong> Image quality filtering, a dust/soil/sand detector, out-of-distribution rejection, and post-hoc temperature scaling bringing Expected Calibration Error down to <strong>{dep_ece_cal}</strong>.</li>
   <li><strong>Cloud Engineering Excellence:</strong> A single-container multi-stage architecture powered by ONNX Runtime, effortlessly fitting into Render's 512 MB free tier with 4&times; safety headroom.</li>
 </ol>
 <p>

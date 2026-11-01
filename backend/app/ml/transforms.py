@@ -53,23 +53,26 @@ def build_train_transform(
     production run, ``strong`` when over-fitting is observed, and ``field`` -
     ``medium`` plus :class:`app.ml.field_augment.FieldConditions` (soil and
     foliage backdrops, small-in-frame leaves, directional light, blur, noise,
-    JPEG) - to close the gap between lab and field photographs.
+    JPEG) - to close the gap between lab and field photographs. ``field_mild``
+    is the same with half the images altered instead of 70%, trading a little
+    field robustness for less lab accuracy lost.
     """
-    if strength not in {"light", "medium", "strong", "field"}:
+    if strength not in {"light", "medium", "strong", "field", "field_mild"}:
         raise ValueError(f"Unknown augmentation strength {strength!r}")
 
-    geometry = "medium" if strength == "field" else strength
+    is_field = strength in ("field", "field_mild")
+    geometry = "medium" if is_field else strength
     scale = {"light": (0.85, 1.0), "medium": (0.7, 1.0), "strong": (0.55, 1.0)}[geometry]
     rotation = {"light": 15, "medium": 25, "strong": 35}[geometry]
     jitter = {"light": 0.12, "medium": 0.22, "strong": 0.32}[geometry]
 
     steps: list = []
-    if strength == "field":
+    if is_field:
         from app.ml.field_augment import FieldConditions
 
         # First, on the full-resolution PIL image, so later crops and rotations
         # apply to the composed field scene rather than to the bare leaf.
-        steps.append(FieldConditions())
+        steps.append(FieldConditions(p=0.5 if strength == "field_mild" else 0.7))
     steps += [
         # RandomResizedCrop gives scale + translation + aspect jitter in one op.
         T.RandomResizedCrop(image_size, scale=scale, ratio=(0.85, 1.18)),

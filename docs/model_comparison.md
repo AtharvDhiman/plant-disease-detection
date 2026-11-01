@@ -4,17 +4,20 @@
 
 # Model comparison
 
-_Generated 2026-10-16 10:42 UTC._
+_Generated 2026-11-01 12:29 UTC._
 
 ## Full metric table
 
 | | Model | Protocol | Accuracy | Precision | Recall | Macro F1 | Top-3 | Params | Size | ms/img | ECE |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **★** | EfficientNet-B0 + CBAM | field_long | 99.68% | 0.9968 | 0.9967 | 0.9967 | 99.98% | 4.26M | 16.4 MB | 18.82 | 0.0437 |
 |  | ResNet50 + CBAM | benchmark | 99.14% | 0.9917 | 0.9914 | 0.9914 | 99.96% | 24.11M | 92.2 MB | 15.93 | 0.0612 |
 |  | ResNet50 | benchmark | 99.12% | 0.9914 | 0.9912 | 0.9912 | 99.93% | 23.59M | 90.2 MB | 14.19 | 0.0614 |
 |  | EfficientNet-B0 | production | 99.06% | 0.9906 | 0.9904 | 0.9904 | 99.94% | 4.06M | 15.6 MB | 18.50 | 0.0500 |
 | **★** | EfficientNet-B0 + CBAM | production | 99.00% | 0.9900 | 0.9898 | 0.9898 | 99.94% | 4.26M | 16.4 MB | 13.17 | 0.0500 |
 | **★** | Custom CNN + CBAM | production | 98.42% | 0.9845 | 0.9842 | 0.9842 | 99.90% | 1.26M | 4.8 MB | 7.41 | 0.0245 |
+|  | EfficientNet-B0 | field | 98.32% | 0.9833 | 0.9829 | 0.9828 | 99.87% | 4.06M | 15.6 MB | 18.07 | 0.0501 |
+| **★** | EfficientNet-B0 + CBAM | field | 98.25% | 0.9828 | 0.9822 | 0.9821 | 99.87% | 4.26M | 16.4 MB | 13.92 | 0.0497 |
 |  | DenseNet121 | benchmark | 97.81% | 0.9781 | 0.9781 | 0.9780 | 99.78% | 6.99M | 27.0 MB | 33.52 | 0.0617 |
 |  | EfficientNet-B0 | benchmark | 97.02% | 0.9707 | 0.9702 | 0.9700 | 99.65% | 4.06M | 15.6 MB | 19.47 | 0.0721 |
 | **★** | EfficientNet-B0 + CBAM | benchmark | 96.82% | 0.9688 | 0.9682 | 0.9681 | 99.63% | 4.26M | 16.4 MB | 17.84 | 0.0727 |
@@ -33,11 +36,14 @@ _Generated 2026-10-16 10:42 UTC._
 
 | Model | Weighted F1 | Top-5 | ROC-AUC (OvR) | Cohen's κ | Val accuracy | Best epoch | Train time |
 |---|---:|---:|---:|---:|---:|---:|---:|
+| EfficientNet-B0 + CBAM | 0.9968 | 99.98% | 0.9999 | 0.9967 | 99.73% | 9 | 73.6 min |
 | ResNet50 + CBAM | 0.9914 | 99.98% | 1.0000 | 0.9912 | 98.95% | 11 | 16.8 min |
 | ResNet50 | 0.9912 | 99.96% | 1.0000 | 0.9910 | 99.04% | 11 | 19.6 min |
 | EfficientNet-B0 | 0.9905 | 99.98% | 1.0000 | 0.9903 | 99.19% | 6 | 57.7 min |
 | EfficientNet-B0 + CBAM | 0.9899 | 99.98% | 1.0000 | 0.9897 | 99.09% | 6 | 63.0 min |
 | Custom CNN + CBAM | 0.9842 | 99.98% | 0.9999 | 0.9838 | 98.58% | 6 | 104.5 min |
+| EfficientNet-B0 | 0.9830 | 99.95% | 0.9999 | 0.9827 | 98.24% | 5 | 46.6 min |
+| EfficientNet-B0 + CBAM | 0.9823 | 99.95% | 0.9999 | 0.9821 | 98.04% | 5 | 50.9 min |
 | DenseNet121 | 0.9780 | 99.98% | 0.9998 | 0.9775 | 98.07% | 12 | 11.3 min |
 | EfficientNet-B0 | 0.9700 | 99.82% | 0.9997 | 0.9694 | 97.06% | 9 | 8.3 min |
 | EfficientNet-B0 + CBAM | 0.9681 | 99.87% | 0.9997 | 0.9673 | 96.97% | 9 | 10.2 min |
@@ -54,7 +60,7 @@ _Generated 2026-10-16 10:42 UTC._
 
 ## Production selection
 
-**Serving:** EfficientNet-B0 (`efficientnet_b0`)
+**Serving:** EfficientNet-B0 + CBAM (`efficientnet_b0_cbam`)
 
 **Criterion:** `f1_macro` — Highest macro F1 on the held-out test split - treats every disease class equally regardless of how many images it has.
 
@@ -64,8 +70,8 @@ _Generated 2026-10-16 10:42 UTC._
 
 | Criterion | Winner |
 |---|---|
-| `f1_macro` | efficientnet_b0 |
-| `accuracy` | efficientnet_b0 |
+| `f1_macro` | efficientnet_b0_cbam |
+| `accuracy` | efficientnet_b0_cbam |
 | `balanced` | place_cbam_last2 |
 | `fastest` | place_cbam_last2 |
 | `smallest` | place_cbam_last2 |

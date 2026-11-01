@@ -79,7 +79,7 @@ def completed_models(protocol_filter: set[str]) -> set[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite", default="research",
-                        choices=[*SUITE_GROUPS, "production", "field"])
+                        choices=[*SUITE_GROUPS, "production", "field", "field_long"])
     parser.add_argument("--models", nargs="*", default=None)
     parser.add_argument("--max-attempts", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=None)

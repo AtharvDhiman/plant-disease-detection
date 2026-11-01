@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-01T07:05:22.367784+00:00",
-  "model": "efficientnet_b0",
-  "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0__prod__9a259f82.pt",
+  "generated_at": "2026-11-01T12:10:21.247836+00:00",
+  "model": "efficientnet_b0_cbam",
+  "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0_cbam__fieldlong__98176ce8.pt",
   "in_distribution": {
     "split": "test_bench",
     "count": 4000,
-    "accuracy": 0.99275
+    "accuracy": 0.997
   },
   "ood_source": {
     "kind": "synthetic_proxies",
@@ -20,64 +20,64 @@
   },
   "selected": {
     "target_tpr": 0.95,
-    "msp_min": 0.15,
-    "entropy_max": 0.85,
-    "energy_max": -4.62461519241333,
+    "msp_min": 0.8946114182472229,
+    "entropy_max": 0.1895107265746073,
+    "energy_max": -5.800341606140137,
     "per_score": {
       "msp": {
         "tpr": 0.95,
-        "fpr": 0.06583333333333333,
-        "ood_detection_rate": 0.9341666666666667
+        "fpr": 0.058333333333333334,
+        "ood_detection_rate": 0.9416666666666667
       },
       "entropy": {
         "tpr": 0.95,
-        "fpr": 0.0675,
-        "ood_detection_rate": 0.9325
+        "fpr": 0.06166666666666667,
+        "ood_detection_rate": 0.9383333333333334
       },
       "energy": {
         "tpr": 0.95,
-        "fpr": 0.27166666666666667,
-        "ood_detection_rate": 0.7283333333333333
+        "fpr": 0.09583333333333334,
+        "ood_detection_rate": 0.9041666666666667
       }
     },
     "distributions": {
       "in_distribution": {
-        "msp_mean": 0.9429515600204468,
-        "entropy_mean": 0.09078096852029086,
-        "energy_mean": -6.554375648498535
+        "msp_mean": 0.9539666175842285,
+        "entropy_mean": 0.08857917996813919,
+        "energy_mean": -6.818260669708252
       },
       "ood": {
-        "msp_mean": 0.40744754672050476,
-        "entropy_mean": 0.6380356209917317,
-        "energy_mean": -4.344792366027832
+        "msp_mean": 0.3649906814098358,
+        "entropy_mean": 0.6871537078342662,
+        "energy_mean": -4.872518539428711
       }
     },
     "method": "msp+entropy"
   },
   "metrics": {
     "auroc": {
-      "Max softmax probability": 0.9752070833333333,
-      "Normalised entropy": 0.9770039583333333,
-      "Free energy": 0.9414502083333334
+      "Max softmax probability": 0.9742880208333333,
+      "Normalised entropy": 0.973050625,
+      "Free energy": 0.9675604166666667
     },
     "detection_rates": {
-      "Max softmax probability": 0.9341666666666667,
-      "Normalised entropy": 0.9325,
-      "Free energy": 0.7283333333333333
+      "Max softmax probability": 0.9416666666666667,
+      "Normalised entropy": 0.9383333333333334,
+      "Free energy": 0.9041666666666667
     },
     "pipeline": {
       "sampled_ood": 400,
       "sampled_in_distribution": 300,
-      "quality_gate_rejects_ood": 0.63,
-      "ood_score_rejects_ood": 0.935,
-      "pipeline_rejects_ood": 0.95,
-      "quality_gate_rejects_real_leaves": 0.02,
+      "quality_gate_rejects_ood": 0.665,
+      "ood_score_rejects_ood": 0.9416666666666667,
+      "pipeline_rejects_ood": 0.9625,
+      "quality_gate_rejects_real_leaves": 0.03,
       "per_family": {
         "extreme": {
           "count": 100,
-          "quality_gate_rejected": 0.51,
-          "ood_score_rejected": 0.81,
-          "pipeline_rejected": 0.87
+          "quality_gate_rejected": 0.64,
+          "ood_score_rejected": 0.76,
+          "pipeline_rejected": 0.88
         },
         "flat": {
           "count": 100,
@@ -93,9 +93,9 @@
         },
         "shuffle": {
           "count": 100,
-          "quality_gate_rejected": 0.01,
-          "ood_score_rejected": 0.93,
-          "pipeline_rejected": 0.93
+          "quality_gate_rejected": 0.02,
+          "ood_score_rejected": 0.97,
+          "pipeline_rejected": 0.97
         }
       },
       "interpretation": "The deployed pipeline runs the image-quality gate before the model, so the end-to-end rejection rate is what a user experiences. The 'quality_gate_rejects_real_leaves' figure is the cost of that gate: the fraction of genuine test photographs it would ask the user to retake."

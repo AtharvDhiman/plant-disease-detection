@@ -76,6 +76,14 @@ def to_row(record: dict) -> dict:
     }
 
 
+def is_full_data(protocol: str | None) -> bool:
+    """Protocols trained on the full split and scored on the 17,572-image test set.
+
+    ``production`` plus every field-augmentation round (``field``, ``field_long``).
+    """
+    return protocol == "production" or str(protocol).startswith("field")
+
+
 def fixed_budget(rows: list[dict]) -> list[dict]:
     """Drop production runs, keeping only the controlled fixed-budget ones.
 
@@ -90,12 +98,14 @@ def fixed_budget(rows: list[dict]) -> list[dict]:
     of one configuration. That inflated threshold then swallowed every real
     finding, the placement result included.
 
-    Note the filter is "not production" rather than "protocol == benchmark":
-    the benchmark, ablation and placement suites carry different protocol tags
-    but share one training budget, schedule and evaluation split, which is
-    exactly what makes them comparable with each other.
+    Note the filter is "not a full-data protocol" rather than "protocol ==
+    benchmark": the benchmark, ablation and placement suites carry different
+    protocol tags but share one training budget, schedule and evaluation split,
+    which is exactly what makes them comparable with each other. ``field`` runs
+    are full-data too (the production protocol plus field augmentation), so they
+    are excluded for the same reason.
     """
-    return [r for r in rows if r.get("protocol") != "production"]
+    return [r for r in rows if not is_full_data(r.get("protocol"))]
 
 
 def estimate_noise_floor(all_rows: list[dict], replicates: list[dict] | None = None) -> dict:

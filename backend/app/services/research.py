@@ -186,7 +186,8 @@ def placement_rows() -> list[dict]:
     a training-budget difference rather than a placement difference.
     """
     return [r for r in benchmark_rows(groups=("placement",))
-            if r.get("protocol") != "production"]
+            if r.get("protocol") != "production"
+            and not str(r.get("protocol")).startswith("field")]
 
 
 def per_class_performance(experiment_id: str | None = None) -> dict | None:

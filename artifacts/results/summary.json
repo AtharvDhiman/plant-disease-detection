@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-08-31T16:14:44.487277+00:00",
-  "experiment_count": 26,
+  "generated_at": "2026-11-01T12:29:32.518213+00:00",
+  "experiment_count": 29,
   "groups": {
-    "benchmark": 17,
+    "benchmark": 20,
     "ablation": 5,
     "placement": 4,
     "production": 4
   },
   "best_accuracy": {
-    "model": "ResNet50 + CBAM",
-    "value": 0.9914473684210526,
-    "model_name": "resnet50_cbam"
+    "model": "EfficientNet-B0 + CBAM",
+    "value": 0.996813111768723,
+    "model_name": "efficientnet_b0_cbam"
   },
   "best_f1_macro": {
-    "model": "ResNet50 + CBAM",
-    "value": 0.9914433568654919,
-    "model_name": "resnet50_cbam"
+    "model": "EfficientNet-B0 + CBAM",
+    "value": 0.9967183044827151,
+    "model_name": "efficientnet_b0_cbam"
   },
   "fastest": {
     "model": "Logistic Regression (hand-crafted features)",
@@ -31,6 +31,13 @@
     {
       "model_name": "efficientnet_b0_cbam",
       "label": "EfficientNet-B0 + CBAM",
+      "accuracy": 0.996813111768723,
+      "f1_macro": 0.9967183044827151,
+      "protocol": "field_long"
+    },
+    {
+      "model_name": "efficientnet_b0_cbam",
+      "label": "EfficientNet-B0 + CBAM",
       "accuracy": 0.9899840655588437,
       "f1_macro": 0.9898100010699992,
       "protocol": "production"
@@ -41,6 +48,13 @@
       "accuracy": 0.9842362849988618,
       "f1_macro": 0.9841949284592842,
       "protocol": "production"
+    },
+    {
+      "model_name": "efficientnet_b0_cbam",
+      "label": "EfficientNet-B0 + CBAM",
+      "accuracy": 0.982529023446392,
+      "f1_macro": 0.9821366618544133,
+      "protocol": "field"
     },
     {
       "model_name": "efficientnet_b0_cbam",
@@ -766,6 +780,87 @@
       "val_accuracy": 0.9877667140825036,
       "seed": 42,
       "num_workers": 0
+    },
+    {
+      "experiment_id": "efficientnet_b0_cbam__field__576cde9b",
+      "model_name": "efficientnet_b0_cbam",
+      "label": "EfficientNet-B0 + CBAM",
+      "group": "benchmark",
+      "protocol": "field",
+      "proposed": true,
+      "accuracy": 0.982529023446392,
+      "precision_macro": 0.9827894805940393,
+      "recall_macro": 0.9822199047153695,
+      "f1_macro": 0.9821366618544133,
+      "f1_weighted": 0.9823438086161728,
+      "top3_accuracy": 0.9987480081948554,
+      "top5_accuracy": 0.9994878215342591,
+      "roc_auc": 0.9998806482529753,
+      "ece": 0.04972911347869775,
+      "parameters": 4261124,
+      "parameters_millions": 4.261124,
+      "model_size_mb": 16.415550231933594,
+      "inference_ms": 13.919740000028469,
+      "training_time_s": 3052.8362319,
+      "training_time_min": 50.880603865,
+      "epochs_run": 6,
+      "val_accuracy": 0.9803698435277383,
+      "seed": 42,
+      "num_workers": 6
+    },
+    {
+      "experiment_id": "efficientnet_b0__field__0de496a5",
+      "model_name": "efficientnet_b0",
+      "label": "EfficientNet-B0",
+      "group": "benchmark",
+      "protocol": "field",
+      "proposed": false,
+      "accuracy": 0.9831550193489642,
+      "precision_macro": 0.9833317373675813,
+      "recall_macro": 0.9828697786649496,
+      "f1_macro": 0.9828076764365036,
+      "f1_weighted": 0.9830055057643673,
+      "top3_accuracy": 0.9987480081948554,
+      "top5_accuracy": 0.9994878215342591,
+      "roc_auc": 0.9998947568788177,
+      "ece": 0.050147813217171266,
+      "parameters": 4056226,
+      "parameters_millions": 4.056226,
+      "model_size_mb": 15.633926391601562,
+      "inference_ms": 18.06937999999718,
+      "training_time_s": 2794.0042125,
+      "training_time_min": 46.566736875,
+      "epochs_run": 6,
+      "val_accuracy": 0.9823613086770981,
+      "seed": 42,
+      "num_workers": 6
+    },
+    {
+      "experiment_id": "efficientnet_b0_cbam__fieldlong__98176ce8",
+      "model_name": "efficientnet_b0_cbam",
+      "label": "EfficientNet-B0 + CBAM",
+      "group": "benchmark",
+      "protocol": "field_long",
+      "proposed": true,
+      "accuracy": 0.996813111768723,
+      "precision_macro": 0.9967834863516986,
+      "recall_macro": 0.9966794521214295,
+      "f1_macro": 0.9967183044827151,
+      "f1_weighted": 0.9968108842118407,
+      "top3_accuracy": 0.9997723651263374,
+      "top5_accuracy": 0.9998292738447531,
+      "roc_auc": 0.9999350613523392,
+      "ece": 0.043659360154584735,
+      "parameters": 4261124,
+      "parameters_millions": 4.261124,
+      "model_size_mb": 16.415550231933594,
+      "inference_ms": 18.823342499999285,
+      "training_time_s": 4418.8,
+      "training_time_min": 73.64666666666668,
+      "epochs_run": 9,
+      "val_accuracy": 0.9972972972972973,
+      "seed": 42,
+      "num_workers": 6
     }
   ],
   "ablation": {

@@ -1,61 +1,61 @@
 {
-  "generated_at": "2026-08-31T16:13:48.486794+00:00",
+  "generated_at": "2026-11-01T12:29:14.138624+00:00",
   "model": {
-    "name": "efficientnet_b0",
-    "label": "EfficientNet-B0",
+    "name": "efficientnet_b0_cbam",
+    "label": "EfficientNet-B0 + CBAM",
     "device": "cuda",
     "image_size": 224,
-    "parameters": 4056226,
-    "size_mb": 15.634
+    "parameters": 4261124,
+    "size_mb": 16.416
   },
   "explain_enabled": true,
   "iterations": 40,
   "model_loading": {
-    "cold_load_ms": 524.14,
-    "first_forward_ms": 515.26,
+    "cold_load_ms": 503.69,
+    "first_forward_ms": 551.76,
     "note": "Loading happens once, in the FastAPI startup hook. No request pays this cost. The first forward pass is measured separately because CUDA kernel initialisation makes it much slower than steady state - which is why the server warms the model at boot."
   },
   "per_request": {
     "quality_ms": {
-      "mean_ms": 2.685,
-      "median_ms": 2.655,
-      "p95_ms": 3.73,
-      "min_ms": 1.93,
-      "max_ms": 4.01,
-      "stdev_ms": 0.432
+      "mean_ms": 13.991,
+      "median_ms": 13.745,
+      "p95_ms": 18.21,
+      "min_ms": 11.46,
+      "max_ms": 19.04,
+      "stdev_ms": 1.566
     },
     "preprocess_ms": {
-      "mean_ms": 2.062,
-      "median_ms": 1.985,
-      "p95_ms": 2.78,
-      "min_ms": 1.6,
-      "max_ms": 2.88,
-      "stdev_ms": 0.289
+      "mean_ms": 1.596,
+      "median_ms": 1.48,
+      "p95_ms": 2.11,
+      "min_ms": 1.33,
+      "max_ms": 2.46,
+      "stdev_ms": 0.284
     },
     "inference_ms": {
-      "mean_ms": 17.639,
-      "median_ms": 17.06,
-      "p95_ms": 21.45,
-      "min_ms": 15.1,
-      "max_ms": 23.45,
-      "stdev_ms": 1.871
+      "mean_ms": 20.647,
+      "median_ms": 20.04,
+      "p95_ms": 24.94,
+      "min_ms": 17.0,
+      "max_ms": 25.56,
+      "stdev_ms": 2.041
     },
     "explain_ms": {
-      "mean_ms": 181.004,
-      "median_ms": 181.565,
-      "p95_ms": 265.09,
+      "mean_ms": 248.128,
+      "median_ms": 238.405,
+      "p95_ms": 369.7,
       "min_ms": 0.0,
-      "max_ms": 281.11,
-      "stdev_ms": 51.822
+      "max_ms": 431.94,
+      "stdev_ms": 76.399
     },
     "total_ms": {
-      "mean_ms": 203.832,
-      "median_ms": 205.08,
-      "p95_ms": 290.12,
-      "min_ms": 25.65,
-      "max_ms": 302.88,
-      "stdev_ms": 51.291
+      "mean_ms": 284.637,
+      "median_ms": 277.8,
+      "p95_ms": 404.2,
+      "min_ms": 35.32,
+      "max_ms": 471.17,
+      "stdev_ms": 76.12
     }
   },
-  "throughput_requests_per_second": 4.91
+  "throughput_requests_per_second": 3.51
 }

@@ -96,6 +96,27 @@ SUITES: dict[str, dict] = {
         "protocol": {**PRODUCTION_PROTOCOL, "augmentation": "field"},
         "tag": "field",
     },
+    "field_long": {
+        # Second round, after the first field run lost 0.75 point of lab accuracy
+        # (99.00% -> 98.25%) and showed validation accuracy still rising at the
+        # last epoch. Three changes aimed at recovering it, made together because
+        # the goal is a better model, not an attribution:
+        #   * 10 epochs instead of 6 (the schedule was cut short, not converged);
+        #   * the whole trunk is fine-tuned, not just the last 3 blocks;
+        #   * field_mild: 50% of images altered instead of 70%.
+        # Only the proposed model is trained - the first round already has the
+        # CBAM-vs-plain control.
+        "models": ["efficientnet_b0_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "augmentation": "field_mild",
+            "epochs": 10,
+            "stage1_epochs": 2,
+            "unfreeze_last_n": None,
+            "early_stopping_patience": 3,
+        },
+        "tag": "fieldlong",
+    },
 }
 
 

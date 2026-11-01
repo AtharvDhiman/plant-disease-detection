@@ -79,7 +79,7 @@ def main() -> int:
     parser.add_argument("--per-class", type=int, default=4,
                         help="Images per disease class (26 disease classes).")
     parser.add_argument("--seed", type=int, default=7)
-    parser.add_argument("--protocols", nargs="+", default=["production", "field"])
+    parser.add_argument("--protocols", nargs="+", default=["production", "field", "field_long"])
     parser.add_argument("--models", nargs="+",
                         default=["efficientnet_b0", "efficientnet_b0_cbam"])
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"],

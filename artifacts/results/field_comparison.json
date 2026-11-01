@@ -1,0 +1,259 @@
+{
+  "per_class": 4,
+  "disease_classes": 26,
+  "seed": 7,
+  "ood_thresholds_from": "efficientnet_b0",
+  "results": {
+    "efficientnet_b0_cbam@production": {
+      "label": "EfficientNet-B0 + CBAM [production]",
+      "experiment_id": "efficientnet_b0_cbam__prod__1e6ba679",
+      "lab_test_accuracy": 0.9899840655588437,
+      "lab_test_f1_macro": 0.9898100010699992,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 97,
+          "ok_wrong": 1
+        },
+        "background": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 90,
+          "ok_wrong": 2
+        },
+        "angle": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 97,
+          "ok_wrong": 2
+        },
+        "distance": {
+          "n": 104,
+          "correct": 9,
+          "ok_right": 3,
+          "ok_wrong": 33
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 96,
+          "ok_wrong": 1
+        },
+        "compression": {
+          "n": 104,
+          "correct": 93,
+          "ok_right": 85,
+          "ok_wrong": 3
+        },
+        "combined": {
+          "n": 104,
+          "correct": 75,
+          "ok_right": 49,
+          "ok_wrong": 13
+        }
+      }
+    },
+    "efficientnet_b0@production": {
+      "label": "EfficientNet-B0 [production]",
+      "experiment_id": "efficientnet_b0__prod__9a259f82",
+      "lab_test_accuracy": 0.9905531527430003,
+      "lab_test_f1_macro": 0.990374410917501,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 97,
+          "ok_wrong": 1
+        },
+        "background": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 91,
+          "ok_wrong": 2
+        },
+        "angle": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 97,
+          "ok_wrong": 2
+        },
+        "distance": {
+          "n": 104,
+          "correct": 7,
+          "ok_right": 4,
+          "ok_wrong": 39
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 96,
+          "ok_wrong": 1
+        },
+        "compression": {
+          "n": 104,
+          "correct": 93,
+          "ok_right": 82,
+          "ok_wrong": 3
+        },
+        "combined": {
+          "n": 104,
+          "correct": 73,
+          "ok_right": 48,
+          "ok_wrong": 11
+        }
+      }
+    },
+    "efficientnet_b0_cbam@field": {
+      "label": "EfficientNet-B0 + CBAM [field]",
+      "experiment_id": "efficientnet_b0_cbam__field__576cde9b",
+      "lab_test_accuracy": 0.982529023446392,
+      "lab_test_f1_macro": 0.9821366618544133,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 96,
+          "ok_wrong": 2
+        },
+        "background": {
+          "n": 104,
+          "correct": 98,
+          "ok_right": 90,
+          "ok_wrong": 3
+        },
+        "angle": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 96,
+          "ok_wrong": 2
+        },
+        "distance": {
+          "n": 104,
+          "correct": 61,
+          "ok_right": 47,
+          "ok_wrong": 21
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 98,
+          "ok_right": 95,
+          "ok_wrong": 1
+        },
+        "compression": {
+          "n": 104,
+          "correct": 92,
+          "ok_right": 85,
+          "ok_wrong": 2
+        },
+        "combined": {
+          "n": 104,
+          "correct": 92,
+          "ok_right": 75,
+          "ok_wrong": 8
+        }
+      }
+    },
+    "efficientnet_b0@field": {
+      "label": "EfficientNet-B0 [field]",
+      "experiment_id": "efficientnet_b0__field__0de496a5",
+      "lab_test_accuracy": 0.9831550193489642,
+      "lab_test_f1_macro": 0.9828076764365036,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 95,
+          "ok_wrong": 2
+        },
+        "background": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 91,
+          "ok_wrong": 2
+        },
+        "angle": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 96,
+          "ok_wrong": 2
+        },
+        "distance": {
+          "n": 104,
+          "correct": 65,
+          "ok_right": 49,
+          "ok_wrong": 22
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 95,
+          "ok_wrong": 2
+        },
+        "compression": {
+          "n": 104,
+          "correct": 93,
+          "ok_right": 85,
+          "ok_wrong": 3
+        },
+        "combined": {
+          "n": 104,
+          "correct": 90,
+          "ok_right": 74,
+          "ok_wrong": 6
+        }
+      }
+    },
+    "efficientnet_b0_cbam@field_long": {
+      "label": "EfficientNet-B0 + CBAM [field_long]",
+      "experiment_id": "efficientnet_b0_cbam__fieldlong__98176ce8",
+      "lab_test_accuracy": 0.996813111768723,
+      "lab_test_f1_macro": 0.9967183044827151,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 97,
+          "ok_wrong": 1
+        },
+        "background": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 94,
+          "ok_wrong": 0
+        },
+        "angle": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 98,
+          "ok_wrong": 1
+        },
+        "distance": {
+          "n": 104,
+          "correct": 95,
+          "ok_right": 81,
+          "ok_wrong": 3
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 98,
+          "ok_wrong": 1
+        },
+        "compression": {
+          "n": 104,
+          "correct": 97,
+          "ok_right": 90,
+          "ok_wrong": 1
+        },
+        "combined": {
+          "n": 104,
+          "correct": 103,
+          "ok_right": 85,
+          "ok_wrong": 1
+        }
+      }
+    }
+  },
+  "caveat": "Field-trained models were trained with augmentation imitating the same kinds of condition, through different generators, so this is not a fully independent test for them. Real field photographs are."
+}

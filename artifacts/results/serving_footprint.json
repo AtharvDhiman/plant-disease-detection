@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-11-01T12:26:02.727528+00:00",
+  "model": "EfficientNet-B0 + CBAM",
+  "threads": 1,
+  "inference_ms_median": 17.99,
+  "pipeline_ms_median_no_explain": 34.5,
+  "explain_ms_median": 92.62,
+  "resident_mb_after_requests": 113.4,
+  "resident_mb_before_model": 53.9,
+  "host": {
+    "cpu_count": 12,
+    "note": "Developer machine, not the free host; the free host's shared CPU is slower."
+  }
+}
