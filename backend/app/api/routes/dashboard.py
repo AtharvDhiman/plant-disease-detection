@@ -113,7 +113,7 @@ def dashboard(
     ).scalars().all()
 
     manifest = research.production_manifest()
-    benchmark = research.benchmark_rows()
+    benchmark = research.fixed_budget_rows()
     best_model = max(benchmark, key=lambda r: r["accuracy"] or 0) if benchmark else None
 
     return {
@@ -191,7 +191,7 @@ def dashboard(
 def _empty_dashboard(days: int) -> dict:
     """Shape-compatible response for a fresh install with no history yet."""
     manifest = research.production_manifest()
-    benchmark = research.benchmark_rows()
+    benchmark = research.fixed_budget_rows()
     best_model = max(benchmark, key=lambda r: r["accuracy"] or 0) if benchmark else None
     return {
         "totals": {

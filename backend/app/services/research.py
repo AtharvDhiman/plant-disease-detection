@@ -177,6 +177,22 @@ def ablation_rows() -> list[dict]:
     return [rows[name] for name in order if name in rows]
 
 
+def is_full_data(row: dict) -> bool:
+    """Trained on the full split and scored on the 17,572-image test set.
+
+    The production protocol plus every field-augmentation round. These are not
+    comparable with the fixed-budget benchmark rows, which were trained on a
+    subset and scored on a 4,560-image split.
+    """
+    protocol = str(row.get("protocol"))
+    return protocol == "production" or protocol.startswith("field")
+
+
+def fixed_budget_rows() -> list[dict]:
+    """Benchmark rows that share one training budget and evaluation split."""
+    return [r for r in benchmark_rows() if not is_full_data(r)]
+
+
 def placement_rows() -> list[dict]:
     """The CBAM placement variants, fixed-budget runs only.
 
@@ -185,9 +201,7 @@ def placement_rows() -> list[dict]:
     placement chart - four bars for three placements, with the taller one being
     a training-budget difference rather than a placement difference.
     """
-    return [r for r in benchmark_rows(groups=("placement",))
-            if r.get("protocol") != "production"
-            and not str(r.get("protocol")).startswith("field")]
+    return [r for r in benchmark_rows(groups=("placement",)) if not is_full_data(r)]
 
 
 def per_class_performance(experiment_id: str | None = None) -> dict | None:

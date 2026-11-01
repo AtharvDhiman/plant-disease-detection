@@ -400,6 +400,23 @@ def test_dashboard(client):
     assert len(body["confidence_histogram"]) > 0
 
 
+def test_dashboard_best_benchmark_is_a_fixed_budget_run(client):
+    """"Benchmark" means the controlled subset protocol. A full-data run (production
+    or field) is scored on a different, larger test set and must not appear as the
+    benchmark winner, however accurate it is."""
+    from app.services import research
+
+    fixed = research.fixed_budget_rows()
+    if not fixed:
+        pytest.skip("No benchmark results in this checkout")
+    assert all(not research.is_full_data(row) for row in fixed)
+
+    model = client.get("/api/dashboard").json()["model"]
+    best = max(fixed, key=lambda row: row["accuracy"] or 0)
+    assert model["best_benchmark_model"] == best["label"]
+    assert model["best_benchmark_accuracy"] == best["accuracy"]
+
+
 def test_figures_listing(client):
     body = client.get("/api/figures").json()
     assert isinstance(body, dict)
