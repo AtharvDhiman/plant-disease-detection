@@ -26,7 +26,6 @@ or the evaluation.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -40,6 +39,7 @@ import torch  # noqa: E402
 from config import TrainConfig, probe_hardware  # noqa: E402
 from evaluate import evaluate_checkpoint  # noqa: E402
 from metrics import plot_training_curves  # noqa: E402
+from resume import history_from_log  # noqa: E402
 from run_experiments import SUITES  # noqa: E402
 from tracker import ExperimentTracker  # noqa: E402
 from trainer import TrainResult, save_history  # noqa: E402
@@ -47,36 +47,6 @@ from trainer import TrainResult, save_history  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.ml.architectures import MODEL_ZOO, build_model, count_parameters, model_size_mb  # noqa: E402
 from app.ml.datasets import load_split_config  # noqa: E402
-
-
-def history_from_log(log_path: Path, experiment_id: str, model_name: str) -> dict:
-    """Epoch rows logged after this experiment's start line."""
-    history = {"epoch": [], "train_loss": [], "train_acc": [], "val_loss": [],
-               "val_acc": [], "lr": [], "epoch_time_s": []}
-    started = False
-    for raw in log_path.read_text(encoding="utf-8").splitlines():
-        try:
-            entry = json.loads(raw)
-        except json.JSONDecodeError:
-            continue
-        message = str(entry.get("message", ""))
-        if entry.get("experiment_id") == experiment_id and "training" in message:
-            started = True
-            history = {key: [] for key in history}      # a restart begins again
-            continue
-        if not started:
-            continue
-        if message.startswith("[") and "training" in message:
-            break                                        # the next experiment began
-        if message.startswith("epoch ") and entry.get("model") == model_name:
-            history["epoch"].append(int(message.split()[1].split("/")[0]))
-            history["train_loss"].append(entry["train_loss"])
-            history["train_acc"].append(entry["train_acc"])
-            history["val_loss"].append(entry["val_loss"])
-            history["val_acc"].append(entry["val_acc"])
-            history["lr"].append(float(entry["lr"]))
-            history["epoch_time_s"].append(entry["sec"])
-    return history
 
 
 def main() -> int:

@@ -79,12 +79,17 @@ def completed_models(protocol_filter: set[str]) -> set[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite", default="research",
-                        choices=[*SUITE_GROUPS, "production", "field", "field_long"])
+                        choices=[*SUITE_GROUPS, "production", "field", "field_long",
+                                 "field_long_resnet50"])
     parser.add_argument("--models", nargs="*", default=None)
     parser.add_argument("--max-attempts", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=None)
     parser.add_argument("--cooldown", type=int, default=20,
                         help="Seconds to wait between attempts, letting memory settle.")
+    parser.add_argument("--resume-experiment-id", default=None,
+                        help="Continue this interrupted run from its best checkpoint instead of "
+                             "starting at epoch 1; passed on every attempt, so a further "
+                             "interruption resumes from the newer checkpoint.")
     args = parser.parse_args()
 
     settings.ensure_dirs()
@@ -107,6 +112,8 @@ def main() -> int:
         command += ["--models", *args.models]
     if args.num_workers is not None:
         command += ["--num-workers", str(args.num_workers)]
+    if args.resume_experiment_id:
+        command += ["--resume-experiment-id", args.resume_experiment_id]
 
     env = {**os.environ, "KMP_DUPLICATE_LIB_OK": "TRUE", "PYTHONUNBUFFERED": "1",
            "PYTHONWARNINGS": "ignore"}

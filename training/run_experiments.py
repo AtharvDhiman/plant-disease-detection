@@ -33,6 +33,7 @@ from config import (  # noqa: E402
 )
 from evaluate import evaluate_checkpoint  # noqa: E402
 from metrics import plot_training_curves  # noqa: E402
+from resume import history_from_log  # noqa: E402
 from tracker import ExperimentTracker  # noqa: E402
 from trainer import save_history, train_model  # noqa: E402
 
@@ -117,7 +118,58 @@ SUITES: dict[str, dict] = {
         },
         "tag": "fieldlong",
     },
+    "field_long_resnet50": {
+        # ResNet50 + CBAM was the most accurate model in the fixed-budget
+        # benchmark (99.14%) but has never been trained on the full data, so it
+        # cannot be compared with the served EfficientNet-B0 + CBAM. This gives
+        # it the identical field_long recipe - same data, epochs, augmentation,
+        # schedule and seed - so a difference in test accuracy is the
+        # architecture and nothing else.
+        "models": ["resnet50_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "augmentation": "field_mild",
+            "epochs": 10,
+            "stage1_epochs": 2,
+            "unfreeze_last_n": None,
+            "early_stopping_patience": 3,
+        },
+        "tag": "fieldlongr50",
+    },
 }
+
+
+RESUME_MUST_MATCH = ("epochs", "learning_rate", "weight_decay", "augmentation", "unfreeze_last_n",
+                     "stage1_epochs", "stage2_lr_scale", "image_size", "seed", "label_smoothing",
+                     "optimizer", "scheduler", "train_split", "val_split", "test_split")
+
+
+def prepare_resume(resume_id: str, configs: list) -> dict[str, dict]:
+    """Validate a resume request and point the matching config at its checkpoint.
+
+    The experiment id embeds a hash of the whole config, including the DataLoader
+    worker count, which depends on free memory at launch and so can differ after a
+    restart. Resuming therefore adopts the original id as the run's label rather
+    than recomputing it - but only after checking that every setting that shapes
+    the *training* matches what the checkpoint was trained with.
+    """
+    checkpoint = settings.checkpoints_dir / f"{resume_id}.pt"
+    if not checkpoint.is_file():
+        raise SystemExit(f"No checkpoint to resume from: {checkpoint}")
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    saved = payload["config"]
+    for config in configs:
+        if saved.get("model_name") != config.model_name:
+            continue
+        current = config.to_dict()
+        mismatch = {key: (saved.get(key), current.get(key)) for key in RESUME_MUST_MATCH
+                    if saved.get(key) != current.get(key)}
+        if mismatch:
+            raise SystemExit(f"Cannot resume {resume_id}: the suite's settings differ from "
+                             f"those the checkpoint was trained with: {mismatch}")
+        config.experiment_id = resume_id
+        return {config.model_name: {"checkpoint": checkpoint, "epoch": int(payload["epoch"])}}
+    raise SystemExit(f"No model in this suite matches checkpoint {resume_id}.")
 
 
 def run_suite(
@@ -130,6 +182,7 @@ def run_suite(
     overrides: dict,
     worker_override: int | None = None,
     seed_override: int | None = None,
+    resume_id: str | None = None,
 ) -> list[dict]:
     """Train + evaluate every model in one suite; returns the new records."""
     suite = SUITES[suite_name]
@@ -156,6 +209,8 @@ def run_suite(
             config.model_name, suite["tag"], config.to_dict()
         )
 
+    resume_for = prepare_resume(resume_id, configs) if resume_id else {}
+
     save_configs(configs, settings.results_dir / f"configs_{suite_name}.json")
     log.info(f"Suite '{suite_name}'", fields={"models": len(configs), "device": str(device)})
 
@@ -168,16 +223,33 @@ def run_suite(
             records.append(tracker.get(config.experiment_id))
             continue
 
-        log.info(
-            f"[{index}/{len(configs)}] training {spec.label}",
-            fields={"experiment_id": config.experiment_id, "batch": config.batch_size,
-                    "img": config.image_size, "epochs": config.epochs,
-                    "split": config.train_split},
-        )
+        resume = None
+        if config.model_name in resume_for:
+            # Read the earlier epochs back from the log BEFORE announcing the
+            # resume, so the announcement cannot be mistaken for a fresh start.
+            carried = history_from_log(settings.logs_dir / "experiments.log",
+                                       config.experiment_id, config.model_name)
+            resume = {"checkpoint": resume_for[config.model_name]["checkpoint"],
+                      "history": carried}
+            log.info(
+                f"[{index}/{len(configs)}] resuming {spec.label} after epoch "
+                f"{resume_for[config.model_name]['epoch']}",
+                fields={"experiment_id": config.experiment_id, "batch": config.batch_size,
+                        "img": config.image_size, "epochs": config.epochs,
+                        "split": config.train_split},
+            )
+        else:
+            log.info(
+                f"[{index}/{len(configs)}] training {spec.label}",
+                fields={"experiment_id": config.experiment_id, "batch": config.batch_size,
+                        "img": config.image_size, "epochs": config.epochs,
+                        "split": config.train_split},
+            )
         try:
             result = train_model(
                 config, split_config, settings.checkpoints_dir,
                 tensorboard_dir=settings.logs_dir / "tensorboard", device=device,
+                resume=resume,
             )
         except torch.cuda.OutOfMemoryError:
             torch.cuda.empty_cache()
@@ -214,7 +286,13 @@ def run_suite(
             "label": spec.label,
             "group": spec.group,
             "proposed": spec.proposed,
-            "notes": spec.notes,
+            "notes": spec.notes if result.resumed_from_epoch is None else (
+                f"{spec.notes} Interrupted by a machine restart after epoch "
+                f"{result.resumed_from_epoch} and resumed from that checkpoint with a fresh "
+                "optimiser state (moments are not stored in checkpoints), so it is close to, "
+                "not identical to, an uninterrupted run. Earlier-epoch history is "
+                "reconstructed from the training log.").strip(),
+            "resumed_from_epoch": result.resumed_from_epoch,
             "protocol": suite_name,
             "dataset_version": split_config.get("created_at"),
             "config": config.to_dict(),
@@ -264,6 +342,10 @@ def main() -> int:
                         help="Override the split config seed. Used to train seed replicates of the "
                              "same architecture, which measure how much of an accuracy gap between "
                              "two models is initialisation noise rather than architecture.")
+    parser.add_argument("--resume-experiment-id", default=None,
+                        help="Continue an interrupted run from its best checkpoint "
+                             "(models/checkpoints/<id>.pt) instead of starting at epoch 1. "
+                             "See training/resume.py for what is and is not restored.")
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--image-size", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
@@ -312,7 +394,7 @@ def main() -> int:
         all_records.extend(
             run_suite(suite_name, args.models, args.force, device, split_config, tracker,
                       overrides, worker_override=args.num_workers,
-                      seed_override=args.seed)
+                      seed_override=args.seed, resume_id=args.resume_experiment_id)
         )
 
     print("\n" + "=" * 108)

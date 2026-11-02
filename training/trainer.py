@@ -23,6 +23,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import TrainConfig
+from resume import fast_forward
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -164,6 +165,11 @@ class TrainResult:
     trainable_parameters: int
     model_size_mb: float
     stopped_early: bool
+    # The epoch the run resumed after, when it continued from a saved checkpoint
+    # instead of starting at epoch 1. Optimiser moments are not stored in
+    # checkpoints, so such a run is close to, not identical to, an uninterrupted
+    # one (see training/resume.py).
+    resumed_from_epoch: int | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -333,11 +339,16 @@ def train_model(
     tensorboard_dir: Path | None = None,
     device: torch.device | None = None,
     progress_every: int = 1,
+    resume: dict | None = None,
 ) -> TrainResult:
-    """Train one model end to end, retrying without worker processes if needed."""
+    """Train one model end to end, retrying without worker processes if needed.
+
+    ``resume`` is ``{"checkpoint": Path, "history": dict}``: continue from that
+    best-so-far checkpoint instead of starting at epoch 1.
+    """
     try:
         return _train_model(config, split_config, checkpoints_dir, tensorboard_dir,
-                            device, progress_every)
+                            device, progress_every, resume)
     except Exception as exc:  # noqa: BLE001 - re-raised below unless it is the known case
         if config.num_workers == 0 or not is_worker_startup_failure(exc):
             raise
@@ -350,7 +361,7 @@ def train_model(
         )
         config.num_workers = 0
         return _train_model(config, split_config, checkpoints_dir, tensorboard_dir,
-                            device, progress_every)
+                            device, progress_every, resume)
 
 
 def _train_model(
@@ -360,6 +371,7 @@ def _train_model(
     tensorboard_dir: Path | None = None,
     device: torch.device | None = None,
     progress_every: int = 1,
+    resume: dict | None = None,
 ) -> TrainResult:
     """Train one model end to end and return its result record."""
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -424,7 +436,54 @@ def _train_model(
     stopped_early = False
     started = time.perf_counter()
 
-    for epoch in range(1, config.epochs + 1):
+    start_epoch = 1
+    resumed_from: int | None = None
+    prior_time = 0.0
+    if resume is not None:
+        # Continue from the best-so-far checkpoint. See training/resume.py for what
+        # is and is not restored (the optimiser's moments are not).
+        payload = torch.load(resume["checkpoint"], map_location=device, weights_only=False)
+        model.load_state_dict(payload["model_state_dict"])
+        resumed_from = int(payload["epoch"])
+        start_epoch = resumed_from + 1
+        best_val_acc = float(payload["val_accuracy"])
+        best_val_loss = float(payload["val_loss"])
+        best_epoch = resumed_from
+        # The checkpoint is the BEST epoch, which can be earlier than the last one
+        # the log shows (validation did not improve after it). Anything past the
+        # checkpoint is redone, so drop those rows from the carried-over history.
+        carried = resume.get("history") or {}
+        keep = [i for i, number in enumerate(carried.get("epoch", [])) if number <= resumed_from]
+        for key in ("epoch", "train_loss", "train_acc", "val_loss", "val_acc", "lr",
+                    "epoch_time_s"):
+            history[key] = [carried[key][i] for i in keep] if key in carried else []
+        if history["epoch"] != list(range(1, resumed_from + 1)):
+            log.warning("Carried-over history is incomplete",
+                        fields={"model": config.model_name, "have": history["epoch"],
+                                "expected_through": resumed_from})
+        prior_time = sum(history["epoch_time_s"])
+
+        steps_per_epoch = len(train_loader)
+        if two_stage and start_epoch > config.stage1_epochs + 1:
+            # The run was already fine-tuning: rebuild stage 2 exactly as the loop
+            # below would have when it reached it.
+            model.set_backbone_trainable(True, last_n=config.unfreeze_last_n)
+            optimizer = make_optimizer(config.learning_rate * config.stage2_lr_scale)
+            stage2 = TrainConfig.from_dict({**config.to_dict(),
+                                            "epochs": config.epochs - config.stage1_epochs,
+                                            "warmup_epochs": 0})
+            scheduler, granularity = build_scheduler(optimizer, stage2, steps_per_epoch)
+            done_steps = (resumed_from - config.stage1_epochs) * steps_per_epoch
+        else:
+            done_steps = resumed_from * steps_per_epoch
+        if granularity == "step":
+            fast_forward(scheduler, done_steps)
+        log.info(f"Continuing from epoch {resumed_from}",
+                 fields={"model": config.model_name, "best_val_acc": round(best_val_acc, 4),
+                         "next_epoch": start_epoch, "of": config.epochs,
+                         "lr": f"{optimizer.param_groups[0]['lr']:.2e}"})
+
+    for epoch in range(start_epoch, config.epochs + 1):
         if two_stage and epoch == config.stage1_epochs + 1:
             # Stage 2: unfreeze the upper trunk and drop the LR so the pretrained
             # filters are nudged rather than overwritten.
@@ -500,7 +559,7 @@ def _train_model(
                 stopped_early = True
                 break
 
-    training_time = time.perf_counter() - started
+    training_time = time.perf_counter() - started + prior_time
     if writer is not None:
         writer.close()
 
@@ -525,6 +584,7 @@ def _train_model(
         trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),
         model_size_mb=size_mb,
         stopped_early=stopped_early,
+        resumed_from_epoch=resumed_from,
     )
 
 
