@@ -480,6 +480,13 @@ def _train_model(
                                 "expected_through": resumed_from})
         prior_time = sum(history["epoch_time_s"])
 
+        # Without this the loader's generator restarts from the seed and every resumed
+        # epoch replays an earlier epoch's shuffle order and (via the worker seeds,
+        # drawn from it when the workers start) its augmentations. A seed that depends
+        # on the resume point gives fresh draws instead.
+        if train_loader.generator is not None:
+            train_loader.generator.manual_seed(config.seed + 1000 * resumed_from)
+
         steps_per_epoch = len(train_loader)
         if two_stage and start_epoch > config.stage1_epochs + 1:
             # The run was already fine-tuning: rebuild stage 2 exactly as the loop

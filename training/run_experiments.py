@@ -260,6 +260,45 @@ SUITES: dict[str, dict] = {
         },
         "tag": "fieldrealplusr50",
     },
+    # Eight real-photo sources (adds PlantSeg web photos, GVLiD grape and CD&S corn
+    # field photos) plus 500 more PlantVillage photos per class to win back lab
+    # accuracy; continues from the five-source models rather than starting over.
+    "field_real_max": {
+        "models": ["efficientnet_b0_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix4_train",
+            "val_split": "realmix4_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 10,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 4,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "efficientnet_b0_cbam__fieldrealplus__cf5d499f.pt"),
+        },
+        "tag": "fieldrealmax",
+    },
+    "field_real_max_resnet50": {
+        "models": ["resnet50_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix4_train",
+            "val_split": "realmix4_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 10,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 4,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "resnet50_cbam__fieldrealplusr50__a9442307.pt"),
+        },
+        "tag": "fieldrealmaxr50",
+    },
 }
 
 

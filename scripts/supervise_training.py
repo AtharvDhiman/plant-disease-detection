@@ -82,7 +82,8 @@ def main() -> int:
                         choices=[*SUITE_GROUPS, "production", "field", "field_long",
                                  "field_long_resnet50", "field_real", "field_real_resnet50",
                                  "field_real_all", "field_real_all_resnet50",
-                                 "field_real_plus", "field_real_plus_resnet50"])
+                                 "field_real_plus", "field_real_plus_resnet50",
+                                 "field_real_max", "field_real_max_resnet50"])
     parser.add_argument("--models", nargs="*", default=None)
     parser.add_argument("--max-attempts", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=None)

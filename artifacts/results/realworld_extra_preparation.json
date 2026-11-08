@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-08T06:53:49.031921+00:00",
+  "generated_at": "2026-11-08T13:59:39.057380+00:00",
   "sources": {
     "plantpathology2021": {
       "photos_used": 3464,
@@ -96,17 +96,68 @@
         "val": 51,
         "test": 102
       }
+    },
+    "plantseg": {
+      "photos_used": 121,
+      "duplicates_removed": 23,
+      "removed_as_plantdoc_test_near_duplicates": 18,
+      "per_class": {
+        "Pepper,_bell___Bacterial_spot": 35,
+        "Squash___Powdery_mildew": 86
+      },
+      "splits": {
+        "train": 84,
+        "val": 13,
+        "test": 24
+      },
+      "removed_as_already_in_another_source": 1823
+    },
+    "gvlid": {
+      "photos_used": 2238,
+      "duplicates_removed": 1239,
+      "removed_as_plantdoc_test_near_duplicates": 0,
+      "per_class": {
+        "Grape___Black_rot": 99,
+        "Grape___Esca_(Black_Measles)": 886,
+        "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": 161,
+        "Grape___healthy": 1092
+      },
+      "splits": {
+        "train": 1182,
+        "val": 224,
+        "test": 447
+      },
+      "removed_as_already_in_another_source": 0
+    },
+    "cds": {
+      "photos_used": 1020,
+      "duplicates_removed": 0,
+      "removed_as_plantdoc_test_near_duplicates": 0,
+      "per_class": {
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": 523,
+        "Corn_(maize)___Northern_Leaf_Blight": 497
+      },
+      "splits": {
+        "train": 714,
+        "val": 102,
+        "test": 204
+      },
+      "removed_as_already_in_another_source": 0
     }
   },
-  "realmix3": {
-    "train": 27912,
-    "val": 2206,
+  "realmix4": {
+    "train": 48892,
+    "val": 2545,
     "train_cap_per_class": 500,
     "sources": [
       "ccmt",
+      "cds",
+      "gvlid",
       "plantpathology2021",
+      "plantseg",
       "plantwild",
       "potato_field"
-    ]
+    ],
+    "extra_plantvillage_per_class": 500
   }
 }

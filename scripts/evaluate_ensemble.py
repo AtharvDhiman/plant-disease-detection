@@ -37,6 +37,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--experiments", nargs=2, required=True)
     parser.add_argument("--splits", nargs="+", default=["plantdoc_test", "plantdoc_val", "plantwild_val"])
+    parser.add_argument("--out", default="ensemble_eval.json")
     args = parser.parse_args()
 
     ledger = {r["experiment_id"]: r
@@ -78,7 +79,7 @@ def main() -> int:
                   f"top-1 {results[split]['scores'][key]['top1'] * 100:5.1f}%  "
                   f"top-3 {results[split]['scores'][key]['top3'] * 100:5.1f}%", flush=True)
 
-    out = settings.results_dir / "ensemble_eval.json"
+    out = settings.results_dir / args.out
     out.write_text(json.dumps({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "experiments": args.experiments, "labels": labels_of, "splits": results,

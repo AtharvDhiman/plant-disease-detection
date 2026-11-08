@@ -120,6 +120,29 @@ class WithCamHead(torch.nn.Module):
         return logits, torch.relu(self.cam(features))
 
 
+class EnsembleWithCamHead(torch.nn.Module):
+    """An :class:`AveragedEnsemble` whose first member also emits its CAM.
+
+    The first member runs once, through :class:`WithCamHead`, so its logits feed
+    both the average and the heat map. The heat map is that member's Grad-CAM,
+    exactly as the torch backend explains an ensemble.
+    """
+
+    def __init__(self, ensemble: torch.nn.Module) -> None:
+        super().__init__()
+        self.ensemble = ensemble
+        self.head = WithCamHead(ensemble.explain_member)
+
+    def forward(self, x):
+        first, cam = self.head(x)
+        temperatures = self.ensemble.temperatures
+        probabilities = [torch.softmax(first / temperatures[0], dim=1)]
+        probabilities += [torch.softmax(member(x) / temperatures[i], dim=1)
+                          for i, member in enumerate(self.ensemble.members) if i > 0]
+        mean = torch.stack(probabilities).mean(dim=0)
+        return torch.log(mean.clamp_min(1e-12)), cam
+
+
 def export(model: torch.nn.Module, image_size: int, destination: Path,
            with_cam: bool = True) -> bool:
     """Export to ONNX. Returns whether a CAM output was included."""
@@ -129,7 +152,8 @@ def export(model: torch.nn.Module, image_size: int, destination: Path,
     graph, outputs, axes = model, ["logits"], {"logits": {0: "batch"}}
     if with_cam:
         try:
-            graph = WithCamHead(model).eval()
+            graph = (EnsembleWithCamHead(model) if hasattr(model, "explain_member")
+                     else WithCamHead(model)).eval()
             with torch.no_grad():
                 graph(example)
             outputs = ["logits", "cam"]
@@ -175,8 +199,10 @@ def verify_cam(model: torch.nn.Module, onnx_path: Path, image_size: int,
     if len(session.get_outputs()) < 2:
         return float("nan")
 
-    # The same layer the application's torch backend explains, so this checks the
-    # graph against what the app would otherwise have computed.
+    # The same network and layer the application's torch backend explains (an
+    # ensemble's first member), so this checks the graph against what the app
+    # would otherwise have computed.
+    model = getattr(model, "explain_member", model)
     target_layer = model.feature_layer
     worst = 0.0
     for seed in range(trials):

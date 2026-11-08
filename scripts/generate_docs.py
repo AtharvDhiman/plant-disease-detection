@@ -697,13 +697,16 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
               "|---|---|---:|---:|---:|---:|---:|"]
     order = {"production": 0, "field": 1, "field_long": 2, "field_long_resnet50": 3,
              "field_real": 4, "field_real_resnet50": 5, "field_real_all": 6,
-             "field_real_all_resnet50": 7, "field_real_plus": 8, "field_real_plus_resnet50": 9}
+             "field_real_all_resnet50": 7, "field_real_plus": 8, "field_real_plus_resnet50": 9,
+             "field_real_max": 10, "field_real_max_resnet50": 11}
     trained_on = {"field_real": "lab + 1 real-photo dataset, 6 epochs",
                   "field_real_resnet50": "lab + 1 real-photo dataset, 6 epochs",
                   "field_real_all": "lab + 3 real-photo datasets, 6 epochs",
                   "field_real_all_resnet50": "lab + 3 real-photo datasets, 6 epochs",
                   "field_real_plus": "lab + 5 real-photo datasets, 10 epochs",
-                  "field_real_plus_resnet50": "lab + 5 real-photo datasets, 10 epochs"}
+                  "field_real_plus_resnet50": "lab + 5 real-photo datasets, 10 epochs",
+                  "field_real_max": "lab (800/class) + 8 real-photo datasets, 10 epochs",
+                  "field_real_max_resnet50": "lab (800/class) + 8 real-photo datasets, 10 epochs"}
     for experiment_id, r in sorted(results.items(), key=lambda kv: order.get(kv[1]["protocol"], 99)):
         trained = trained_on.get(r["protocol"], "lab photos only")
         low, high = r["top1_ci95"]
@@ -734,9 +737,11 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
         labels = ensemble.get("labels", {})
         ids = ensemble.get("experiments", [])
         lines += ["### A bigger model, and both together\n",
-                  "ResNet50 + CBAM (24 M parameters, 92 MB) was fine-tuned on exactly the same "
-                  "data and schedule. Averaging the two models' predictions was also tried. "
-                  "Top-1 / top-3 on real photos:\n",
+                  "ResNet50 + CBAM (24 M parameters, 92 MB) was fine-tuned on five of the "
+                  "real-photo sources with the same schedule. Averaging its calibrated "
+                  "probabilities with the served model's (`ensemble_cbam`, assembled by "
+                  "`scripts/build_ensemble.py`) was also measured. Top-1 / top-3 on real "
+                  "photos:\n",
                   "| Real-photo split | " + " | ".join(labels.get(i, i) for i in ids)
                   + " | Average of both |",
                   "|---|" + "---:|" * (len(ids) + 1)]
@@ -745,13 +750,36 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
                      for k in [*ids, "ensemble"]]
             lines.append(f"| {split} ({info['n']}) | " + " | ".join(cells) + " |")
         lines += ["",
-                  "On the held-out test photos the two models tie at top-1; averaging adds about "
-                  "a point or two, mostly in top-3. Serving both would roughly double memory and "
-                  "response time on the free host, and ResNet50 alone is about six times larger "
-                  "and several times slower on a CPU for no measurable gain, so the application "
-                  "serves EfficientNet-B0 + CBAM. With a paid host the average of both would be "
-                  "the next step.",
+                  "Alone, the two networks are within a point of each other. Averaged, they are "
+                  "the most accurate configuration measured on real photos - about three points "
+                  "better than either on the PlantDoc test photos and five on PlantWild's "
+                  "validation photos - which puts the system at the top of the 60-76% range "
+                  "published for this benchmark. Serving the average would add the 92 MB "
+                  "ResNet50 to the 16 MB model and multiply CPU time per photo several times on "
+                  "the free host, so the application serves EfficientNet-B0 + CBAM alone; the "
+                  "ensemble is implemented end to end (torch and ONNX) for a host with more "
+                  "memory.",
                   ""]
+
+    new_sources = (extra or {}).get("new_sources") or {}
+    if new_sources.get("splits"):
+        labels = new_sources.get("labels", {})
+        ids = new_sources.get("experiments", [])
+        names = {"gvlid_test": "Vineyard photos (GVLiD test split)",
+                 "cds_test": "Corn-field photos (CD&S test split)"}
+        lines += ["### Photos from the newest field sources\n",
+                  "Two of the sources added last are field collections the earlier models never "
+                  "saw. Top-1 / top-3 on their held-out test splits - same-source tests, so "
+                  "easier than PlantDoc's, but they show what the extra data buys:\n",
+                  "| Held-out photos | " + " | ".join(
+                      labels.get(i, i) + (" (served)" if i == serving else " (previous)")
+                      for i in ids) + " |",
+                  "|---|" + "---:|" * len(ids)]
+        for split, info in new_sources["splits"].items():
+            cells = [f"{pct(info['scores'][k]['top1'], 1)} / {pct(info['scores'][k]['top3'], 1)}"
+                     for k in ids]
+            lines.append(f"| {names.get(split, split)} ({info['n']}) | " + " | ".join(cells) + " |")
+        lines.append("")
 
     sources = get(extra or {}, "splits.external_sources") or {}
     extra_prep = (extra or {}).get("extra_prep") or {}
@@ -770,8 +798,9 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
             lines.append(f"| [{name}]({info.get('url')}) | {num(used.get(name))} | "
                          f"{info.get('licence')} | {info.get('citation')} |")
         lines += ["",
-                  "PlantWild's licence (CC BY-NC-ND 4.0) is non-commercial: a model fine-tuned "
-                  "on it should be used for research and education, which is this project's "
+                  "PlantWild (CC BY-NC-ND 4.0) and PlantSeg (CC BY-NC 4.0) are licensed for "
+                  "non-commercial use only, and CD&S states no licence: a model fine-tuned on "
+                  "them should be used for research and education, which is this project's "
                   "purpose. No photos from any source are committed to this repository.",
                   ""]
 
@@ -785,15 +814,26 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
                   f"was chosen on {num(op.get('photos'))} real validation photographs "
                   "(`scripts/choose_real_operating_point.py`; never the PlantDoc test split) as "
                   f"the most permissive one at which answers shown as a diagnosis are right at "
-                  f"least {pct(op.get('target_precision'), 0)} of the time.\n",
-                  "| Threshold | Shown as diagnosis | Of those, right | Confidently wrong (of all photos) |",
-                  "|---:|---:|---:|---:|"]
+                  f"least {pct(op.get('target_precision'), 0)} of the time"
+                  + (f" - and at least {pct(op.get('web_target_precision'), 0)} on the "
+                     f"{num(op.get('web_photos'))} photos found through web image searches "
+                     "(PlantDoc, PlantWild, PlantSeg) on their own. The field collections are "
+                     "easy, and pooled with them a threshold can look precise overall while "
+                     "letting through confidently wrong answers on exactly the photos people "
+                     "check against a web search; no threshold reaches 90% on the web photos "
+                     "alone, so their floor is 85%, slightly above what the previous model "
+                     "achieved there (84.7%)." if op.get("web_target_precision") else ".")
+                  + "\n",
+                  "| Threshold | Shown as diagnosis | Of those, right | Confidently wrong (of all photos) "
+                  "| Web photos shown | Of those, right |",
+                  "|---:|---:|---:|---:|---:|---:|"]
         rows = [r for r in op.get("sweep", []) if round(r["msp_min"] * 100) % 10 == 0 or r is chosen
                 or abs(r["msp_min"] - chosen["msp_min"]) < 1e-6]
         for r in rows:
             mark = " **(in force)**" if abs(r["msp_min"] - chosen["msp_min"]) < 1e-6 else ""
             lines.append(f"| {r['msp_min']:.2f}{mark} | {pct(r['coverage'], 1)} | "
-                         f"{pct(r['precision'], 1)} | {pct(r['shown_wrong'], 1)} |")
+                         f"{pct(r['precision'], 1)} | {pct(r['shown_wrong'], 1)} | "
+                         f"{pct(r.get('web_coverage'), 1)} | {pct(r.get('web_precision'), 1)} |")
         if at_015:
             lines += ["",
                       f"At the previous setting (0.15) this model would show every real photo as "
@@ -1416,7 +1456,9 @@ def main() -> int:
         "plantdoc_prep": load(settings.results_dir / "plantdoc_preparation.json"),
         "extra_prep": load(settings.results_dir / "realworld_extra_preparation.json"),
         "real_op": load(settings.results_dir / "real_operating_point.json"),
-        "ensemble": load(settings.results_dir / "ensemble_eval.json"),
+        "ensemble": (load(settings.results_dir / "ensemble_max_r50plus.json")
+                     or load(settings.results_dir / "ensemble_eval.json")),
+        "new_sources": load(settings.results_dir / "new_sources_eval.json"),
         "splits": load(settings.splits_path),
     }
 

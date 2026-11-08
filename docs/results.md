@@ -4,7 +4,7 @@
 
 # Results
 
-_Generated 2026-11-08 12:31 UTC from `artifacts/results/experiments.json` (34 completed experiments)._
+_Generated 2026-11-08 17:36 UTC from `artifacts/results/experiments.json` (35 completed experiments)._
 
 ## Headline
 
@@ -15,7 +15,7 @@ _Generated 2026-11-08 12:31 UTC from `artifacts/results/experiments.json` (34 co
 | Fastest inference | Logistic Regression (hand-crafted features) | classical | 0.02 ms/image |
 | Smallest model | Ablation A: CNN | ablation | 4.8 MB |
 | Best proposed (CBAM) model | EfficientNet-B0 + CBAM | field_long | 99.68% accuracy, 0.9967 macro F1 |
-| Serving in the application | EfficientNet-B0 + CBAM | field_real_plus | selected by `f1_macro` |
+| Serving in the application | EfficientNet-B0 + CBAM | field_real_max | selected by `f1_macro` |
 | Evaluated on | held-out test split | — | 17,572 images, 38 classes |
 
 Rows with different protocols are **not** comparable: `benchmark` models were trained on a fixed subset and scored on a 4,560-image split; `production`, `field` and `field_long` models were trained on the full data and scored on 17,572 images.
@@ -41,28 +41,28 @@ The dataset's own `valid` folder is used as the held-out **test** split; validat
 
 ## The deployed model: EfficientNet-B0 + CBAM
 
-Every metric for the model the application serves (`efficientnet_b0_cbam__fieldrealplus__cf5d499f`), on the full held-out test split.
+Every metric for the model the application serves (`efficientnet_b0_cbam__fieldrealmax__b2596c9c`), on the full held-out test split.
 
 | Metric | Value |
 |---|---:|
 | Test images | 17,572 |
-| Accuracy (top-1) | 99.33% |
+| Accuracy (top-1) | 99.60% |
 | Top-3 accuracy | 99.98% |
-| Top-5 accuracy | 99.98% |
-| Balanced accuracy | 99.31% |
-| Macro precision | 0.9933 |
-| Macro recall | 0.9931 |
-| Macro F1 | 0.9931 |
-| Weighted F1 | 0.9933 |
-| Cohen's kappa | 0.9931 |
-| Matthews correlation | 0.9931 |
-| ROC AUC (macro, one-vs-rest) | 0.99993 |
-| Expected calibration error (raw) | 0.0470 |
-| Brier score | 0.0143 |
-| Mean confidence when right / wrong | 94.8% / 65.9% |
-| Inference, batch 1 | 14.02 ms (cuda) |
+| Top-5 accuracy | 99.99% |
+| Balanced accuracy | 99.59% |
+| Macro precision | 0.9960 |
+| Macro recall | 0.9959 |
+| Macro F1 | 0.9959 |
+| Weighted F1 | 0.9960 |
+| Cohen's kappa | 0.9959 |
+| Matthews correlation | 0.9959 |
+| ROC AUC (macro, one-vs-rest) | 0.99996 |
+| Expected calibration error (raw) | 0.0536 |
+| Brier score | 0.0106 |
+| Mean confidence when right / wrong | 94.3% / 68.9% |
+| Inference, batch 1 | 15.12 ms (cuda) |
 
-118 of 17,572 test images are misclassified.
+70 of 17,572 test images are misclassified.
 
 
 ## Per-class accuracy (deployed model)
@@ -71,46 +71,46 @@ Sorted hardest first. Recall is the per-class accuracy: the share of that diseas
 
 | # | Class | Recall (accuracy) | Precision | F1 | Test images |
 |---:|---|---:|---:|---:|---:|
-| 1 | Corn (maize) - Cercospora leaf spot Gray leaf spot | 92.44% | 98.96% | 0.9559 | 410 |
-| 2 | Corn (maize) - Northern Leaf Blight | 98.95% | 94.40% | 0.9662 | 477 |
-| 3 | Tomato - Target Spot | 95.19% | 98.64% | 0.9688 | 457 |
-| 4 | Tomato - Spider mites Two-spotted spider mite | 99.77% | 96.23% | 0.9797 | 435 |
-| 5 | Tomato - Bacterial spot | 98.59% | 97.90% | 0.9824 | 425 |
-| 6 | Tomato - Septoria leaf spot | 99.08% | 97.52% | 0.9829 | 436 |
-| 7 | Tomato - Early blight | 97.29% | 99.57% | 0.9842 | 480 |
-| 8 | Tomato - Late blight | 98.92% | 98.07% | 0.9849 | 463 |
-| 9 | Apple - Apple scab | 99.01% | 99.60% | 0.9930 | 504 |
-| 10 | Tomato - Leaf Mold | 98.94% | 99.79% | 0.9936 | 470 |
-| 11 | Corn (maize) - Common rust | 99.79% | 98.96% | 0.9937 | 477 |
-| 12 | Tomato - Tomato Yellow Leaf Curl Virus | 98.98% | 100.00% | 0.9949 | 490 |
-| 13 | Pepper, bell - Healthy | 99.40% | 99.60% | 0.9950 | 497 |
-| 14 | Apple - Healthy | 99.40% | 99.60% | 0.9950 | 502 |
-| 15 | Grape - Black rot | 99.36% | 100.00% | 0.9968 | 472 |
-| 16 | Grape - Esca (Black Measles) | 100.00% | 99.38% | 0.9969 | 480 |
-| 17 | Tomato - Healthy | 100.00% | 99.38% | 0.9969 | 481 |
-| 18 | Potato - Late blight | 99.59% | 99.79% | 0.9969 | 485 |
-| 19 | Tomato - Tomato mosaic virus | 100.00% | 99.56% | 0.9978 | 448 |
-| 20 | Peach - Bacterial spot | 100.00% | 99.57% | 0.9978 | 459 |
-| 21 | Pepper, bell - Bacterial spot | 100.00% | 99.58% | 0.9979 | 478 |
-| 22 | Cherry (including sour) - Powdery mildew | 99.76% | 100.00% | 0.9988 | 421 |
-| 23 | Peach - Healthy | 100.00% | 99.77% | 0.9988 | 432 |
-| 24 | Strawberry - Leaf scorch | 99.77% | 100.00% | 0.9989 | 444 |
-| 25 | Blueberry - Healthy | 100.00% | 99.78% | 0.9989 | 454 |
-| 26 | Cherry (including sour) - Healthy | 99.78% | 100.00% | 0.9989 | 456 |
-| 27 | Potato - Healthy | 99.78% | 100.00% | 0.9989 | 456 |
-| 28 | Corn (maize) - Healthy | 100.00% | 99.79% | 0.9989 | 465 |
-| 29 | Potato - Early blight | 100.00% | 99.79% | 0.9990 | 485 |
-| 30 | Apple - Black rot | 100.00% | 99.80% | 0.9990 | 497 |
-| 31 | Orange - Haunglongbing (Citrus greening) | 100.00% | 99.80% | 0.9990 | 503 |
-| 32 | Soybean - Healthy | 100.00% | 99.80% | 0.9990 | 505 |
-| 33 | Apple - Cedar apple rust | 100.00% | 100.00% | 1.0000 | 440 |
-| 34 | Grape - Leaf blight (Isariopsis Leaf Spot) | 100.00% | 100.00% | 1.0000 | 430 |
-| 35 | Grape - Healthy | 100.00% | 100.00% | 1.0000 | 423 |
-| 36 | Raspberry - Healthy | 100.00% | 100.00% | 1.0000 | 445 |
-| 37 | Squash - Powdery mildew | 100.00% | 100.00% | 1.0000 | 434 |
-| 38 | Strawberry - Healthy | 100.00% | 100.00% | 1.0000 | 456 |
+| 1 | Corn (maize) - Cercospora leaf spot Gray leaf spot | 95.61% | 98.25% | 0.9691 | 410 |
+| 2 | Corn (maize) - Northern Leaf Blight | 98.11% | 96.30% | 0.9720 | 477 |
+| 3 | Tomato - Target Spot | 96.72% | 100.00% | 0.9833 | 457 |
+| 4 | Tomato - Early blight | 99.17% | 98.55% | 0.9886 | 480 |
+| 5 | Tomato - Spider mites Two-spotted spider mite | 99.54% | 98.41% | 0.9897 | 435 |
+| 6 | Tomato - Bacterial spot | 99.29% | 98.83% | 0.9906 | 425 |
+| 7 | Tomato - Septoria leaf spot | 99.08% | 99.08% | 0.9908 | 436 |
+| 8 | Tomato - Late blight | 99.35% | 99.14% | 0.9924 | 463 |
+| 9 | Tomato - Tomato Yellow Leaf Curl Virus | 99.59% | 99.19% | 0.9939 | 490 |
+| 10 | Apple - Apple scab | 99.01% | 100.00% | 0.9950 | 504 |
+| 11 | Apple - Healthy | 100.00% | 99.01% | 0.9950 | 502 |
+| 12 | Corn (maize) - Common rust | 99.79% | 99.58% | 0.9969 | 477 |
+| 13 | Tomato - Healthy | 100.00% | 99.38% | 0.9969 | 481 |
+| 14 | Potato - Healthy | 100.00% | 99.56% | 0.9978 | 456 |
+| 15 | Potato - Late blight | 99.59% | 100.00% | 0.9979 | 485 |
+| 16 | Cherry (including sour) - Healthy | 99.78% | 100.00% | 0.9989 | 456 |
+| 17 | Corn (maize) - Healthy | 100.00% | 99.79% | 0.9989 | 465 |
+| 18 | Grape - Black rot | 100.00% | 99.79% | 0.9989 | 472 |
+| 19 | Grape - Esca (Black Measles) | 99.79% | 100.00% | 0.9990 | 480 |
+| 20 | Apple - Black rot | 100.00% | 100.00% | 1.0000 | 497 |
+| 21 | Apple - Cedar apple rust | 100.00% | 100.00% | 1.0000 | 440 |
+| 22 | Blueberry - Healthy | 100.00% | 100.00% | 1.0000 | 454 |
+| 23 | Cherry (including sour) - Powdery mildew | 100.00% | 100.00% | 1.0000 | 421 |
+| 24 | Grape - Leaf blight (Isariopsis Leaf Spot) | 100.00% | 100.00% | 1.0000 | 430 |
+| 25 | Grape - Healthy | 100.00% | 100.00% | 1.0000 | 423 |
+| 26 | Orange - Haunglongbing (Citrus greening) | 100.00% | 100.00% | 1.0000 | 503 |
+| 27 | Peach - Bacterial spot | 100.00% | 100.00% | 1.0000 | 459 |
+| 28 | Peach - Healthy | 100.00% | 100.00% | 1.0000 | 432 |
+| 29 | Pepper, bell - Bacterial spot | 100.00% | 100.00% | 1.0000 | 478 |
+| 30 | Pepper, bell - Healthy | 100.00% | 100.00% | 1.0000 | 497 |
+| 31 | Potato - Early blight | 100.00% | 100.00% | 1.0000 | 485 |
+| 32 | Raspberry - Healthy | 100.00% | 100.00% | 1.0000 | 445 |
+| 33 | Soybean - Healthy | 100.00% | 100.00% | 1.0000 | 505 |
+| 34 | Squash - Powdery mildew | 100.00% | 100.00% | 1.0000 | 434 |
+| 35 | Strawberry - Leaf scorch | 100.00% | 100.00% | 1.0000 | 444 |
+| 36 | Strawberry - Healthy | 100.00% | 100.00% | 1.0000 | 456 |
+| 37 | Tomato - Leaf Mold | 100.00% | 100.00% | 1.0000 | 470 |
+| 38 | Tomato - Tomato mosaic virus | 100.00% | 100.00% | 1.0000 | 448 |
 
-18 of 38 classes are recognised with 100% recall; the hardest is **Corn (maize) - Cercospora leaf spot Gray leaf spot** at 92.44%.
+24 of 38 classes are recognised with 100% recall; the hardest is **Corn (maize) - Cercospora leaf spot Gray leaf spot** at 95.61%.
 
 ## Benchmark
 
@@ -142,6 +142,7 @@ Trained on the complete training split at 224 px and scored on the full 17,572-i
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 |  | ResNet50 + CBAM | field_long_resnet50 | 99.74% | 0.9973 | 0.9973 | 0.9973 | 99.98% | 24.11M | 92.2 MB | 11.01 | 0.0472 |
 | **★** | EfficientNet-B0 + CBAM | field_long | 99.68% | 0.9968 | 0.9967 | 0.9967 | 99.98% | 4.26M | 16.4 MB | 18.82 | 0.0437 |
+| **★** | EfficientNet-B0 + CBAM | field_real_max | 99.60% | 0.9960 | 0.9959 | 0.9959 | 99.98% | 4.26M | 16.4 MB | 15.12 | 0.0536 |
 | **★** | EfficientNet-B0 + CBAM | field_real | 99.56% | 0.9956 | 0.9954 | 0.9955 | 99.98% | 4.26M | 16.4 MB | 14.56 | 0.0527 |
 | **★** | EfficientNet-B0 + CBAM | field_real_all | 99.53% | 0.9952 | 0.9952 | 0.9952 | 99.98% | 4.26M | 16.4 MB | 13.35 | 0.0506 |
 | **★** | EfficientNet-B0 + CBAM | field_real_plus | 99.33% | 0.9933 | 0.9931 | 0.9931 | 99.98% | 4.26M | 16.4 MB | 14.02 | 0.0470 |
@@ -196,6 +197,7 @@ Temperature scaling fits one scalar on the validation split. It cannot change wh
 | EfficientNet-B0 | 0.0501 | 0.0021 | 0.577 | +96% |
 | EfficientNet-B0 + CBAM | 0.0506 | 0.0358 | 0.941 | +29% |
 | EfficientNet-B0 + CBAM | 0.0527 | 0.0452 | 0.973 | +14% |
+| EfficientNet-B0 + CBAM | 0.0536 | 0.0532 | 0.999 | +1% |
 | Ablation D: CNN + SE | 0.0582 | 0.0083 | 0.644 | +86% |
 | ResNet50 + CBAM | 0.0612 | 0.0022 | 0.604 | +96% |
 | ResNet50 | 0.0614 | 0.0019 | 0.581 | +97% |
@@ -217,9 +219,9 @@ Calibrated on 4000 held-out test images against 1200 synthetic_proxies samples, 
 
 | Score | AUROC | Threshold | OOD caught |
 |---|---:|---:|---:|
-| Max softmax probability | 0.9583 | 0.8481 | 89.7% |
-| Normalised entropy | 0.9469 | 0.2415 | 82.1% |
-| Free energy | 0.8560 | -5.4262 | 32.0% |
+| Max softmax probability | 0.9715 | 0.8669 | 91.9% |
+| Normalised entropy | 0.9687 | 0.2314 | 91.5% |
+| Free energy | 0.9269 | -6.1543 | 62.4% |
 
 
 ### Whole-pipeline rejection
@@ -229,17 +231,17 @@ The image-quality gate runs *before* the model, so the end-to-end rate is what a
 | Stage | OOD rejected |
 |---|---:|
 | Image-quality gate alone | 66.8% |
-| OOD score alone | 89.8% |
-| **Combined pipeline** | **95.2%** |
+| OOD score alone | 92.0% |
+| **Combined pipeline** | **96.2%** |
 | Cost: genuine leaves rejected | 3.0% |
 
 
 | OOD family | Quality gate | OOD score | Combined |
 |---|---:|---:|---:|
-| extreme | 64.0% | 71.0% | 86.0% |
+| extreme | 64.0% | 75.0% | 89.0% |
 | flat | 100.0% | 100.0% | 100.0% |
-| noise | 100.0% | 98.0% | 100.0% |
-| shuffle | 3.0% | 94.0% | 95.0% |
+| noise | 100.0% | 100.0% | 100.0% |
+| shuffle | 3.0% | 95.0% | 96.0% |
 
 
 > **Caveat.** Synthetic proxies (uniform noise, flat colour fields, tile-shuffled leaves, heavily degraded leaves) are genuinely out of distribution but are easier to reject than real photographs of unrelated subjects. The detection rates below are therefore an upper bound. Re-run with --ood-dir pointing at a real non-leaf corpus for a tighter estimate.
@@ -268,7 +270,8 @@ Every score above comes from PlantVillage's laboratory photographs, and the firs
 | ResNet50 + CBAM | field_long_resnet50 | 10/10 | field_mild | 99.74% | 0.9973 | 46 |  |
 | EfficientNet-B0 + CBAM | field_real | 6/6 | field_mild | 99.56% | 0.9955 | 78 |  |
 | EfficientNet-B0 + CBAM | field_real_all | 6/6 | field_mild | 99.53% | 0.9952 | 83 |  |
-| EfficientNet-B0 + CBAM | field_real_plus | 10/10 | field_mild | 99.33% | 0.9931 | 118 | ✔ |
+| EfficientNet-B0 + CBAM | field_real_plus | 10/10 | field_mild | 99.33% | 0.9931 | 118 |  |
+| EfficientNet-B0 + CBAM | field_real_max | 10/10 | field_mild | 99.60% | 0.9959 | 70 | ✔ |
 | ResNet50 + CBAM | field_real_plus_resnet50 | 10/10 | field_mild | 99.23% | 0.9922 | 136 |  |
 
 `production`: standard augmentation, last 3 blocks fine-tuned, 6 epochs. `field`: field augmentation on 70% of images, otherwise the same schedule. `field_long`: field augmentation on 50% of images, **the whole network fine-tuned**, 10 epochs. All scored on the same 17,572-image test split.
@@ -281,20 +284,21 @@ The same 26 disease classes x 4 held-out leaves, put through each field conditio
 
 | Model | Lab test | Original lab photo | Leaf on a soil background | Photographed off-axis | Leaf small in the frame (far away) | Harsh directional sunlight | Heavy JPEG compression | All of the above (closest to a field photo) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| EfficientNet-B0 [production] | 99.06% | 96.2% (0) | 96.2% (0) | 96.2% (1) | 6.7% (0) | 97.1% (1) | 92.3% (0) | 69.2% (0) |
-| EfficientNet-B0 + CBAM [production] | 99.00% | 96.2% (0) | 96.2% (0) | 96.2% (1) | 8.7% (0) | 97.1% (1) | 92.3% (0) | 71.2% (1) |
-| EfficientNet-B0 [field] | 98.32% | 95.2% (1) | 97.1% (0) | 95.2% (1) | 64.4% (7) | 96.2% (1) | 92.3% (0) | 85.6% (1) |
-| EfficientNet-B0 + CBAM [field] | 98.25% | 95.2% (1) | 95.2% (0) | 96.2% (1) | 60.6% (7) | 95.2% (1) | 91.3% (0) | 87.5% (1) |
-| EfficientNet-B0 + CBAM [field_long] | 99.68% | 96.2% (1) | 99.0% (0) | 97.1% (1) | 94.2% (0) | 97.1% (1) | 96.2% (0) | 98.1% (1) |
-| ResNet50 + CBAM [field_long_resnet50] | 99.74% | 97.1% (0) | 99.0% (0) | 98.1% (0) | 94.2% (1) | 96.2% (0) | 95.2% (0) | 97.1% (2) |
-| EfficientNet-B0 + CBAM [field_real_plus] **←** | 99.33% | 97.1% (0) | 99.0% (0) | 97.1% (0) | 91.3% (3) | 98.1% (0) | 94.2% (2) | 92.3% (1) |
-| ResNet50 + CBAM [field_real_plus_resnet50] | 99.23% | 95.2% (0) | 98.1% (1) | 95.2% (0) | 85.6% (7) | 97.1% (0) | 94.2% (2) | 94.2% (3) |
+| EfficientNet-B0 [production] | 99.06% | 96.2% (0) | 96.2% (0) | 96.2% (0) | 6.7% (0) | 97.1% (0) | 92.3% (0) | 69.2% (0) |
+| EfficientNet-B0 + CBAM [production] | 99.00% | 96.2% (0) | 96.2% (0) | 96.2% (0) | 8.7% (0) | 97.1% (0) | 92.3% (0) | 71.2% (0) |
+| EfficientNet-B0 [field] | 98.32% | 95.2% (0) | 97.1% (0) | 95.2% (0) | 64.4% (4) | 96.2% (1) | 92.3% (0) | 85.6% (1) |
+| EfficientNet-B0 + CBAM [field] | 98.25% | 95.2% (0) | 95.2% (0) | 96.2% (1) | 60.6% (4) | 95.2% (1) | 91.3% (0) | 87.5% (1) |
+| EfficientNet-B0 + CBAM [field_long] | 99.68% | 96.2% (0) | 99.0% (0) | 97.1% (0) | 94.2% (0) | 97.1% (0) | 96.2% (0) | 98.1% (1) |
+| ResNet50 + CBAM [field_long_resnet50] | 99.74% | 97.1% (0) | 99.0% (0) | 98.1% (0) | 94.2% (1) | 96.2% (0) | 95.2% (0) | 97.1% (1) |
+| EfficientNet-B0 + CBAM [field_real_plus] | 99.33% | 97.1% (0) | 99.0% (0) | 97.1% (0) | 91.3% (2) | 98.1% (0) | 94.2% (0) | 92.3% (0) |
+| EfficientNet-B0 + CBAM [field_real_max] **←** | 99.60% | 96.2% (0) | 99.0% (0) | 98.1% (0) | 90.4% (1) | 97.1% (0) | 95.2% (0) | 94.2% (1) |
+| ResNet50 + CBAM [field_real_plus_resnet50] | 99.23% | 95.2% (0) | 98.1% (1) | 95.2% (0) | 85.6% (3) | 97.1% (0) | 94.2% (1) | 94.2% (3) |
 
 n = 104 images per condition. A refusal produces no class and counts as not correct. The row marked **←** is the model the application serves.
 
 ### Why this model serves
 
-Fine-tuned on real field and web photographs from five sources (PlantDoc, PlantWild, Plant Pathology 2021, CCMT, potato field) for 10 epochs. On PlantDoc's held-out real test photos it is right 72.0% of the time against 31.8% for the previous model, while its PlantVillage lab accuracy (99.33%) stays within the 0.5-point limit of the previous model's 99.68%. Real-photo accuracy is what users experience, so it decides.
+Fine-tuned for 10 epochs on real photographs from eight sources (adding GVLiD vineyard and CD&S corn-field photos and PlantSeg web photos to the earlier five) plus 800 PlantVillage photos per class. Lab accuracy rises to 99.60% from the previous model's 99.33%. On PlantDoc's held-out real test photos it ties the previous model (71.6% vs 72.0%, one photo apart), and on held-out vineyard and corn-field photos it is right 98.7% and 98.5% of the time against 32.0% and 58.8%.
 
 See [Accuracy on real photographs](#accuracy-on-real-photographs).
 
@@ -313,13 +317,14 @@ Before any training, 16 PlantDoc training photos were removed because a perceptu
 
 | Model | Trained on | Real photos: top-1 (95% CI) | Top-3 | Shown right | Shown **wrong** | Lab test accuracy |
 |---|---|---:|---:|---:|---:|---:|
-| EfficientNet-B0 | lab photos only | 30.1% (25%–36%) | 52.1% | 8.5% | 7.2% | 99.06% |
-| EfficientNet-B0 + CBAM | lab photos only | 31.8% (26%–38%) | 59.7% | 14.8% | 11.0% | 99.68% |
-| ResNet50 + CBAM | lab photos only | 37.7% (32%–44%) | 66.5% | 24.2% | 18.6% | 99.74% |
-| EfficientNet-B0 + CBAM | lab + 1 real-photo dataset, 6 epochs | 66.5% (60%–72%) | 90.7% | 44.1% | 9.3% | 99.56% |
-| EfficientNet-B0 + CBAM | lab + 3 real-photo datasets, 6 epochs | 67.4% (61%–73%) | 90.7% | 46.6% | 9.3% | 99.53% |
-| EfficientNet-B0 + CBAM **←** | lab + 5 real-photo datasets, 10 epochs | 72.0% (66%–77%) | 92.8% | 51.7% | 8.5% | 99.33% |
-| ResNet50 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.5% (66%–78%) | 89.8% | 60.2% | 15.3% | 99.23% |
+| EfficientNet-B0 | lab photos only | 30.1% (25%–36%) | 52.1% | 4.2% | 1.7% | 99.06% |
+| EfficientNet-B0 + CBAM | lab photos only | 31.8% (26%–38%) | 59.7% | 11.4% | 6.8% | 99.68% |
+| ResNet50 + CBAM | lab photos only | 37.7% (32%–44%) | 66.5% | 20.3% | 13.1% | 99.74% |
+| EfficientNet-B0 + CBAM | lab + 1 real-photo dataset, 6 epochs | 66.5% (60%–72%) | 90.7% | 37.3% | 6.4% | 99.56% |
+| EfficientNet-B0 + CBAM | lab + 3 real-photo datasets, 6 epochs | 67.4% (61%–73%) | 90.7% | 38.1% | 5.5% | 99.53% |
+| EfficientNet-B0 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.0% (66%–77%) | 92.8% | 42.4% | 4.7% | 99.33% |
+| ResNet50 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.5% (66%–78%) | 89.8% | 54.2% | 11.0% | 99.23% |
+| EfficientNet-B0 + CBAM **←** | lab (800/class) + 8 real-photo datasets, 10 epochs | 71.6% (66%–77%) | 91.1% | 48.7% | 6.4% | 99.60% |
 
 *Top-1/top-3*: the network alone, on every photo. *Shown right / wrong*: what the full application displays with status `ok` (the rest are flagged as uncertain, dusty or not identified, or refused), with every model judged at the one "not sure" threshold now in force - so these columns compare networks, not the settings each was originally served with. The row marked **←** is the model the application serves.
 
@@ -327,15 +332,26 @@ Before any training, 16 PlantDoc training photos were removed because a perceptu
 
 ### A bigger model, and both together
 
-ResNet50 + CBAM (24 M parameters, 92 MB) was fine-tuned on exactly the same data and schedule. Averaging the two models' predictions was also tried. Top-1 / top-3 on real photos:
+ResNet50 + CBAM (24 M parameters, 92 MB) was fine-tuned on five of the real-photo sources with the same schedule. Averaging its calibrated probabilities with the served model's (`ensemble_cbam`, assembled by `scripts/build_ensemble.py`) was also measured. Top-1 / top-3 on real photos:
 
 | Real-photo split | EfficientNet-B0 + CBAM | ResNet50 + CBAM | Average of both |
 |---|---:|---:|---:|
-| plantdoc_test (236) | 72.0% / 92.8% | 72.5% / 89.8% | 72.5% / 94.1% |
-| plantdoc_val (348) | 73.6% / 90.8% | 73.0% / 90.8% | 73.9% / 94.0% |
-| plantwild_val (734) | 69.2% / 89.2% | 71.9% / 88.8% | 73.6% / 91.0% |
+| plantdoc_test (236) | 71.6% / 91.1% | 72.5% / 89.8% | 74.6% / 93.2% |
+| plantdoc_val (348) | 75.3% / 89.7% | 73.0% / 90.8% | 74.1% / 93.1% |
+| plantwild_val (734) | 69.3% / 86.6% | 71.9% / 88.8% | 74.0% / 89.5% |
+| plantpathology2021_val (346) | 96.8% / 99.4% | 96.8% / 99.7% | 97.1% / 99.7% |
+| ccmt_val (347) | 90.8% / 98.3% | 91.4% / 99.7% | 91.9% / 99.4% |
 
-On the held-out test photos the two models tie at top-1; averaging adds about a point or two, mostly in top-3. Serving both would roughly double memory and response time on the free host, and ResNet50 alone is about six times larger and several times slower on a CPU for no measurable gain, so the application serves EfficientNet-B0 + CBAM. With a paid host the average of both would be the next step.
+Alone, the two networks are within a point of each other. Averaged, they are the most accurate configuration measured on real photos - about three points better than either on the PlantDoc test photos and five on PlantWild's validation photos - which puts the system at the top of the 60-76% range published for this benchmark. Serving the average would add the 92 MB ResNet50 to the 16 MB model and multiply CPU time per photo several times on the free host, so the application serves EfficientNet-B0 + CBAM alone; the ensemble is implemented end to end (torch and ONNX) for a host with more memory.
+
+### Photos from the newest field sources
+
+Two of the sources added last are field collections the earlier models never saw. Top-1 / top-3 on their held-out test splits - same-source tests, so easier than PlantDoc's, but they show what the extra data buys:
+
+| Held-out photos | EfficientNet-B0 + CBAM (served) | EfficientNet-B0 + CBAM (previous) |
+|---|---:|---:|
+| Vineyard photos (GVLiD test split) (447) | 98.7% / 99.8% | 32.0% / 47.4% |
+| Corn-field photos (CD&S test split) (204) | 98.5% / 100.0% | 58.8% / 98.5% |
 
 ### Real-photo training data
 
@@ -348,27 +364,30 @@ Fine-tuning used a stratified PlantVillage subset (so no class is forgotten) plu
 | [ccmt](https://data.mendeley.com/datasets/bwh3zbpkpv/1) | 3,468 | CC BY 4.0 | Mensah Kwabena et al., Dataset for Crop Pest and Disease Detection, Mendeley Data v1, 2023 (doi:10.17632/bwh3zbpkpv.1) |
 | [plantwild](https://huggingface.co/datasets/uqtwei2/PlantWild) | 7,316 | CC BY-NC-ND 4.0 (non-commercial) | Wei et al., Benchmarking In-the-Wild Multimodal Plant Disease Recognition and A Versatile Baseline, ACM MM 2024 |
 | [potato_field](https://data.mendeley.com/datasets/ptz377bwb8/1) | 509 | CC BY 4.0 | Shabrina et al., A novel dataset of potato leaf disease in uncontrolled environment, Data in Brief 2024 (doi:10.17632/ptz377bwb8.1) |
+| [plantseg](https://zenodo.org/records/17719108) | 121 | CC BY-NC 4.0 (non-commercial) | Wei et al., PlantSeg: A Large-Scale In-the-wild Dataset for Plant Disease Segmentation (Zenodo v7, 2025) |
+| [gvlid](https://data.mendeley.com/datasets/wkymf8bhcg/5) | 2,238 | CC BY 4.0 | GVLiD: GrapeVine Leaf identification of the Diseases, Mendeley Data v5 (doi:10.17632/wkymf8bhcg.5) |
+| [cds](https://osf.io/s6ru5/) | 1,020 | no licence stated (used for non-commercial academic work, with citation) | Ahmad et al., CD&S Dataset: Handheld Imagery Dataset Acquired Under Field Conditions for Corn Disease Identification and Severity Estimation, 2021 |
 
-PlantWild's licence (CC BY-NC-ND 4.0) is non-commercial: a model fine-tuned on it should be used for research and education, which is this project's purpose. No photos from any source are committed to this repository.
+PlantWild (CC BY-NC-ND 4.0) and PlantSeg (CC BY-NC 4.0) are licensed for non-commercial use only, and CD&S states no licence: a model fine-tuned on them should be used for research and education, which is this project's purpose. No photos from any source are committed to this repository.
 
 ### When the app says "not sure"
 
-Below a minimum top-class probability the app does not give a plain diagnosis; it says it is unsure and shows the closest matches. That threshold was chosen on 1,761 real validation photographs (`scripts/choose_real_operating_point.py`; never the PlantDoc test split) as the most permissive one at which answers shown as a diagnosis are right at least 90% of the time.
+Below a minimum top-class probability the app does not give a plain diagnosis; it says it is unsure and shows the closest matches. That threshold was chosen on 2,095 real validation photographs (`scripts/choose_real_operating_point.py`; never the PlantDoc test split) as the most permissive one at which answers shown as a diagnosis are right at least 90% of the time - and at least 85% on the 1,045 photos found through web image searches (PlantDoc, PlantWild, PlantSeg) on their own. The field collections are easy, and pooled with them a threshold can look precise overall while letting through confidently wrong answers on exactly the photos people check against a web search; no threshold reaches 90% on the web photos alone, so their floor is 85%, slightly above what the previous model achieved there (84.7%).
 
-| Threshold | Shown as diagnosis | Of those, right | Confidently wrong (of all photos) |
-|---:|---:|---:|---:|
-| 0.10 | 100.0% | 79.7% | 20.3% |
-| 0.20 | 99.7% | 79.8% | 20.1% |
-| 0.30 | 98.2% | 80.5% | 19.1% |
-| 0.40 | 94.8% | 82.4% | 16.7% |
-| 0.50 | 89.5% | 84.2% | 14.1% |
-| 0.60 | 84.2% | 86.2% | 11.6% |
-| 0.70 | 78.3% | 89.0% | 8.6% |
-| 0.74 **(in force)** | 75.8% | 90.3% | 7.3% |
-| 0.80 | 70.7% | 91.6% | 6.0% |
-| 0.90 | 56.3% | 93.6% | 3.6% |
+| Threshold | Shown as diagnosis | Of those, right | Confidently wrong (of all photos) | Web photos shown | Of those, right |
+|---:|---:|---:|---:|---:|---:|
+| 0.10 | 100.0% | 83.2% | 16.8% | 100.0% | 71.1% |
+| 0.20 | 99.7% | 83.3% | 16.6% | 99.4% | 71.4% |
+| 0.30 | 98.3% | 84.1% | 15.6% | 96.7% | 72.7% |
+| 0.40 | 95.9% | 85.4% | 14.0% | 92.5% | 74.6% |
+| 0.50 | 92.2% | 86.7% | 12.3% | 86.3% | 76.4% |
+| 0.60 | 88.5% | 88.0% | 10.6% | 80.0% | 78.5% |
+| 0.70 | 84.4% | 89.6% | 8.8% | 73.2% | 80.8% |
+| 0.80 | 78.8% | 91.6% | 6.6% | 63.8% | 83.8% |
+| 0.85 **(in force)** | 73.8% | 92.7% | 5.4% | 57.5% | 85.2% |
+| 0.90 | 64.6% | 93.6% | 4.1% | 47.9% | 86.6% |
 
-At the previous setting (0.15) this model would show every real photo as a diagnosis, 20.3% of them confidently wrong; at 0.74 that falls to 7.3%, at the cost of saying "not sure" for 24.2% of photos - for which the right answer is usually among the closest matches shown.
+At the previous setting (0.15) this model would show every real photo as a diagnosis, 16.8% of them confidently wrong; at 0.85 that falls to 5.4%, at the cost of saying "not sure" for 26.2% of photos - for which the right answer is usually among the closest matches shown.
 
 
 ## Accuracy on field-like photos

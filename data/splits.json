@@ -1010,6 +1010,172 @@
         "Tomato___Tomato_mosaic_virus": 36,
         "Tomato___healthy": 86
       }
+    },
+    "plantseg_train": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\plantseg_train.csv",
+      "count": 84,
+      "class_counts": {
+        "Pepper,_bell___Bacterial_spot": 24,
+        "Squash___Powdery_mildew": 60
+      }
+    },
+    "plantseg_val": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\plantseg_val.csv",
+      "count": 13,
+      "class_counts": {
+        "Pepper,_bell___Bacterial_spot": 4,
+        "Squash___Powdery_mildew": 9
+      }
+    },
+    "plantseg_test": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\plantseg_test.csv",
+      "count": 24,
+      "class_counts": {
+        "Pepper,_bell___Bacterial_spot": 7,
+        "Squash___Powdery_mildew": 17
+      }
+    },
+    "gvlid_train": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\gvlid_train.csv",
+      "count": 1182,
+      "class_counts": {
+        "Grape___Black_rot": 69,
+        "Grape___Esca_(Black_Measles)": 500,
+        "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": 113,
+        "Grape___healthy": 500
+      }
+    },
+    "gvlid_val": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\gvlid_val.csv",
+      "count": 224,
+      "class_counts": {
+        "Grape___Black_rot": 10,
+        "Grape___Esca_(Black_Measles)": 89,
+        "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": 16,
+        "Grape___healthy": 109
+      }
+    },
+    "gvlid_test": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\gvlid_test.csv",
+      "count": 447,
+      "class_counts": {
+        "Grape___Black_rot": 20,
+        "Grape___Esca_(Black_Measles)": 177,
+        "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": 32,
+        "Grape___healthy": 218
+      }
+    },
+    "cds_train": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\cds_train.csv",
+      "count": 714,
+      "class_counts": {
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": 366,
+        "Corn_(maize)___Northern_Leaf_Blight": 348
+      }
+    },
+    "cds_val": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\cds_val.csv",
+      "count": 102,
+      "class_counts": {
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": 52,
+        "Corn_(maize)___Northern_Leaf_Blight": 50
+      }
+    },
+    "cds_test": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\cds_test.csv",
+      "count": 204,
+      "class_counts": {
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": 105,
+        "Corn_(maize)___Northern_Leaf_Blight": 99
+      }
+    },
+    "realmix4_train": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\realmix4_train.csv",
+      "count": 48892,
+      "class_counts": {
+        "Apple___Apple_scab": 1781,
+        "Apple___Black_rot": 1421,
+        "Apple___Cedar_apple_rust": 1576,
+        "Apple___healthy": 1887,
+        "Blueberry___healthy": 1349,
+        "Cherry_(including_sour)___Powdery_mildew": 879,
+        "Cherry_(including_sour)___healthy": 1156,
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": 1526,
+        "Corn_(maize)___Common_rust_": 1322,
+        "Corn_(maize)___Northern_Leaf_Blight": 1898,
+        "Corn_(maize)___healthy": 1052,
+        "Grape___Black_rot": 1216,
+        "Grape___Esca_(Black_Measles)": 1300,
+        "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": 913,
+        "Grape___healthy": 1630,
+        "Orange___Haunglongbing_(Citrus_greening)": 966,
+        "Peach___Bacterial_spot": 800,
+        "Peach___healthy": 1262,
+        "Pepper,_bell___Bacterial_spot": 1116,
+        "Pepper,_bell___healthy": 1147,
+        "Potato___Early_blight": 1316,
+        "Potato___Late_blight": 1501,
+        "Potato___healthy": 1113,
+        "Raspberry___healthy": 1304,
+        "Soybean___healthy": 1157,
+        "Squash___Powdery_mildew": 1473,
+        "Strawberry___Leaf_scorch": 853,
+        "Strawberry___healthy": 1237,
+        "Tomato___Bacterial_spot": 1330,
+        "Tomato___Early_blight": 1282,
+        "Tomato___Late_blight": 1323,
+        "Tomato___Leaf_Mold": 1248,
+        "Tomato___Septoria_leaf_spot": 1899,
+        "Tomato___Spider_mites Two-spotted_spider_mite": 808,
+        "Tomato___Target_Spot": 800,
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus": 1502,
+        "Tomato___Tomato_mosaic_virus": 1079,
+        "Tomato___healthy": 1470
+      }
+    },
+    "realmix4_val": {
+      "manifest": "D:\\Data science projects\\Plant disease detection\\data\\manifests\\realmix4_val.csv",
+      "count": 2545,
+      "class_counts": {
+        "Apple___Apple_scab": 167,
+        "Apple___Black_rot": 104,
+        "Apple___Cedar_apple_rust": 94,
+        "Apple___healthy": 176,
+        "Blueberry___healthy": 54,
+        "Cherry_(including_sour)___Powdery_mildew": 21,
+        "Cherry_(including_sour)___healthy": 45,
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": 92,
+        "Corn_(maize)___Common_rust_": 49,
+        "Corn_(maize)___Northern_Leaf_Blight": 107,
+        "Corn_(maize)___healthy": 46,
+        "Grape___Black_rot": 50,
+        "Grape___Esca_(Black_Measles)": 99,
+        "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": 26,
+        "Grape___healthy": 147,
+        "Orange___Haunglongbing_(Citrus_greening)": 34,
+        "Peach___Bacterial_spot": 10,
+        "Peach___healthy": 41,
+        "Pepper,_bell___Bacterial_spot": 35,
+        "Pepper,_bell___healthy": 42,
+        "Potato___Early_blight": 48,
+        "Potato___Late_blight": 77,
+        "Potato___healthy": 55,
+        "Raspberry___healthy": 45,
+        "Soybean___healthy": 43,
+        "Squash___Powdery_mildew": 66,
+        "Strawberry___Leaf_scorch": 18,
+        "Strawberry___healthy": 43,
+        "Tomato___Bacterial_spot": 52,
+        "Tomato___Early_blight": 53,
+        "Tomato___Late_blight": 52,
+        "Tomato___Leaf_Mold": 46,
+        "Tomato___Septoria_leaf_spot": 279,
+        "Tomato___Spider_mites Two-spotted_spider_mite": 10,
+        "Tomato___Target_Spot": 10,
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus": 87,
+        "Tomato___Tomato_mosaic_virus": 36,
+        "Tomato___healthy": 86
+      }
     }
   },
   "external_sources": {
@@ -1117,6 +1283,55 @@
       "mapping": {
         "Healthy": "Potato___healthy",
         "Phytopthora": "Potato___Late_blight"
+      }
+    },
+    "plantseg": {
+      "citation": "Wei et al., PlantSeg: A Large-Scale In-the-wild Dataset for Plant Disease Segmentation (Zenodo v7, 2025)",
+      "url": "https://zenodo.org/records/17719108",
+      "licence": "CC BY-NC 4.0 (non-commercial)",
+      "mapping": {
+        "apple black rot": "Apple___Black_rot",
+        "apple rust": "Apple___Cedar_apple_rust",
+        "apple scab": "Apple___Apple_scab",
+        "bell pepper bacterial spot": "Pepper,_bell___Bacterial_spot",
+        "cherry powdery mildew": "Cherry_(including_sour)___Powdery_mildew",
+        "citrus greening disease": "Orange___Haunglongbing_(Citrus_greening)",
+        "corn gray leaf spot": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+        "corn northern leaf blight": "Corn_(maize)___Northern_Leaf_Blight",
+        "corn rust": "Corn_(maize)___Common_rust_",
+        "grape black rot": "Grape___Black_rot",
+        "potato early blight": "Potato___Early_blight",
+        "potato late blight": "Potato___Late_blight",
+        "squash powdery mildew": "Squash___Powdery_mildew",
+        "zucchini powdery mildew": "Squash___Powdery_mildew",
+        "strawberry leaf scorch": "Strawberry___Leaf_scorch",
+        "tomato bacterial leaf spot": "Tomato___Bacterial_spot",
+        "tomato early blight": "Tomato___Early_blight",
+        "tomato late blight": "Tomato___Late_blight",
+        "tomato leaf mold": "Tomato___Leaf_Mold",
+        "tomato mosaic virus": "Tomato___Tomato_mosaic_virus",
+        "tomato septoria leaf spot": "Tomato___Septoria_leaf_spot",
+        "tomato yellow leaf curl virus": "Tomato___Tomato_Yellow_Leaf_Curl_Virus"
+      }
+    },
+    "gvlid": {
+      "citation": "GVLiD: GrapeVine Leaf identification of the Diseases, Mendeley Data v5 (doi:10.17632/wkymf8bhcg.5)",
+      "url": "https://data.mendeley.com/datasets/wkymf8bhcg/5",
+      "licence": "CC BY 4.0",
+      "mapping": {
+        "healthy": "Grape___healthy",
+        "black rot": "Grape___Black_rot",
+        "esca": "Grape___Esca_(Black_Measles)",
+        "leaf blight": "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)"
+      }
+    },
+    "cds": {
+      "citation": "Ahmad et al., CD&S Dataset: Handheld Imagery Dataset Acquired Under Field Conditions for Corn Disease Identification and Severity Estimation, 2021",
+      "url": "https://osf.io/s6ru5/",
+      "licence": "no licence stated (used for non-commercial academic work, with citation)",
+      "mapping": {
+        "gls": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+        "nlb": "Corn_(maize)___Northern_Leaf_Blight"
       }
     }
   }

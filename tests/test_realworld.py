@@ -101,3 +101,33 @@ def test_perceptual_hash_matches_a_recompressed_copy_but_not_a_different_photo(t
     assert distances[0] <= 6            # same photo, resized and recompressed
     assert distances[1] > 6             # genuinely different image
     assert perceptual_hash(tmp_path / "missing.png") is None
+
+
+def test_extra_source_mappings_target_model_classes():
+    from prepare_extra_realworld import CCMT, CDS, GVLID, PLANT_PATHOLOGY, PLANTSEG, PLANTWILD, POTATO
+
+    splits = ROOT / "data" / "splits.json"
+    if not splits.exists():
+        pytest.skip("No split configuration in this checkout")
+    classes = set(json.loads(splits.read_text(encoding="utf-8"))["class_names"])
+    for mapping in (PLANT_PATHOLOGY, CCMT, PLANTWILD, POTATO, PLANTSEG, GVLID, CDS):
+        assert set(mapping.values()) <= classes
+
+
+def test_folders_are_matched_by_name_case_insensitively_and_outputs_are_not_reread(tmp_path):
+    from prepare_extra_realworld import folders_by_name
+
+    source = tmp_path / "src"
+    for rel in ("train/GLS/a.jpg", "test/gls/b.JPG", "train/nls/c.jpg", "Leaf Blight/d.png"):
+        (source / rel).parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", (900, 600), (80, 130, 60)).save(source / rel)
+    out = source / "resized"
+    mapping = {"gls": "Corn_gls", "leaf blight": "Grape_blight"}
+
+    rows = folders_by_name(source, mapping, out)
+    assert sorted(t for _, t in rows) == ["Corn_gls", "Corn_gls", "Grape_blight"]  # nls unmapped
+    assert all(p.parent.parent == out for p, _ in rows)
+    with Image.open(rows[0][0]) as image:
+        assert max(image.size) == 512                                    # resized copy
+    # A second pass must not pick up its own resized copies as new photos.
+    assert len(folders_by_name(source, mapping, out)) == 3

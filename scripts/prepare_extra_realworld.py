@@ -25,7 +25,13 @@ real-world benchmark stays unseen. Each source gets its own stratified
 train/val/test split (70/10/20); its test split is reported separately as a
 *same-source* score, which is easier than PlantDoc's cross-source test.
 
+Optional further sources (``--plantseg``, ``--gvlid``, ``--cds``; mappings
+below) are checked against every photo already in use, not only the PlantDoc
+test split, because web-scraped collections share photos.
+
     python scripts/prepare_extra_realworld.py
+    python scripts/prepare_extra_realworld.py --mix-name realmix4 --extra-pv-per-class 500 \\
+        --plantseg _datasets/plantseg --gvlid _datasets/gvlid --cds _datasets/cds
 """
 from __future__ import annotations
 
@@ -111,6 +117,50 @@ POTATO = {
     "Healthy": "Potato___healthy",
     "Phytopthora": "Potato___Late_blight",
 }
+# PlantSeg (Wei et al., arXiv 2409.04038; Zenodo 17719108 v7, CC BY-NC 4.0):
+# photographs gathered with Google/Bing/Baidu image searches - the same kind of
+# photo as PlantDoc. Zucchini is a summer squash (Cucurbita pepo), so its powdery
+# mildew is the model's squash class. "grape leaf spot" is ambiguous and left out.
+PLANTSEG = {
+    "apple black rot": "Apple___Black_rot",
+    "apple rust": "Apple___Cedar_apple_rust",
+    "apple scab": "Apple___Apple_scab",
+    "bell pepper bacterial spot": "Pepper,_bell___Bacterial_spot",
+    "cherry powdery mildew": "Cherry_(including_sour)___Powdery_mildew",
+    "citrus greening disease": "Orange___Haunglongbing_(Citrus_greening)",
+    "corn gray leaf spot": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+    "corn northern leaf blight": "Corn_(maize)___Northern_Leaf_Blight",
+    "corn rust": "Corn_(maize)___Common_rust_",
+    "grape black rot": "Grape___Black_rot",
+    "potato early blight": "Potato___Early_blight",
+    "potato late blight": "Potato___Late_blight",
+    "squash powdery mildew": "Squash___Powdery_mildew",
+    "zucchini powdery mildew": "Squash___Powdery_mildew",
+    "strawberry leaf scorch": "Strawberry___Leaf_scorch",
+    "tomato bacterial leaf spot": "Tomato___Bacterial_spot",
+    "tomato early blight": "Tomato___Early_blight",
+    "tomato late blight": "Tomato___Late_blight",
+    "tomato leaf mold": "Tomato___Leaf_Mold",
+    "tomato mosaic virus": "Tomato___Tomato_mosaic_virus",
+    "tomato septoria leaf spot": "Tomato___Septoria_leaf_spot",
+    "tomato yellow leaf curl virus": "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+}
+PLANTSEG_SPLIT_DIR = {"Training": "train", "Validation": "val", "Test": "test"}
+# GVLiD (Mendeley wkymf8bhcg v5, CC BY 4.0): grapevine leaves photographed on
+# field visits. Matched by folder name, case-insensitively.
+GVLID = {
+    "healthy": "Grape___healthy",
+    "black rot": "Grape___Black_rot",
+    "esca": "Grape___Esca_(Black_Measles)",
+    "leaf blight": "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
+}
+# CD&S (Ahmad et al., 2021; OSF s6ru5): hand-held photos of corn leaves in the
+# field at Purdue. Northern leaf spot (nls) has no counterpart and is not used.
+CDS = {
+    "gls": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+    "nlb": "Corn_(maize)___Northern_Leaf_Blight",
+}
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 MAX_SIDE = 512
 
 
@@ -157,6 +207,50 @@ def folders(source_dir: Path, root: str, mapping: dict, out_dir: Path) -> list[t
     return rows
 
 
+def plantseg(source_dir: Path, out_dir: Path) -> list[tuple[Path, str]]:
+    """PlantSeg images straight out of plantseg.zip, labelled from Metadata.csv."""
+    import csv
+    import zipfile
+
+    rows = []
+    with (source_dir / "Metadata.csv").open(encoding="utf-8-sig") as handle:
+        meta = [r for r in csv.DictReader(handle) if r["Disease"] in PLANTSEG]
+    with zipfile.ZipFile(source_dir / "plantseg.zip") as archive:
+        for record in sorted(meta, key=lambda r: r["Name"]):
+            target = PLANTSEG[record["Disease"]]
+            destination = out_dir / target / f"{Path(record['Name']).stem}.jpg"
+            if not destination.exists():
+                member = f"plantseg/images/{PLANTSEG_SPLIT_DIR[record['Split']]}/{record['Name']}"
+                try:
+                    with Image.open(io.BytesIO(archive.read(member))) as image:
+                        save_resized(image, destination)
+                except Exception:  # noqa: BLE001 - missing or unreadable member: skip it
+                    continue
+            rows.append((destination, target))
+    return rows
+
+
+def folders_by_name(source_dir: Path, mapping: dict, out_dir: Path) -> list[tuple[Path, str]]:
+    """Photos anywhere under ``source_dir`` whose folder name is a key of ``mapping``."""
+    rows = []
+    for path in sorted(source_dir.rglob("*")):
+        if path.suffix.lower() not in IMAGE_SUFFIXES or out_dir in path.parents:
+            continue
+        target = mapping.get(path.parent.name.strip().lower())
+        if target is None:
+            continue
+        prefix = "_".join(path.relative_to(source_dir).parent.parts).replace(" ", "_")
+        destination = out_dir / target / f"{prefix}__{path.stem}.jpg"
+        if not destination.exists():
+            try:
+                with Image.open(path) as image:
+                    save_resized(image, destination)
+            except Exception:  # noqa: BLE001 - unreadable file: skip it
+                continue
+        rows.append((destination, target))
+    return rows
+
+
 def split(rows, class_to_idx, source, rng, cap):
     """Stratified 70/10/20 split, with the training part capped per class."""
     by_class = defaultdict(list)
@@ -180,6 +274,13 @@ def main() -> int:
     parser.add_argument("--ccmt", type=Path, default=PROJECT_ROOT / "_datasets" / "ccmt")
     parser.add_argument("--plantwild", type=Path, default=PROJECT_ROOT / "_datasets" / "plantwild")
     parser.add_argument("--potato", type=Path, default=PROJECT_ROOT / "_datasets" / "potato_field")
+    parser.add_argument("--plantseg", type=Path, default=None,
+                        help="PlantSeg folder (contains plantseg/ after unzipping); off by default.")
+    parser.add_argument("--gvlid", type=Path, default=None,
+                        help="GVLiD folder (contains extracted/ after unpacking the RAR).")
+    parser.add_argument("--cds", type=Path, default=None, help="CD&S folder (train/ and test/).")
+    parser.add_argument("--extra-pv-per-class", type=int, default=0,
+                        help="Extra PlantVillage training photos per class on top of realmix's 300.")
     parser.add_argument("--mix-name", default="realmix3",
                         help="Name of the combined training/validation splits to write.")
     parser.add_argument("--train-cap", type=int, default=500,
@@ -207,11 +308,29 @@ def main() -> int:
                                        args.plantwild / "resized")
     if (args.potato / POTATO_ROOT).is_dir():
         sources["potato_field"] = folders(args.potato, POTATO_ROOT, POTATO, args.potato / "resized")
+    # Sources added later are checked against every photo already in use (PlantDoc's
+    # train/val photos and the sources above): PlantSeg comes from the same group as
+    # PlantWild and from the same search engines as PlantDoc, so the same photo can
+    # turn up twice - once in one source's training split, once in another's
+    # validation split - which would inflate the validation scores used to pick a model.
+    cross_checked = set()
+    if args.plantseg is not None and args.plantseg.is_dir():
+        sources["plantseg"] = plantseg(args.plantseg, args.plantseg / "resized")
+        cross_checked.add("plantseg")
+    if args.gvlid is not None and args.gvlid.is_dir():
+        sources["gvlid"] = folders_by_name(args.gvlid / "extracted", GVLID, args.gvlid / "resized")
+        cross_checked.add("gvlid")
+    if args.cds is not None and args.cds.is_dir():
+        sources["cds"] = folders_by_name(args.cds, CDS, args.cds / "resized")
+        cross_checked.add("cds")
 
+    in_use = [perceptual_hash(Path(e.path)) for name in ("plantdoc_train", "plantdoc_val")
+              for e in read_manifest(Path(split_config["splits"][name]["manifest"]))]
     summary = {"generated_at": datetime.now(timezone.utc).isoformat(), "sources": {}}
     new_splits: dict[str, list[ManifestEntry]] = {}
     for source, rows in sources.items():
-        kept, seen, exact_dupes, leaked = [], set(), 0, 0
+        kept, seen, exact_dupes, leaked, overlap = [], set(), 0, 0, 0
+        earlier = np.array([h for h in in_use if h is not None], dtype=np.uint64)
         for path, name in rows:
             h = perceptual_hash(path)
             if h is None:
@@ -222,8 +341,12 @@ def main() -> int:
             if (hamming(guard, h) <= args.dedup_distance).any():
                 leaked += 1
                 continue
+            if source in cross_checked and (hamming(earlier, h) <= args.dedup_distance).any():
+                overlap += 1
+                continue
             seen.add(h)
             kept.append((path, name))
+        in_use += list(seen)
         parts = split(kept, class_to_idx, source, rng, args.train_cap)
         for part, entries in parts.items():
             new_splits[f"{source}_{part}"] = entries
@@ -234,12 +357,26 @@ def main() -> int:
             "per_class": dict(sorted(Counter(n for _, n in kept).items())),
             "splits": {part: len(entries) for part, entries in parts.items()},
         }
+        if source in cross_checked:
+            summary["sources"][source]["removed_as_already_in_another_source"] = overlap
         print(f"{source}: {len(kept)} photos ({exact_dupes} duplicates, {leaked} matching PlantDoc "
-              f"test removed) -> " + ", ".join(f"{k} {len(v)}" for k, v in parts.items()))
+              f"test removed, {overlap} already in another source) -> "
+              + ", ".join(f"{k} {len(v)}" for k, v in parts.items()), flush=True)
     summary["sources"]["plantpathology2021"]["skipped_labels"] = dict(pp_skipped)
 
     base_train = read_manifest(Path(split_config["splits"]["realmix_train"]["manifest"]))
     base_val = read_manifest(Path(split_config["splits"]["realmix_val"]["manifest"]))
+    if args.extra_pv_per_class:
+        # More PlantVillage photos keep lab accuracy from slipping while the model
+        # learns real photographs (300 per class cost about 0.35 points).
+        already = {e.path for e in base_train}
+        pv_train = [e for e in read_manifest(Path(split_config["splits"]["train"]["manifest"]))
+                    if e.path not in already]
+        by_class = defaultdict(list)
+        for e in pv_train:
+            by_class[e.label].append(e)
+        for label in sorted(by_class):
+            base_train += rng.sample(by_class[label], min(args.extra_pv_per_class, len(by_class[label])))
     mix_train, mix_val = f"{args.mix_name}_train", f"{args.mix_name}_val"
     new_splits[mix_train] = base_train + [e for s in sources for e in new_splits[f"{s}_train"]]
     new_splits[mix_val] = base_val + [e for s in sources for e in new_splits[f"{s}_val"]]
@@ -275,9 +412,29 @@ def main() -> int:
             "url": "https://data.mendeley.com/datasets/ptz377bwb8/1",
             "licence": "CC BY 4.0", "mapping": POTATO},
     })
+    if "plantseg" in sources:
+        split_config["external_sources"]["plantseg"] = {
+            "citation": "Wei et al., PlantSeg: A Large-Scale In-the-wild Dataset for Plant "
+                        "Disease Segmentation (Zenodo v7, 2025)",
+            "url": "https://zenodo.org/records/17719108",
+            "licence": "CC BY-NC 4.0 (non-commercial)", "mapping": PLANTSEG}
+    if "gvlid" in sources:
+        split_config["external_sources"]["gvlid"] = {
+            "citation": "GVLiD: GrapeVine Leaf identification of the Diseases, Mendeley Data v5 "
+                        "(doi:10.17632/wkymf8bhcg.5)",
+            "url": "https://data.mendeley.com/datasets/wkymf8bhcg/5",
+            "licence": "CC BY 4.0", "mapping": GVLID}
+    if "cds" in sources:
+        split_config["external_sources"]["cds"] = {
+            "citation": "Ahmad et al., CD&S Dataset: Handheld Imagery Dataset Acquired Under Field "
+                        "Conditions for Corn Disease Identification and Severity Estimation, 2021",
+            "url": "https://osf.io/s6ru5/",
+            "licence": "no licence stated (used for non-commercial academic work, with citation)",
+            "mapping": CDS}
     settings.splits_path.write_text(json.dumps(split_config, indent=2), encoding="utf-8")
     summary[args.mix_name] = {"train": len(new_splits[mix_train]), "val": len(new_splits[mix_val]),
-                              "train_cap_per_class": args.train_cap, "sources": sorted(sources)}
+                              "train_cap_per_class": args.train_cap, "sources": sorted(sources),
+                              "extra_plantvillage_per_class": args.extra_pv_per_class}
     (settings.results_dir / "realworld_extra_preparation.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8")
     return 0

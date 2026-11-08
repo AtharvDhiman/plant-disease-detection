@@ -460,19 +460,22 @@ class Predictor:
             for method in methods:
                 try:
                     if BACKEND == "torch":
+                        # An averaged ensemble is explained through one member
+                        # (see AveragedEnsemble); a single network is its own.
+                        explained = getattr(loaded.model, "explain_member", loaded.model)
                         if method == "grad_cam":
-                            result = grad_cam(loaded.model, tensor, loaded.model.feature_layer,
+                            result = grad_cam(explained, tensor, explained.feature_layer,
                                               class_index)
                         elif method == "grad_cam_plus_plus":
-                            result = grad_cam_plus_plus(loaded.model, tensor,
-                                                        loaded.model.feature_layer, class_index)
+                            result = grad_cam_plus_plus(explained, tensor,
+                                                        explained.feature_layer, class_index)
                         elif method == "cbam_spatial":
-                            result = cbam_spatial_map(loaded.model, tensor, class_index)
+                            result = cbam_spatial_map(explained, tensor, class_index)
                             if result is None:
                                 continue
-                            channel_profile = cbam_channel_profile(loaded.model)
+                            channel_profile = cbam_channel_profile(explained)
                         elif method == "integrated_gradients":
-                            result = integrated_gradients(loaded.model, tensor, class_index,
+                            result = integrated_gradients(explained, tensor, class_index,
                                                           steps=24)
                         else:
                             errors[method] = "Unknown explanation method."

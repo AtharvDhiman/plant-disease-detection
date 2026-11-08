@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-11-08T15:36:06.705100+00:00",
+  "experiments": [
+    "efficientnet_b0_cbam__fieldrealmax__b2596c9c",
+    "efficientnet_b0_cbam__fieldrealplus__cf5d499f"
+  ],
+  "labels": {
+    "efficientnet_b0_cbam__fieldrealmax__b2596c9c": "EfficientNet-B0 + CBAM",
+    "efficientnet_b0_cbam__fieldrealplus__cf5d499f": "EfficientNet-B0 + CBAM"
+  },
+  "splits": {
+    "plantdoc_test": {
+      "n": 236,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.7161016949152542,
+          "top3": 0.9110169491525424
+        },
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.7203389830508474,
+          "top3": 0.9279661016949152
+        },
+        "ensemble": {
+          "top1": 0.7372881355932204,
+          "top3": 0.9322033898305084
+        }
+      }
+    },
+    "plantdoc_val": {
+      "n": 348,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.7528735632183908,
+          "top3": 0.896551724137931
+        },
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.735632183908046,
+          "top3": 0.9080459770114943
+        },
+        "ensemble": {
+          "top1": 0.7442528735632183,
+          "top3": 0.9224137931034483
+        }
+      }
+    },
+    "plantwild_val": {
+      "n": 734,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.6934604904632152,
+          "top3": 0.8664850136239782
+        },
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.6920980926430518,
+          "top3": 0.8923705722070845
+        },
+        "ensemble": {
+          "top1": 0.6948228882833788,
+          "top3": 0.888283378746594
+        }
+      }
+    },
+    "plantpathology2021_val": {
+      "n": 346,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.9682080924855492,
+          "top3": 0.9942196531791907
+        },
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.9739884393063584,
+          "top3": 0.9971098265895953
+        },
+        "ensemble": {
+          "top1": 0.9682080924855492,
+          "top3": 0.9971098265895953
+        }
+      }
+    },
+    "ccmt_val": {
+      "n": 347,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.9077809798270894,
+          "top3": 0.9827089337175793
+        },
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.8933717579250721,
+          "top3": 0.9942363112391931
+        },
+        "ensemble": {
+          "top1": 0.9048991354466859,
+          "top3": 0.9827089337175793
+        }
+      }
+    }
+  }
+}

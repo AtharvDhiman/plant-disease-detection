@@ -126,7 +126,8 @@ def generate_report():
     # threshold chosen on real validation photos, and the data sources.
     real_eval = load_json(PROJECT_ROOT / "artifacts/results/real_photo_eval.json", {})
     real_op = load_json(PROJECT_ROOT / "artifacts/results/real_operating_point.json", {})
-    ensemble = load_json(PROJECT_ROOT / "artifacts/results/ensemble_eval.json", {})
+    ensemble = (load_json(PROJECT_ROOT / "artifacts/results/ensemble_max_r50plus.json", {})
+                or load_json(PROJECT_ROOT / "artifacts/results/ensemble_eval.json", {}))
     real_n = real_eval.get("n", "—")
     real_rows = ""
     order = ["production", "field_long", "field_long_resnet50", "field_real", "field_real_all",
@@ -540,7 +541,7 @@ This project develops an <strong>end-to-end, trustworthy, production-grade deep 
 
 <div class="callout callout-blue avoid-break">
   <div class="callout-title">Key Architectural Achievement</div>
-  The deployed model ({dep_label}, fine-tuned on five real-photo datasets) achieves <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1 and {dep_top3} Top-3 accuracy</strong> on 17,572 held-out laboratory images and &mdash; the number that matters for a phone or web photo &mdash; <strong>{real_top1} on {real_n} held-out real photographs</strong> (top-3 {real_top3}), up from {old_real_top1} for the laboratory-trained model. It runs in ~{inference_ms} ms per image (~{pipeline_ms} ms for the whole pipeline) on a single CPU thread without a GPU (Section 10).
+  The deployed model ({dep_label}, fine-tuned on eight real-photo datasets) achieves <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1 and {dep_top3} Top-3 accuracy</strong> on 17,572 held-out laboratory images and &mdash; the number that matters for a phone or web photo &mdash; <strong>{real_top1} on {real_n} held-out real photographs</strong> (top-3 {real_top3}), up from {old_real_top1} for the laboratory-trained model. It runs in ~{inference_ms} ms per image (~{pipeline_ms} ms for the whole pipeline) on a single CPU thread without a GPU (Section 10).
 </div>
 
 <!-- ========================================================================= -->
@@ -1374,7 +1375,7 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
 <div class="avoid-break">
   <h3>Accuracy on Real Photographs</h3>
   <p>
-  Laboratory accuracy (~99%) does not carry over to a photograph from a phone or a web search. The independent test is the held-out test split of PlantDoc &mdash; {real_n} real field and web photographs that no model saw in training (perceptual-hash de-duplication removed any training photo matching a test photo). The models trained on laboratory photographs only are right on about a third of them; fine-tuning on five real-photo datasets raises that to <strong>{real_top1}</strong>, with the right disease among the top three <strong>{real_top3}</strong> of the time:
+  Laboratory accuracy (~99%) does not carry over to a photograph from a phone or a web search. The independent test is the held-out test split of PlantDoc &mdash; {real_n} real field and web photographs that no model saw in training (perceptual-hash de-duplication removed any training photo matching a test photo). The models trained on laboratory photographs only are right on about a third of them; fine-tuning on eight real-photo datasets raises that to <strong>{real_top1}</strong>, with the right disease among the top three <strong>{real_top3}</strong> of the time:
   </p>
   <table>
     <thead><tr><th>Model</th><th>Trained on</th><th class="numeric">Real photos: top-1 (95% CI)</th><th class="numeric">Top-3</th><th class="numeric">Lab test</th></tr></thead>
@@ -1393,13 +1394,13 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
       {source_rows}
     </tbody>
   </table>
-  <div style="font-size: 7.5pt; color: #64748b; font-style: italic;">PlantWild is licensed CC BY-NC-ND 4.0 (non-commercial), so the deployed model is for research and education.</div>
+  <div style="font-size: 7.5pt; color: #64748b; font-style: italic;">PlantWild (CC BY-NC-ND 4.0) and PlantSeg (CC BY-NC 4.0) are licensed for non-commercial use only and CD&amp;S states no licence, so the deployed model is for research and education.</div>
 </div>
 
 <div class="avoid-break">
   <h3>When the Application Says "Not Sure"</h3>
   <p>
-  The threshold below which the app gives no plain diagnosis was chosen on {op_photos} real validation photographs (never the test split) as the most permissive value at which answers shown as a diagnosis are right at least 90% of the time. At the previous setting (0.15) this model would give a confidently wrong diagnosis for {op_wrong_before} of real photos; at {dep_msp} that falls to {op_wrong_now}, and the uncertain photos are shown with their closest matches instead.
+  The threshold below which the app gives no plain diagnosis was chosen on {op_photos} real validation photographs (never the test split) as the most permissive value at which answers shown as a diagnosis are right at least 90% of the time overall and at least 85% on the photos found through web image searches (PlantDoc, PlantWild, PlantSeg) on their own &mdash; pooled with the easy field collections, a threshold could otherwise look precise while letting through confidently wrong answers on exactly the photos people check against a web search. At the previous setting (0.15) this model would give a confidently wrong diagnosis for {op_wrong_before} of real photos; at {dep_msp} that falls to {op_wrong_now}, and the uncertain photos are shown with their closest matches instead.
   </p>
   <table>
     <thead><tr><th class="numeric">Threshold</th><th class="numeric">Shown as diagnosis</th><th class="numeric">Of those, right</th><th class="numeric">Confidently wrong (of all)</th></tr></thead>
@@ -1411,14 +1412,14 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
 
 <div class="avoid-break">
   <h3>A Bigger Model, and Both Together</h3>
-  <p>ResNet50 + CBAM (92&nbsp;MB) was fine-tuned on the same data and schedule, and averaging both models' predictions was tested. Top-1 / top-3 on real photos:</p>
+  <p>ResNet50 + CBAM (92&nbsp;MB) was fine-tuned on five of the real-photo sources with the same schedule, and averaging its calibrated probabilities with the served model's was measured. Top-1 / top-3 on real photos:</p>
   <table>
     <thead><tr><th>Split</th><th class="numeric">EfficientNet-B0 + CBAM</th><th class="numeric">ResNet50 + CBAM</th><th class="numeric">Average of both</th></tr></thead>
     <tbody>
       {ensemble_rows}
     </tbody>
   </table>
-  <p>The two tie on the test photos and averaging adds a point or two, mostly at top-3, for roughly double the memory and latency &mdash; not worth it on a 512&nbsp;MB free host, so the application serves the EfficientNet model.</p>
+  <p>Alone the two are within a point of each other; averaged they are the most accurate configuration measured on real photos &mdash; about three points better on the test photos and five on PlantWild's validation photos, at the top of the 60&ndash;76% range published for this benchmark. Serving the average would add the 92&nbsp;MB ResNet50 and several times the CPU time per photo on the 512&nbsp;MB free host, so the application serves the EfficientNet model; the ensemble is implemented end to end for a larger host.</p>
 </div>
 
 <div class="avoid-break">
@@ -1441,7 +1442,7 @@ This project demonstrates that deploying deep learning vision models for agricul
 </p>
 <ol>
   <li><strong>Controlled Scientific Rigor:</strong> 18 benchmark architectures, ablation study with noise-floor benchmarking, and 3-way split protocol.</li>
-  <li><strong>Measured Model Selection:</strong> {dep_label} achieving <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1</strong> with small size ({dep_size} MB) and fast CPU inference (~{inference_ms} ms), fine-tuned on five real-photo datasets: on held-out real photographs it is right {real_top1} of the time (top-3 {real_top3}), up from {old_real_top1} for the laboratory-trained model.</li>
+  <li><strong>Measured Model Selection:</strong> {dep_label} achieving <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1</strong> with small size ({dep_size} MB) and fast CPU inference (~{inference_ms} ms), fine-tuned on eight real-photo datasets: on held-out real photographs it is right {real_top1} of the time (top-3 {real_top3}), up from {old_real_top1} for the laboratory-trained model.</li>
   <li><strong>Production Safety & Trust:</strong> Image quality filtering, a dust/soil/sand detector, out-of-distribution rejection, and post-hoc temperature scaling bringing Expected Calibration Error down to <strong>{dep_ece_cal}</strong>.</li>
   <li><strong>Cloud Engineering Excellence:</strong> A single-container multi-stage architecture powered by ONNX Runtime, effortlessly fitting into Render's 512 MB free tier with 4&times; safety headroom.</li>
 </ol>

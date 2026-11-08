@@ -289,15 +289,63 @@ class TransferModel(nn.Module):
 # --------------------------------------------------------------------------- #
 
 
+# --------------------------------------------------------------------------- #
+# Averaged ensemble
+# --------------------------------------------------------------------------- #
+
+
+class AveragedEnsemble(nn.Module):
+    """Average of several trained networks' temperature-scaled class probabilities.
+
+    ``forward`` returns ``log(mean_i softmax(z_i / T_i))``. Because softmax is
+    shift-invariant and the mean is already a distribution, ``softmax`` of that
+    output is exactly the averaged probability - so everything downstream that
+    expects logits (calibration, the "not sure" threshold, ONNX serving with a
+    temperature of 1) works unchanged.
+
+    Each member keeps its own fitted temperature (stored as a buffer, so it
+    travels with the checkpoint): averaging miscalibrated members would let the
+    more over-confident one dominate.
+
+    Heat maps explain the first member (``explain_member``): Grad-CAM needs one
+    convolutional feature map, and the two members' maps have different
+    resolutions and meanings. The UI therefore shows where the EfficientNet
+    member looked for the class the ensemble chose.
+    """
+
+    def __init__(self, members: list[nn.Module], temperatures: list[float] | None = None) -> None:
+        super().__init__()
+        self.members = nn.ModuleList(members)
+        values = temperatures if temperatures is not None else [1.0] * len(members)
+        if len(values) != len(members):
+            raise ValueError("one temperature per member")
+        self.register_buffer("temperatures", torch.tensor(values, dtype=torch.float32))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        probabilities = torch.stack([
+            torch.softmax(member(x) / self.temperatures[i], dim=1)
+            for i, member in enumerate(self.members)
+        ]).mean(dim=0)
+        return torch.log(probabilities.clamp_min(1e-12))
+
+    @property
+    def explain_member(self) -> nn.Module:
+        return self.members[0]
+
+    @property
+    def feature_layer(self) -> nn.Module:
+        return self.members[0].feature_layer
+
+
 @dataclass(frozen=True)
 class ModelSpec:
     """Declarative description of one entry in the benchmark."""
 
     name: str
-    family: str                 # "custom" | "transfer"
+    family: str                 # "custom" | "transfer" | "ensemble"
     label: str                  # human-readable name for the UI
     kwargs: dict = field(default_factory=dict)
-    group: str = "benchmark"    # benchmark | ablation | placement
+    group: str = "benchmark"    # benchmark | ablation | placement | ensemble
     proposed: bool = False
     notes: str = ""
 
@@ -388,6 +436,14 @@ MODEL_ZOO: dict[str, ModelSpec] = {
         "place_cbam_all", "custom", "CBAM on every stage",
         {"attention": "cbam", "attention_stages": "all"}, group="placement",
     ),
+    # ---- averaged ensemble of two trained CBAM networks ----------------------
+    # Not trained as such: scripts/build_ensemble.py assembles it from two
+    # fine-tuned checkpoints and evaluates it like any other model.
+    "ensemble_cbam": ModelSpec(
+        "ensemble_cbam", "ensemble", "EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged)",
+        {"members": ("efficientnet_b0_cbam", "resnet50_cbam")}, group="ensemble",
+        notes="Average of the two networks' calibrated probabilities.",
+    ),
 }
 
 
@@ -397,6 +453,10 @@ def build_model(name: str, num_classes: int, pretrained: bool = True, **override
         raise ValueError(f"Unknown model {name!r}; expected one of {sorted(MODEL_ZOO)}")
     spec = MODEL_ZOO[name]
     kwargs = {**spec.kwargs, **overrides}
+    if spec.family == "ensemble":
+        members = [build_model(member, num_classes, pretrained=pretrained)
+                   for member in kwargs["members"]]
+        return AveragedEnsemble(members, kwargs.get("temperatures"))
     if spec.family == "custom":
         kwargs.pop("pretrained", None)
         return PlantCNN(num_classes=num_classes, **kwargs)

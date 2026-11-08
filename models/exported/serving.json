@@ -46,7 +46,7 @@
     "Tomato___Tomato_mosaic_virus",
     "Tomato___healthy"
   ],
-  "temperature": 0.9998810291290283,
+  "temperature": 0.9988800883293152,
   "normalize_mean": [
     0.485,
     0.456,
@@ -58,9 +58,9 @@
     0.225
   ],
   "ood_thresholds": {
-    "msp_min": 0.74,
+    "msp_min": 0.85,
     "entropy_max": 1.0,
-    "energy_max": -5.426188945770264,
+    "energy_max": -6.154302597045898,
     "method": "msp",
     "calibrated": true,
     "target_tpr": 0.95,
@@ -70,16 +70,16 @@
   "parameters": 4261124,
   "size_mb": 16.43564224243164,
   "test_metrics": {
-    "accuracy": 0.993284771226952,
-    "precision_macro": 0.9933210520943477,
-    "recall_macro": 0.9931034163120198,
-    "f1_macro": 0.9931430976120722,
-    "f1_weighted": 0.9932686830428573,
+    "accuracy": 0.9960163897109037,
+    "precision_macro": 0.9960134550968952,
+    "recall_macro": 0.9959016972892997,
+    "f1_macro": 0.9959401007675917,
+    "f1_weighted": 0.9960106685387657,
     "top3_accuracy": 0.9998292738447531,
-    "top5_accuracy": 0.9998292738447531,
-    "roc_auc_macro_ovr": 0.9999300804439045,
-    "ece": 0.046970573042564134,
-    "ece_after_temperature": 0.0469393746292648,
+    "top5_accuracy": 0.9999430912815843,
+    "roc_auc_macro_ovr": 0.9999576873203339,
+    "ece": 0.053589791112070316,
+    "ece_after_temperature": 0.053242823087406646,
     "test_split": "test",
     "test_samples": 17572
   },
@@ -87,13 +87,13 @@
     "criterion": "f1_macro",
     "criterion_description": "Highest macro F1 on the held-out test split - treats every disease class equally regardless of how many images it has.",
     "forced": true,
-    "forced_reason": "Fine-tuned on real field and web photographs from five sources (PlantDoc, PlantWild, Plant Pathology 2021, CCMT, potato field) for 10 epochs. On PlantDoc's held-out real test photos it is right 72.0% of the time against 31.8% for the previous model, while its PlantVillage lab accuracy (99.33%) stays within the 0.5-point limit of the previous model's 99.68%. Real-photo accuracy is what users experience, so it decides.",
+    "forced_reason": "Fine-tuned for 10 epochs on real photographs from eight sources (adding GVLiD vineyard and CD&S corn-field photos and PlantSeg web photos to the earlier five) plus 800 PlantVillage photos per class. Lab accuracy rises to 99.60% from the previous model's 99.33%. On PlantDoc's held-out real test photos it ties the previous model (71.6% vs 72.0%, one photo apart), and on held-out vineyard and corn-field photos it is right 98.7% and 98.5% of the time against 32.0% and 58.8%.",
     "pool": "production",
-    "candidates_considered": 11,
+    "candidates_considered": 13,
     "quality_gate": null,
     "note": "The production model is chosen on measured test performance. The proposed CBAM architecture remains the research contribution and is reported in the benchmark and ablation tables regardless of whether it wins this selection."
   },
-  "source_checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0_cbam__fieldrealplus__cf5d499f.pt",
+  "source_checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0_cbam__fieldrealmax__b2596c9c.pt",
   "cam_exact": true,
   "explain_methods": [
     "grad_cam",

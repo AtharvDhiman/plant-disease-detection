@@ -16,6 +16,11 @@ What is and is not restored
 * **Not restored:** the optimiser's moment estimates, because checkpoints have
   never stored them. AdamW restarts with empty moments, which costs a few
   hundred steps of slightly noisier updates at the learning rate in force.
+  Nor is the DataLoader's random stream: it is re-seeded from the seed and the
+  resume epoch, so the resumed epochs get fresh shuffles and augmentations.
+  (Before 2026-11-08 it restarted from the seed alone, and each resumed epoch
+  replayed an earlier one's draws - which showed as training accuracy creeping
+  to 99% while validation still improved.)
   A resumed run is therefore *very close to* an uninterrupted one, not
   identical to it, and the ledger record says so.
 * **Reconstructed:** the per-epoch history before the interruption, from the

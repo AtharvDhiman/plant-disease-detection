@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-11-08T10:47:29.049491+00:00",
+  "generated_at": "2026-11-08T17:02:55.089477+00:00",
   "model": "efficientnet_b0_cbam",
-  "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0_cbam__fieldrealplus__cf5d499f.pt",
+  "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0_cbam__fieldrealmax__b2596c9c.pt",
   "in_distribution": {
     "split": "test_bench",
     "count": 4000,
-    "accuracy": 0.99525
+    "accuracy": 0.996
   },
   "ood_source": {
     "kind": "synthetic_proxies",
@@ -20,47 +20,47 @@
   },
   "selected": {
     "target_tpr": 0.95,
-    "msp_min": 0.74,
+    "msp_min": 0.85,
     "entropy_max": 1.0,
-    "energy_max": -5.426188945770264,
+    "energy_max": -6.154302597045898,
     "distributions": {
       "in_distribution": {
-        "msp_mean": 0.9474084377288818,
-        "entropy_mean": 0.0945789443083401,
-        "energy_mean": -6.820699691772461
+        "msp_mean": 0.9424763321876526,
+        "entropy_mean": 0.11011048880868893,
+        "energy_mean": -7.1028642654418945
       },
       "ood": {
-        "msp_mean": 0.5178928375244141,
-        "entropy_mean": 0.46474442274879796,
-        "energy_mean": -5.500422954559326
+        "msp_mean": 0.42614445090293884,
+        "entropy_mean": 0.6097460994473732,
+        "energy_mean": -5.507702827453613
       }
     },
     "method": "msp"
   },
   "metrics": {
     "auroc": {
-      "Max softmax probability": 0.9583045833333333,
-      "Normalised entropy": 0.9469104166666666,
-      "Free energy": 0.8559642708333334
+      "Max softmax probability": 0.971483125,
+      "Normalised entropy": 0.9687041666666667,
+      "Free energy": 0.926891875
     },
     "detection_rates": {
-      "Max softmax probability": 0.8966666666666667,
-      "Normalised entropy": 0.8208333333333333,
-      "Free energy": 0.31999999999999995
+      "Max softmax probability": 0.9191666666666667,
+      "Normalised entropy": 0.915,
+      "Free energy": 0.6241666666666666
     },
     "pipeline": {
       "sampled_ood": 400,
       "sampled_in_distribution": 300,
       "quality_gate_rejects_ood": 0.6675,
-      "ood_score_rejects_ood": 0.8983333333333333,
-      "pipeline_rejects_ood": 0.9525,
+      "ood_score_rejects_ood": 0.92,
+      "pipeline_rejects_ood": 0.9625,
       "quality_gate_rejects_real_leaves": 0.03,
       "per_family": {
         "extreme": {
           "count": 100,
           "quality_gate_rejected": 0.64,
-          "ood_score_rejected": 0.71,
-          "pipeline_rejected": 0.86
+          "ood_score_rejected": 0.75,
+          "pipeline_rejected": 0.89
         },
         "flat": {
           "count": 100,
@@ -71,14 +71,14 @@
         "noise": {
           "count": 100,
           "quality_gate_rejected": 1.0,
-          "ood_score_rejected": 0.98,
+          "ood_score_rejected": 1.0,
           "pipeline_rejected": 1.0
         },
         "shuffle": {
           "count": 100,
           "quality_gate_rejected": 0.03,
-          "ood_score_rejected": 0.94,
-          "pipeline_rejected": 0.95
+          "ood_score_rejected": 0.95,
+          "pipeline_rejected": 0.96
         }
       },
       "interpretation": "The deployed pipeline runs the image-quality gate before the model, so the end-to-end rejection rate is what a user experiences. The 'quality_gate_rejects_real_leaves' figure is the cost of that gate: the fraction of genuine test photographs it would ask the user to retake."
@@ -87,31 +87,31 @@
   "plot": "D:\\Data science projects\\Plant disease detection\\artifacts\\plots\\ood_score_distributions.png",
   "note": "The serving path enforces the MSP and entropy thresholds. The energy threshold is recorded for reference; it is the least stable of the three across retraining because it depends on the absolute logit scale.",
   "operating_point": {
-    "msp_min": 0.74,
+    "msp_min": 0.85,
     "entropy_max": 1.0,
     "chosen_by": "real-validation-sweep",
     "method": "msp",
-    "reason": "Chosen on 1,761 real validation photographs (PlantDoc, PlantWild, Plant Pathology 2021, CCMT, potato field; never the PlantDoc test split) by scripts/choose_real_operating_point.py: the most permissive threshold at which answers shown as a diagnosis are right at least 90% of the time. Shows 75.8% of real photos as a diagnosis (90.3% right); confidently wrong answers fall from 20.3% at the old 0.15 setting to 7.3%. Below it the app says it is unsure and shows the closest matches.",
-    "set_at": "2026-11-08T10:47:43.502904+00:00",
+    "reason": "Chosen on 2095 real validation photographs (plantdoc, plantwild, plantpathology2021, ccmt, potato_field, plantseg, gvlid, cds): the most permissive threshold at which answers shown as diagnoses are right at least 90% of the time overall and 85% on the web-search photos alone (PlantDoc, PlantWild, PlantSeg) (scripts/choose_real_operating_point.py).",
+    "set_at": "2026-11-08T17:20:21.376375+00:00",
     "calibrated_at_target_tpr": {
-      "msp_min": 0.8480752110481262,
-      "entropy_max": 0.2414700780142739,
-      "energy_max": -5.426188945770264,
+      "msp_min": 0.8668956160545349,
+      "entropy_max": 0.23141875593901853,
+      "energy_max": -6.154302597045898,
       "per_score": {
         "msp": {
           "tpr": 0.95,
-          "fpr": 0.10333333333333333,
-          "ood_detection_rate": 0.8966666666666667
+          "fpr": 0.08083333333333333,
+          "ood_detection_rate": 0.9191666666666667
         },
         "entropy": {
           "tpr": 0.95,
-          "fpr": 0.17916666666666667,
-          "ood_detection_rate": 0.8208333333333333
+          "fpr": 0.085,
+          "ood_detection_rate": 0.915
         },
         "energy": {
           "tpr": 0.95,
-          "fpr": 0.68,
-          "ood_detection_rate": 0.31999999999999995
+          "fpr": 0.37583333333333335,
+          "ood_detection_rate": 0.6241666666666666
         }
       },
       "target_tpr": 0.95
