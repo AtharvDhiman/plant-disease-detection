@@ -353,6 +353,56 @@
           "ok_wrong": 1
         }
       }
+    },
+    "resnet50_cbam@field_real_plus_resnet50": {
+      "label": "ResNet50 + CBAM [field_real_plus_resnet50]",
+      "experiment_id": "resnet50_cbam__fieldrealplusr50__a9442307",
+      "lab_test_accuracy": 0.9922604142954701,
+      "lab_test_f1_macro": 0.9921576188640205,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 96,
+          "ok_wrong": 0
+        },
+        "background": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 95,
+          "ok_wrong": 1
+        },
+        "angle": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 92,
+          "ok_wrong": 0
+        },
+        "distance": {
+          "n": 104,
+          "correct": 89,
+          "ok_right": 83,
+          "ok_wrong": 7
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 98,
+          "ok_wrong": 0
+        },
+        "compression": {
+          "n": 104,
+          "correct": 98,
+          "ok_right": 94,
+          "ok_wrong": 2
+        },
+        "combined": {
+          "n": 104,
+          "correct": 98,
+          "ok_right": 78,
+          "ok_wrong": 3
+        }
+      }
     }
   },
   "caveat": "Field-trained models were trained with augmentation imitating the same kinds of condition, through different generators, so this is not a fully independent test for them. Real field photographs are."

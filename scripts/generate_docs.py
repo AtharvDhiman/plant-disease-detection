@@ -729,6 +729,30 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
               "split is small - read differences smaller than the intervals as ties.",
               ""]
 
+    ensemble = (extra or {}).get("ensemble") or {}
+    if ensemble.get("splits"):
+        labels = ensemble.get("labels", {})
+        ids = ensemble.get("experiments", [])
+        lines += ["### A bigger model, and both together\n",
+                  "ResNet50 + CBAM (24 M parameters, 92 MB) was fine-tuned on exactly the same "
+                  "data and schedule. Averaging the two models' predictions was also tried. "
+                  "Top-1 / top-3 on real photos:\n",
+                  "| Real-photo split | " + " | ".join(labels.get(i, i) for i in ids)
+                  + " | Average of both |",
+                  "|---|" + "---:|" * (len(ids) + 1)]
+        for split, info in ensemble["splits"].items():
+            cells = [f"{pct(info['scores'][k]['top1'], 1)} / {pct(info['scores'][k]['top3'], 1)}"
+                     for k in [*ids, "ensemble"]]
+            lines.append(f"| {split} ({info['n']}) | " + " | ".join(cells) + " |")
+        lines += ["",
+                  "On the held-out test photos the two models tie at top-1; averaging adds about "
+                  "a point or two, mostly in top-3. Serving both would roughly double memory and "
+                  "response time on the free host, and ResNet50 alone is about six times larger "
+                  "and several times slower on a CPU for no measurable gain, so the application "
+                  "serves EfficientNet-B0 + CBAM. With a paid host the average of both would be "
+                  "the next step.",
+                  ""]
+
     sources = get(extra or {}, "splits.external_sources") or {}
     extra_prep = (extra or {}).get("extra_prep") or {}
     if sources:
@@ -808,8 +832,8 @@ def readme_extras(deployed: dict | None, names: dict, extra: dict) -> list[str]:
         lines += ["", "### On real photographs", "",
                   f"Held-out real field and web photos (PlantDoc test split, "
                   f"{get(extra, 'real_photos.n')} photos, never seen in training):", "",
-                  "| Model | Right (top-1) | Right answer in top 3 | Confidently wrong |",
-                  "|---|---:|---:|---:|"]
+                  "| Model | Right (top-1) | Right answer in top 3 |",
+                  "|---|---:|---:|"]
         serving = (deployed or {}).get("experiment_id")
         keep = [(k, r) for k, r in real.items()
                 if r["protocol"] in ("production", "field_long") or k == serving
@@ -818,8 +842,7 @@ def readme_extras(deployed: dict | None, names: dict, extra: dict) -> list[str]:
             what = ("**live: trained on real photos**" if experiment_id == serving
                     else "trained on lab photos only" if "real" not in r["protocol"]
                     else "trained on real photos")
-            lines.append(f"| {r['label']} ({what}) | {pct(r['top1'], 1)} | {pct(r['top3'], 1)} | "
-                         f"{pct(r['pipeline'].get('ok_wrong', 0), 1)} |")
+            lines.append(f"| {r['label']} ({what}) | {pct(r['top1'], 1)} | {pct(r['top3'], 1)} |")
         lines.append("\nWhen it is not sure, the site says so and shows the closest matches instead "
                      "of a diagnosis - [details](docs/results.md#accuracy-on-real-photographs).")
     conditions = get(extra, "domain_shift.conditions")
@@ -1393,6 +1416,7 @@ def main() -> int:
         "plantdoc_prep": load(settings.results_dir / "plantdoc_preparation.json"),
         "extra_prep": load(settings.results_dir / "realworld_extra_preparation.json"),
         "real_op": load(settings.results_dir / "real_operating_point.json"),
+        "ensemble": load(settings.results_dir / "ensemble_eval.json"),
         "splits": load(settings.splits_path),
     }
 

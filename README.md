@@ -268,11 +268,12 @@ All 38 classes: [`docs/results.md` → Per-class accuracy](docs/results.md#per-c
 
 Held-out real field and web photos (PlantDoc test split, 236 photos, never seen in training):
 
-| Model | Right (top-1) | Right answer in top 3 | Confidently wrong |
-|---|---:|---:|---:|
-| EfficientNet-B0 (trained on lab photos only) | 30.1% | 52.1% | 7.2% |
-| EfficientNet-B0 + CBAM (trained on lab photos only) | 31.8% | 59.7% | 11.0% |
-| EfficientNet-B0 + CBAM (**live: trained on real photos**) | 72.0% | 92.8% | 8.5% |
+| Model | Right (top-1) | Right answer in top 3 |
+|---|---:|---:|
+| EfficientNet-B0 (trained on lab photos only) | 30.1% | 52.1% |
+| EfficientNet-B0 + CBAM (trained on lab photos only) | 31.8% | 59.7% |
+| EfficientNet-B0 + CBAM (**live: trained on real photos**) | 72.0% | 92.8% |
+| ResNet50 + CBAM (trained on real photos) | 72.5% | 89.8% |
 
 When it is not sure, the site says so and shows the closest matches instead of a diagnosis - [details](docs/results.md#accuracy-on-real-photographs).
 
@@ -280,13 +281,13 @@ When it is not sure, the site says so and shows the closest matches instead of a
 
 | Condition | Correct class |
 |---|---:|
-| Original lab photo | 94.2% |
-| Leaf on a soil background | 100.0% |
-| Photographed off-axis | 99.0% |
-| Leaf small in the frame (far away) | 88.5% |
-| Harsh directional sunlight | 99.0% |
-| Heavy JPEG compression | 92.3% |
-| All of the above (closest to a field photo) | 95.2% |
+| Original lab photo | 93.3% |
+| Leaf on a soil background | 98.1% |
+| Photographed off-axis | 98.1% |
+| Leaf small in the frame (far away) | 84.6% |
+| Harsh directional sunlight | 96.2% |
+| Heavy JPEG compression | 94.2% |
+| All of the above (closest to a field photo) | 93.3% |
 
 Leaves imitated as field photos, through the full live pipeline - [details](docs/results.md#accuracy-on-field-like-photos).
 
@@ -324,6 +325,7 @@ Trained on the complete training split at 224px and scored on the full test spli
 | **★** | EfficientNet-B0 + CBAM | field_real | 99.56% | 0.9956 | 0.9954 | 0.9955 | 99.98% | 4.26M | 16.4 MB | 14.56 | 0.0527 |
 | **★** | EfficientNet-B0 + CBAM | field_real_all | 99.53% | 0.9952 | 0.9952 | 0.9952 | 99.98% | 4.26M | 16.4 MB | 13.35 | 0.0506 |
 | **★** | EfficientNet-B0 + CBAM | field_real_plus | 99.33% | 0.9933 | 0.9931 | 0.9931 | 99.98% | 4.26M | 16.4 MB | 14.02 | 0.0470 |
+|  | ResNet50 + CBAM | field_real_plus_resnet50 | 99.23% | 0.9922 | 0.9922 | 0.9922 | 99.97% | 24.11M | 92.2 MB | 9.10 | 0.0458 |
 |  | EfficientNet-B0 | production | 99.06% | 0.9906 | 0.9904 | 0.9904 | 99.94% | 4.06M | 15.6 MB | 18.50 | 0.0500 |
 | **★** | EfficientNet-B0 + CBAM | production | 99.00% | 0.9900 | 0.9898 | 0.9898 | 99.94% | 4.26M | 16.4 MB | 13.17 | 0.0500 |
 | **★** | Custom CNN + CBAM | production | 98.42% | 0.9845 | 0.9842 | 0.9842 | 99.90% | 1.26M | 4.8 MB | 7.41 | 0.0245 |

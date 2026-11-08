@@ -1,0 +1,64 @@
+{
+  "generated_at": "2026-11-08T12:31:07.802590+00:00",
+  "experiments": [
+    "efficientnet_b0_cbam__fieldrealplus__cf5d499f",
+    "resnet50_cbam__fieldrealplusr50__a9442307"
+  ],
+  "labels": {
+    "efficientnet_b0_cbam__fieldrealplus__cf5d499f": "EfficientNet-B0 + CBAM",
+    "resnet50_cbam__fieldrealplusr50__a9442307": "ResNet50 + CBAM"
+  },
+  "splits": {
+    "plantdoc_test": {
+      "n": 236,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.7203389830508474,
+          "top3": 0.9279661016949152
+        },
+        "resnet50_cbam__fieldrealplusr50__a9442307": {
+          "top1": 0.7245762711864406,
+          "top3": 0.8983050847457628
+        },
+        "ensemble": {
+          "top1": 0.7245762711864406,
+          "top3": 0.940677966101695
+        }
+      }
+    },
+    "plantdoc_val": {
+      "n": 348,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.735632183908046,
+          "top3": 0.9080459770114943
+        },
+        "resnet50_cbam__fieldrealplusr50__a9442307": {
+          "top1": 0.7298850574712644,
+          "top3": 0.9080459770114943
+        },
+        "ensemble": {
+          "top1": 0.7385057471264368,
+          "top3": 0.9396551724137931
+        }
+      }
+    },
+    "plantwild_val": {
+      "n": 734,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
+          "top1": 0.6920980926430518,
+          "top3": 0.8923705722070845
+        },
+        "resnet50_cbam__fieldrealplusr50__a9442307": {
+          "top1": 0.7193460490463215,
+          "top3": 0.888283378746594
+        },
+        "ensemble": {
+          "top1": 0.7356948228882834,
+          "top3": 0.9100817438692098
+        }
+      }
+    }
+  }
+}

@@ -122,20 +122,64 @@ def generate_report():
     comparison_n = next(iter((field_comparison.get("results") or {}).values()), {}) \
         .get("conditions", {}).get("original", {}).get("n", "—")
 
-    ood_rows = ""
-    for key, (name, _) in shift_labels.items():
-        try:
-            strict = ood_points["points"]["calibrated_95tpr"]["conditions"][key]
-            loose = ood_points["points"]["in_force"]["conditions"][key]
-        except KeyError:
+    # Real photographs: the PlantDoc held-out test split, the "not sure"
+    # threshold chosen on real validation photos, and the data sources.
+    real_eval = load_json(PROJECT_ROOT / "artifacts/results/real_photo_eval.json", {})
+    real_op = load_json(PROJECT_ROOT / "artifacts/results/real_operating_point.json", {})
+    ensemble = load_json(PROJECT_ROOT / "artifacts/results/ensemble_eval.json", {})
+    real_n = real_eval.get("n", "—")
+    real_rows = ""
+    order = ["production", "field_long", "field_long_resnet50", "field_real", "field_real_all",
+             "field_real_plus", "field_real_plus_resnet50"]
+    trained_on = {"production": "lab only", "field_long": "lab only (field augmentation)",
+                  "field_long_resnet50": "lab only (field augmentation)",
+                  "field_real": "lab + 1 real-photo set, 6 ep", "field_real_all": "lab + 3 sets, 6 ep",
+                  "field_real_plus": "lab + 5 sets, 10 ep", "field_real_plus_resnet50": "lab + 5 sets, 10 ep"}
+    for experiment_id, r in sorted((real_eval.get("results") or {}).items(),
+                                   key=lambda kv: order.index(kv[1]["protocol"])
+                                   if kv[1]["protocol"] in order else 99):
+        live = experiment_id == dep_id
+        shade = ' style="background-color: #ecfdf5; font-weight: 600;"' if live else ""
+        low, high = r["top1_ci95"]
+        real_rows += (f"<tr{shade}><td>{r['label']}{' (serving)' if live else ''}</td>"
+                      f"<td>{trained_on.get(r['protocol'], r['protocol'])}</td>"
+                      f"<td class='numeric'>{r['top1'] * 100:.1f}% ({low * 100:.0f}–{high * 100:.0f})</td>"
+                      f"<td class='numeric'>{r['top3'] * 100:.1f}%</td>"
+                      f"<td class='numeric'>{r['lab_test_accuracy'] * 100:.2f}%</td></tr>\n")
+    live_real = (real_eval.get("results") or {}).get(dep_id, {})
+    real_top1 = f"{live_real.get('top1', 0) * 100:.1f}%"
+    real_top3 = f"{live_real.get('top3', 0) * 100:.1f}%"
+    old_real = next((r for r in (real_eval.get("results") or {}).values()
+                     if r["protocol"] == "field_long"), {})
+    old_real_top1 = f"{old_real.get('top1', 0) * 100:.1f}%"
+
+    op_rows = ""
+    chosen = real_op.get("chosen") or {}
+    for r in real_op.get("sweep", []):
+        if round(r["msp_min"] * 100) % 10 and abs(r["msp_min"] - chosen.get("msp_min", -1)) > 1e-6:
             continue
-        cell = lambda t, k: f"{t.get(k, 0) / t['n'] * 100:.0f}%"  # noqa: E731
-        ood_rows += (f"<tr><td>{name}</td><td class='numeric'>{cell(strict, 'ok_right')}</td>"
-                     f"<td class='numeric'>{cell(strict, 'ok_wrong')}</td>"
-                     f"<td class='numeric'>{cell(strict, 'not_identified')}</td>"
-                     f"<td class='numeric'>{cell(loose, 'ok_right')}</td>"
-                     f"<td class='numeric'>{cell(loose, 'ok_wrong')}</td>"
-                     f"<td class='numeric'>{cell(loose, 'not_identified')}</td></tr>\n")
+        mark = abs(r["msp_min"] - chosen.get("msp_min", -1)) < 1e-6
+        shade = ' style="background-color: #ecfdf5; font-weight: 600;"' if mark else ""
+        op_rows += (f"<tr{shade}><td class='numeric'>{r['msp_min']:.2f}{' (in force)' if mark else ''}</td>"
+                    f"<td class='numeric'>{r['coverage'] * 100:.1f}%</td>"
+                    f"<td class='numeric'>{r['precision'] * 100:.1f}%</td>"
+                    f"<td class='numeric'>{r['shown_wrong'] * 100:.1f}%</td></tr>\n")
+    op_photos = real_op.get("photos", "—")
+    op_wrong_now = f"{chosen.get('shown_wrong', 0) * 100:.1f}%"
+    op_wrong_before = next((f"{r['shown_wrong'] * 100:.1f}%" for r in real_op.get("sweep", [])
+                            if abs(r["msp_min"] - 0.15) < 1e-6), "—")
+
+    source_rows = ""
+    for name, info in (splits.get("external_sources") or {}).items():
+        source_rows += (f"<tr><td>{name}</td><td>{info.get('licence')}</td>"
+                        f"<td>{info.get('citation')}</td></tr>\n")
+
+    ensemble_rows = ""
+    for split, info in (ensemble.get("splits") or {}).items():
+        cells = "".join(f"<td class='numeric'>{info['scores'][k]['top1'] * 100:.1f}% / "
+                        f"{info['scores'][k]['top3'] * 100:.1f}%</td>"
+                        for k in [*ensemble.get("experiments", []), "ensemble"])
+        ensemble_rows += f"<tr><td>{split} ({info['n']})</td>{cells}</tr>\n"
 
     # Collect images as base64
     img_compare_acc = image_to_base64(PROJECT_ROOT / "artifacts/plots/compare_accuracy.png")
@@ -496,7 +540,7 @@ This project develops an <strong>end-to-end, trustworthy, production-grade deep 
 
 <div class="callout callout-blue avoid-break">
   <div class="callout-title">Key Architectural Achievement</div>
-  The deployed model ({dep_label}, trained with field-condition augmentation) achieves <strong>{dep_acc} overall accuracy, {dep_f1_pct} Macro F1, and {dep_top3} Top-3 accuracy</strong> across 17,572 held-out test images, running the model in ~{inference_ms} ms per image (~{pipeline_ms} ms for the whole pipeline) on a single CPU thread without a GPU. On photographs made to look like field shots it keeps most of that accuracy, where the previous laboratory-trained model fell to about 70% (Section 10).
+  The deployed model ({dep_label}, fine-tuned on five real-photo datasets) achieves <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1 and {dep_top3} Top-3 accuracy</strong> on 17,572 held-out laboratory images and &mdash; the number that matters for a phone or web photo &mdash; <strong>{real_top1} on {real_n} held-out real photographs</strong> (top-3 {real_top3}), up from {old_real_top1} for the laboratory-trained model. It runs in ~{inference_ms} ms per image (~{pipeline_ms} ms for the whole pipeline) on a single CPU thread without a GPU (Section 10).
 </div>
 
 <!-- ========================================================================= -->
@@ -607,7 +651,7 @@ The application enforces strict decoupling between <strong>Offline Training/Rese
 
   <div class="flow-step">
     <strong>Stage 5: Temperature-Scaled Calibration & OOD Scoring</strong><br>
-    Scales raw logits by calibrated parameter <i>T = {dep_t}</i> and computes softmax probabilities. Simultaneously evaluates the raw logits against the Out-of-Distribution operating point in force (Max Softmax Probability &ge; {dep_msp}, Predictive Entropy &le; {dep_entropy}). This is deliberately more permissive than the thresholds calibrated on laboratory leaves; Section 10 measures the trade-off.
+    Scales raw logits by calibrated parameter <i>T = {dep_t}</i> and computes softmax probabilities. Simultaneously evaluates the raw logits against the "not sure" threshold (Max Softmax Probability &ge; {dep_msp}), chosen on real validation photographs so that answers shown as a diagnosis are right at least 90% of the time; below it the app shows the closest matches instead of a verdict (Section 10).
   </div>
 
   <div class="flow-step">
@@ -1324,33 +1368,57 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
 
 <div class="callout callout-amber avoid-break">
   <div class="callout-title">Reading These Results Honestly</div>
-  <strong>Not independent.</strong> The augmentation imitates the same kinds of condition the probe applies (through different generators), so the probe flatters the field-trained models; real field photographs are the independent test, and none were used. <strong>Not attributable to CBAM.</strong> In round one, plain EfficientNet-B0 and EfficientNet-B0 + CBAM tied (98.32% vs 98.25%). Round two trained only the CBAM model with three changes at once (longer schedule, whole network, milder augmentation), so the gain over the earlier models cannot be assigned to any single one of them, and no plain EfficientNet was run on that schedule. The round-two run was also interrupted by a machine restart during its final epoch; its best checkpoint (epoch 9 of 10) was evaluated exactly as a finished run would have been.
+  <strong>Not independent.</strong> The augmentation imitates the same kinds of condition the probe applies (through different generators), so the probe flatters the field-trained models; real field photographs are the independent test, reported next. <strong>Not attributable to CBAM.</strong> In round one, plain EfficientNet-B0 and EfficientNet-B0 + CBAM tied (98.32% vs 98.25%). Round two trained only the CBAM model with three changes at once (longer schedule, whole network, milder augmentation), so the gain over the earlier models cannot be assigned to any single one of them, and no plain EfficientNet was run on that schedule. The round-two run was also interrupted by a machine restart during its final epoch; its best checkpoint (epoch 9 of 10) was evaluated exactly as a finished run would have been.
 </div>
 
 <div class="avoid-break">
-  <h3>Out-of-Distribution Operating Point</h3>
+  <h3>Accuracy on Real Photographs</h3>
   <p>
-  Thresholds calibrated to keep 95% of <em>laboratory</em> leaves are strict for field photographs, which are naturally less confident. The application is served with a more permissive setting (top-class probability at least {dep_msp}), in force since real-world uploads were being refused. Through the full pipeline on the same photographs, the two settings trade correct diagnoses against confident wrong ones:
+  Laboratory accuracy (~99%) does not carry over to a photograph from a phone or a web search. The independent test is the held-out test split of PlantDoc &mdash; {real_n} real field and web photographs that no model saw in training (perceptual-hash de-duplication removed any training photo matching a test photo). The models trained on laboratory photographs only are right on about a third of them; fine-tuning on five real-photo datasets raises that to <strong>{real_top1}</strong>, with the right disease among the top three <strong>{real_top3}</strong> of the time:
   </p>
   <table>
-    <thead>
-      <tr>
-        <th rowspan="2">Condition</th>
-        <th colspan="3" style="text-align:center;">Calibrated (strict)</th>
-        <th colspan="3" style="text-align:center;">In force (permissive)</th>
-      </tr>
-      <tr>
-        <th class="numeric">right</th><th class="numeric">wrong</th><th class="numeric">not identified</th>
-        <th class="numeric">right</th><th class="numeric">wrong</th><th class="numeric">not identified</th>
-      </tr>
-    </thead>
+    <thead><tr><th>Model</th><th>Trained on</th><th class="numeric">Real photos: top-1 (95% CI)</th><th class="numeric">Top-3</th><th class="numeric">Lab test</th></tr></thead>
     <tbody>
-      {ood_rows}
+      {real_rows}
     </tbody>
   </table>
-  <div style="font-size: 7.5pt; color: #64748b; font-style: italic;">
-    <em>right</em>/<em>wrong</em>: answers shown with status ok. <em>not identified</em>: flagged out-of-distribution, with the closest match still shown. The strict setting removes most confident wrong answers but refuses many correct photographs.
-  </div>
+</div>
+
+<div class="avoid-break">
+  <h3>Real-Photo Training Data</h3>
+  <p>Only classes that map unambiguously onto the model's 38 were used; photographs were resized to 512&nbsp;px and de-duplicated. A stratified PlantVillage subset was mixed in so no class is forgotten. No photographs are committed to the repository.</p>
+  <table>
+    <thead><tr><th>Source</th><th>Licence</th><th>Citation</th></tr></thead>
+    <tbody>
+      {source_rows}
+    </tbody>
+  </table>
+  <div style="font-size: 7.5pt; color: #64748b; font-style: italic;">PlantWild is licensed CC BY-NC-ND 4.0 (non-commercial), so the deployed model is for research and education.</div>
+</div>
+
+<div class="avoid-break">
+  <h3>When the Application Says "Not Sure"</h3>
+  <p>
+  The threshold below which the app gives no plain diagnosis was chosen on {op_photos} real validation photographs (never the test split) as the most permissive value at which answers shown as a diagnosis are right at least 90% of the time. At the previous setting (0.15) this model would give a confidently wrong diagnosis for {op_wrong_before} of real photos; at {dep_msp} that falls to {op_wrong_now}, and the uncertain photos are shown with their closest matches instead.
+  </p>
+  <table>
+    <thead><tr><th class="numeric">Threshold</th><th class="numeric">Shown as diagnosis</th><th class="numeric">Of those, right</th><th class="numeric">Confidently wrong (of all)</th></tr></thead>
+    <tbody>
+      {op_rows}
+    </tbody>
+  </table>
+</div>
+
+<div class="avoid-break">
+  <h3>A Bigger Model, and Both Together</h3>
+  <p>ResNet50 + CBAM (92&nbsp;MB) was fine-tuned on the same data and schedule, and averaging both models' predictions was tested. Top-1 / top-3 on real photos:</p>
+  <table>
+    <thead><tr><th>Split</th><th class="numeric">EfficientNet-B0 + CBAM</th><th class="numeric">ResNet50 + CBAM</th><th class="numeric">Average of both</th></tr></thead>
+    <tbody>
+      {ensemble_rows}
+    </tbody>
+  </table>
+  <p>The two tie on the test photos and averaging adds a point or two, mostly at top-3, for roughly double the memory and latency &mdash; not worth it on a 512&nbsp;MB free host, so the application serves the EfficientNet model.</p>
 </div>
 
 <div class="avoid-break">
@@ -1373,7 +1441,7 @@ This project demonstrates that deploying deep learning vision models for agricul
 </p>
 <ol>
   <li><strong>Controlled Scientific Rigor:</strong> 18 benchmark architectures, ablation study with noise-floor benchmarking, and 3-way split protocol.</li>
-  <li><strong>Measured Model Selection:</strong> {dep_label} achieving <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1</strong> with small size ({dep_size} MB) and fast CPU inference (~{inference_ms} ms), trained with field-condition augmentation so that it holds up on field-style photographs.</li>
+  <li><strong>Measured Model Selection:</strong> {dep_label} achieving <strong>{dep_acc} accuracy, {dep_f1_pct} Macro F1</strong> with small size ({dep_size} MB) and fast CPU inference (~{inference_ms} ms), fine-tuned on five real-photo datasets: on held-out real photographs it is right {real_top1} of the time (top-3 {real_top3}), up from {old_real_top1} for the laboratory-trained model.</li>
   <li><strong>Production Safety & Trust:</strong> Image quality filtering, a dust/soil/sand detector, out-of-distribution rejection, and post-hoc temperature scaling bringing Expected Calibration Error down to <strong>{dep_ece_cal}</strong>.</li>
   <li><strong>Cloud Engineering Excellence:</strong> A single-container multi-stage architecture powered by ONNX Runtime, effortlessly fitting into Render's 512 MB free tier with 4&times; safety headroom.</li>
 </ol>

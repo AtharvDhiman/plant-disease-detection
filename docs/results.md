@@ -4,7 +4,7 @@
 
 # Results
 
-_Generated 2026-11-08 10:55 UTC from `artifacts/results/experiments.json` (33 completed experiments)._
+_Generated 2026-11-08 12:31 UTC from `artifacts/results/experiments.json` (34 completed experiments)._
 
 ## Headline
 
@@ -145,6 +145,7 @@ Trained on the complete training split at 224 px and scored on the full 17,572-i
 | **★** | EfficientNet-B0 + CBAM | field_real | 99.56% | 0.9956 | 0.9954 | 0.9955 | 99.98% | 4.26M | 16.4 MB | 14.56 | 0.0527 |
 | **★** | EfficientNet-B0 + CBAM | field_real_all | 99.53% | 0.9952 | 0.9952 | 0.9952 | 99.98% | 4.26M | 16.4 MB | 13.35 | 0.0506 |
 | **★** | EfficientNet-B0 + CBAM | field_real_plus | 99.33% | 0.9933 | 0.9931 | 0.9931 | 99.98% | 4.26M | 16.4 MB | 14.02 | 0.0470 |
+|  | ResNet50 + CBAM | field_real_plus_resnet50 | 99.23% | 0.9922 | 0.9922 | 0.9922 | 99.97% | 24.11M | 92.2 MB | 9.10 | 0.0458 |
 |  | EfficientNet-B0 | production | 99.06% | 0.9906 | 0.9904 | 0.9904 | 99.94% | 4.06M | 15.6 MB | 18.50 | 0.0500 |
 | **★** | EfficientNet-B0 + CBAM | production | 99.00% | 0.9900 | 0.9898 | 0.9898 | 99.94% | 4.26M | 16.4 MB | 13.17 | 0.0500 |
 |  | CBAM on last two stages | production | 98.81% | 0.9881 | 0.9881 | 0.9880 | 99.94% | 1.26M | 4.8 MB | 4.18 | 0.0275 |
@@ -185,6 +186,7 @@ Temperature scaling fits one scalar on the validation split. It cannot change wh
 | Ablation B: CNN + Channel attention | 0.0429 | 0.0036 | 0.642 | +92% |
 | CBAM on last two stages | 0.0429 | 0.0051 | 0.662 | +88% |
 | EfficientNet-B0 + CBAM | 0.0437 | 0.0017 | 0.536 | +96% |
+| ResNet50 + CBAM | 0.0458 | 0.0467 | 1.003 | -2% |
 | EfficientNet-B0 + CBAM | 0.0470 | 0.0469 | 1.000 | +0% |
 | CBAM on every stage | 0.0472 | 0.0057 | 0.670 | +88% |
 | ResNet50 + CBAM | 0.0472 | 0.0013 | 0.605 | +97% |
@@ -267,6 +269,7 @@ Every score above comes from PlantVillage's laboratory photographs, and the firs
 | EfficientNet-B0 + CBAM | field_real | 6/6 | field_mild | 99.56% | 0.9955 | 78 |  |
 | EfficientNet-B0 + CBAM | field_real_all | 6/6 | field_mild | 99.53% | 0.9952 | 83 |  |
 | EfficientNet-B0 + CBAM | field_real_plus | 10/10 | field_mild | 99.33% | 0.9931 | 118 | ✔ |
+| ResNet50 + CBAM | field_real_plus_resnet50 | 10/10 | field_mild | 99.23% | 0.9922 | 136 |  |
 
 `production`: standard augmentation, last 3 blocks fine-tuned, 6 epochs. `field`: field augmentation on 70% of images, otherwise the same schedule. `field_long`: field augmentation on 50% of images, **the whole network fine-tuned**, 10 epochs. All scored on the same 17,572-image test split.
 
@@ -285,6 +288,7 @@ The same 26 disease classes x 4 held-out leaves, put through each field conditio
 | EfficientNet-B0 + CBAM [field_long] | 99.68% | 96.2% (1) | 99.0% (0) | 97.1% (1) | 94.2% (0) | 97.1% (1) | 96.2% (0) | 98.1% (1) |
 | ResNet50 + CBAM [field_long_resnet50] | 99.74% | 97.1% (0) | 99.0% (0) | 98.1% (0) | 94.2% (1) | 96.2% (0) | 95.2% (0) | 97.1% (2) |
 | EfficientNet-B0 + CBAM [field_real_plus] **←** | 99.33% | 97.1% (0) | 99.0% (0) | 97.1% (0) | 91.3% (3) | 98.1% (0) | 94.2% (2) | 92.3% (1) |
+| ResNet50 + CBAM [field_real_plus_resnet50] | 99.23% | 95.2% (0) | 98.1% (1) | 95.2% (0) | 85.6% (7) | 97.1% (0) | 94.2% (2) | 94.2% (3) |
 
 n = 104 images per condition. A refusal produces no class and counts as not correct. The row marked **←** is the model the application serves.
 
@@ -315,10 +319,23 @@ Before any training, 16 PlantDoc training photos were removed because a perceptu
 | EfficientNet-B0 + CBAM | lab + 1 real-photo dataset, 6 epochs | 66.5% (60%–72%) | 90.7% | 44.1% | 9.3% | 99.56% |
 | EfficientNet-B0 + CBAM | lab + 3 real-photo datasets, 6 epochs | 67.4% (61%–73%) | 90.7% | 46.6% | 9.3% | 99.53% |
 | EfficientNet-B0 + CBAM **←** | lab + 5 real-photo datasets, 10 epochs | 72.0% (66%–77%) | 92.8% | 51.7% | 8.5% | 99.33% |
+| ResNet50 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.5% (66%–78%) | 89.8% | 60.2% | 15.3% | 99.23% |
 
 *Top-1/top-3*: the network alone, on every photo. *Shown right / wrong*: what the full application displays with status `ok` (the rest are flagged as uncertain, dusty or not identified, or refused), with every model judged at the one "not sure" threshold now in force - so these columns compare networks, not the settings each was originally served with. The row marked **←** is the model the application serves.
 
 **What this means.** Real photographs are much harder than laboratory ones: several leaves, real backgrounds, different lighting, cultivars and disease stages. A model's PlantVillage accuracy (~99.7%) is not its accuracy on a photo from a phone or a web search, and this table is the closer estimate. PlantDoc's labels are themselves known to contain some noise, and its test split is small - read differences smaller than the intervals as ties.
+
+### A bigger model, and both together
+
+ResNet50 + CBAM (24 M parameters, 92 MB) was fine-tuned on exactly the same data and schedule. Averaging the two models' predictions was also tried. Top-1 / top-3 on real photos:
+
+| Real-photo split | EfficientNet-B0 + CBAM | ResNet50 + CBAM | Average of both |
+|---|---:|---:|---:|
+| plantdoc_test (236) | 72.0% / 92.8% | 72.5% / 89.8% | 72.5% / 94.1% |
+| plantdoc_val (348) | 73.6% / 90.8% | 73.0% / 90.8% | 73.9% / 94.0% |
+| plantwild_val (734) | 69.2% / 89.2% | 71.9% / 88.8% | 73.6% / 91.0% |
+
+On the held-out test photos the two models tie at top-1; averaging adds about a point or two, mostly in top-3. Serving both would roughly double memory and response time on the free host, and ResNet50 alone is about six times larger and several times slower on a CPU for no measurable gain, so the application serves EfficientNet-B0 + CBAM. With a paid host the average of both would be the next step.
 
 ### Real-photo training data
 
@@ -360,17 +377,17 @@ Every number above comes from laboratory photographs. This measures how the full
 
 | Condition | Correct class | vs lab | Not marked reliable |
 |---|---:|---:|---:|
-| Original lab photo | 94.2% (98/104) | — | 6.7% |
-| Leaf on a soil background | 100.0% (104/104) | +5.8 pt | 3.8% |
-| Photographed off-axis | 99.0% (103/104) | +4.8 pt | 1.9% |
-| Leaf small in the frame (far away) | 88.5% (92/104) | -5.8 pt | 19.2% |
-| Harsh directional sunlight | 99.0% (103/104) | +4.8 pt | 1.9% |
-| Heavy JPEG compression | 92.3% (96/104) | -1.9 pt | 9.6% |
-| All of the above (closest to a field photo) | 95.2% (99/104) | +1.0 pt | 13.5% |
+| Original lab photo | 93.3% (97/104) | — | 10.6% |
+| Leaf on a soil background | 98.1% (102/104) | +4.8 pt | 6.7% |
+| Photographed off-axis | 98.1% (102/104) | +4.8 pt | 9.6% |
+| Leaf small in the frame (far away) | 84.6% (88/104) | -8.7 pt | 26.9% |
+| Harsh directional sunlight | 96.2% (100/104) | +2.9 pt | 4.8% |
+| Heavy JPEG compression | 94.2% (98/104) | +1.0 pt | 15.4% |
+| All of the above (closest to a field photo) | 93.3% (97/104) | +0.0 pt | 30.8% |
 
 *Correct class* counts the top prediction when the app gave one, including a provisional or low-confidence answer. A refusal (poor quality, not a plant, heavy dust) produces no class and counts as not correct - which is why even the unmodified photos score below the model's lab test accuracy: the pipeline's own checks refuse a few percent of clean laboratory photos. *Not marked reliable* is any outcome other than a plain `ok`.
 
-The hardest single condition is **leaf small in the frame (far away)** (88.5%). When the leaf is small in the frame the app advises moving closer.
+The hardest single condition is **leaf small in the frame (far away)** (84.6%). When the leaf is small in the frame the app advises moving closer.
 
 > Transformations imitate field conditions applied to laboratory images. Real photographs additionally bring occlusion, motion blur, overlapping leaves and unseen species, so this is a lower bound on the accuracy drop rather than an estimate of it.
 
