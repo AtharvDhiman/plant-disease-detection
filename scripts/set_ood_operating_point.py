@@ -38,6 +38,10 @@ def main() -> int:
     parser.add_argument("--msp-min", type=float, required=True)
     parser.add_argument("--entropy-max", type=float, required=True)
     parser.add_argument("--reason", required=True)
+    parser.add_argument("--method", default=None, choices=["msp", "entropy", "msp+entropy"],
+                        help="Which criteria may veto a prediction (default: keep the calibrated one).")
+    parser.add_argument("--chosen-by", default="hand",
+                        help="How the point was chosen, recorded alongside it.")
     parser.add_argument("--source", default=str(settings.metadata_dir / "ood_thresholds.json"),
                         help="The calibrated file to start from.")
     args = parser.parse_args()
@@ -59,13 +63,14 @@ def main() -> int:
     # thresholds. They do not describe the operating point now in force, so they
     # are moved aside rather than left looking as though they do.
     calibrated_values["per_score"] = selected.pop("per_score", None)
-    selected["method"] = selected.get("method", "msp+entropy")
+    selected["method"] = args.method or selected.get("method", "msp+entropy")
 
     calibrated["selected"] = selected
     calibrated["operating_point"] = {
         "msp_min": args.msp_min,
         "entropy_max": args.entropy_max,
-        "chosen_by": "hand",
+        "chosen_by": args.chosen_by,
+        "method": selected["method"],
         "reason": args.reason,
         "set_at": datetime.now(timezone.utc).isoformat(),
         "calibrated_at_target_tpr": {**calibrated_values, "target_tpr": selected.get("target_tpr")},

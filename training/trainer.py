@@ -236,6 +236,15 @@ def build_loaders(
     train_ds = load_split(split_config, config.train_split, train_tf)
     val_ds = load_split(split_config, config.val_split, eval_tf)
 
+    other_sources = {e.source for e in train_ds.entries} - {"plantvillage"}
+    if other_sources and config.augmentation.startswith("field"):
+        # Field-condition augmentation cuts the leaf off a grey card and places it
+        # on a synthetic backdrop. Real field photographs have no grey card - the
+        # cut-out would slice through real foliage - and already carry real
+        # backgrounds, so they get the standard augmentation instead.
+        real_tf = build_train_transform(config.image_size, strength="medium")
+        train_ds.source_transforms = dict.fromkeys(other_sources, real_tf)
+
     generator = torch.Generator()
     generator.manual_seed(config.seed)
 
@@ -384,6 +393,14 @@ def _train_model(
     class_counts = train_ds.class_counts()
 
     model = build_model(config.model_name, num_classes, pretrained=config.pretrained).to(device)
+    if config.init_checkpoint:
+        # Fine-tuning an already-trained model: its weights replace ImageNet's.
+        initial = torch.load(config.init_checkpoint, map_location=device, weights_only=False)
+        if initial.get("class_names") and initial["class_names"] != class_names:
+            raise ValueError("init_checkpoint was trained on a different class list")
+        model.load_state_dict(initial["model_state_dict"])
+        log.info("Initialised from checkpoint",
+                 fields={"model": config.model_name, "checkpoint": str(config.init_checkpoint)})
     total_params, _ = count_parameters(model)
     size_mb = model_size_mb(model)
 

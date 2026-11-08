@@ -267,6 +267,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--criterion", default="f1_macro", choices=list(CRITERIA))
     parser.add_argument("--model", default=None, help="Force a specific model name.")
+    parser.add_argument("--experiment-id", default=None,
+                        help="Force one specific run. Needed when the deciding evidence is not "
+                             "the lab test split - e.g. accuracy on real photographs "
+                             "(scripts/evaluate_real_photos.py) - and so cannot be expressed as "
+                             "one of the lab-metric criteria.")
+    parser.add_argument("--reason", default=None,
+                        help="Why --experiment-id was chosen; recorded in the manifest.")
     parser.add_argument("--protocol", default=None,
                         help="Restrict selection to one protocol (e.g. production).")
     parser.add_argument("--torchscript", action="store_true")
@@ -299,7 +306,14 @@ def main() -> int:
         log.info("Selecting from full-data production runs",
                  fields={"count": len(production_records)})
 
-    if args.model:
+    if args.experiment_id:
+        chosen = next((r for r in pool if r["experiment_id"] == args.experiment_id), None)
+        if chosen is None:
+            raise SystemExit(f"Experiment {args.experiment_id!r} is not in the pool.")
+        if not args.reason:
+            raise SystemExit("--experiment-id needs --reason: the manifest must say why.")
+        ranking = sorted(pool, key=CRITERIA[args.criterion]["key"], reverse=True)
+    elif args.model:
         chosen = next((r for r in pool if r["model_name"] == args.model), None)
         if chosen is None:
             raise SystemExit(f"Model {args.model!r} has no experiment record in the pool.")
@@ -313,7 +327,8 @@ def main() -> int:
         "selection": {
             "criterion": args.criterion,
             "criterion_description": CRITERIA[args.criterion]["description"],
-            "forced": bool(args.model),
+            "forced": bool(args.model or args.experiment_id),
+            "forced_reason": args.reason,
             "pool": "production" if production_records and not args.protocol else "all",
             "candidates_considered": len(pool),
             "quality_gate": QUALITY_GATE if args.criterion in {"fastest", "smallest"} else None,

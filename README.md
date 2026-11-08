@@ -9,7 +9,8 @@
 
 <p>
   <a href="https://plant-disease-detection-x3y4.onrender.com/"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-online-2f8a4e?style=for-the-badge&logo=render&logoColor=white"></a>
-  <a href="docs/results.md"><img alt="Test accuracy 99.68%" src="https://img.shields.io/badge/test%20accuracy-99.68%25-16432a?style=for-the-badge"></a>
+  <a href="docs/results.md"><img alt="Lab test accuracy 99.33%" src="https://img.shields.io/badge/lab%20accuracy-99.33%25-16432a?style=for-the-badge"></a>
+  <a href="docs/results.md#accuracy-on-real-photographs"><img alt="Real-photo accuracy 72%, top-3 93%" src="https://img.shields.io/badge/real%20photos-72%25%20%C2%B7%20top--3%2093%25-2f8a4e?style=for-the-badge"></a>
   <a href="docs/results.md#per-class-accuracy-deployed-model"><img alt="38 classes, 14 crops" src="https://img.shields.io/badge/classes-38%20%C2%B7%2014%20crops-1f5c38?style=for-the-badge"></a>
 </p>
 <p>
@@ -76,8 +77,10 @@
 
 | | |
 |---|---|
-| 🎯 **99.68% test accuracy** | On 17,572 held-out images, 38 classes across 14 crops — every number generated from the experiment ledger, none hard-coded |
-| 🌾 **Trained for field photos** | Field-condition augmentation (soil backdrops, small leaves, harsh light, JPEG): on photos made to look like field shots it keeps 88–99%, where the lab-trained model fell to 7–70% ([details](docs/results.md#field-condition-training)) |
+| 📷 **Tested on real photos, not just lab ones** | On 236 held-out real field and web photos it names the right disease **72%** of the time (top-3: **93%**), up from **32%** for the lab-trained model — fine-tuned on five real-photo datasets (PlantDoc, PlantWild, Plant Pathology 2021, CCMT, potato field photos) ([details](docs/results.md#accuracy-on-real-photographs)) |
+| 🤔 **Says "not sure" instead of guessing** | The confidence threshold is set on real photos: confidently wrong answers fell from 20% to 7%; uncertain photos get the closest matches instead of a verdict |
+| 🎯 **99.33% lab accuracy** | On 17,572 held-out PlantVillage images, 38 classes across 14 crops — every number generated from the experiment ledger, none hard-coded |
+| 🌾 **Trained for field conditions** | Field-condition augmentation (soil backdrops, small leaves, harsh light, JPEG) keeps 91–99% on lab photos made to look like field shots ([details](docs/results.md#field-condition-training)) |
 | 🧠 **CBAM attention, tested properly** | A controlled ablation (none / channel / spatial / SE / CBAM) and 18 trained configurations against classical ML and 7 other deep architectures, with a measured noise floor |
 | 🔍 **Explains every answer** | Grad-CAM, Grad-CAM++ and the learned CBAM attention map, with the caveat that heat maps are not lesion segmentation |
 | 📏 **Confidence you can read literally** | Temperature-scaled probabilities, banded HIGH / MEDIUM / LOW, with reliability diagrams before and after |
@@ -233,12 +236,12 @@ and must be able to justify itself.
 <!-- RESULTS:START -->
 | Result | Model | Protocol | Value |
 |---|---|---|---|
-| Best accuracy | EfficientNet-B0 + CBAM | field_long | **99.68%** |
-| Best macro F1 | EfficientNet-B0 + CBAM | field_long | **0.9967** |
+| Best accuracy | ResNet50 + CBAM | field_long_resnet50 | **99.74%** |
+| Best macro F1 | ResNet50 + CBAM | field_long_resnet50 | **0.9973** |
 | Fastest inference | Logistic Regression (hand-crafted features) | classical | 0.02 ms/image |
 | Smallest model | Ablation A: CNN | ablation | 4.8 MB |
 | Best proposed (CBAM) model | EfficientNet-B0 + CBAM | field_long | 99.68% accuracy, 0.9967 macro F1 |
-| Serving in the application | EfficientNet-B0 + CBAM | field_long | selected by `f1_macro` |
+| Serving in the application | EfficientNet-B0 + CBAM | field_real_plus | selected by `f1_macro` |
 | Evaluated on | held-out test split | — | 17,572 images, 38 classes |
 
 Rows with different protocols are **not** comparable: `benchmark` models were trained on a fixed subset and scored on a 4,560-image split; `production`, `field` and `field_long` models were trained on the full data and scored on 17,572 images.
@@ -247,19 +250,31 @@ Rows with different protocols are **not** comparable: `benchmark` models were tr
 
 | Accuracy | Top-3 | Macro F1 | Balanced acc. | Cohen's κ | ROC AUC | Test images |
 |---:|---:|---:|---:|---:|---:|---:|
-| **99.68%** | 99.98% | 0.9967 | 99.67% | 0.9967 | 0.99994 | 17,572 |
+| **99.33%** | 99.98% | 0.9931 | 99.31% | 0.9931 | 0.99993 | 17,572 |
 
 Hardest classes (per-class accuracy = recall):
 
 | Class | Accuracy | F1 |
 |---|---:|---:|
-| Corn (maize) - Cercospora leaf spot Gray leaf spot | 95.12% | 0.9642 |
-| Corn (maize) - Northern Leaf Blight | 97.90% | 0.9669 |
-| Tomato - Target Spot | 97.37% | 0.9834 |
-| Tomato - Spider mites Two-spotted spider mite | 99.77% | 0.9909 |
-| Tomato - Late blight | 99.35% | 0.9946 |
+| Corn (maize) - Cercospora leaf spot Gray leaf spot | 92.44% | 0.9559 |
+| Corn (maize) - Northern Leaf Blight | 98.95% | 0.9662 |
+| Tomato - Target Spot | 95.19% | 0.9688 |
+| Tomato - Spider mites Two-spotted spider mite | 99.77% | 0.9797 |
+| Tomato - Bacterial spot | 98.59% | 0.9824 |
 
 All 38 classes: [`docs/results.md` → Per-class accuracy](docs/results.md#per-class-accuracy-deployed-model).
+
+### On real photographs
+
+Held-out real field and web photos (PlantDoc test split, 236 photos, never seen in training):
+
+| Model | Right (top-1) | Right answer in top 3 | Confidently wrong |
+|---|---:|---:|---:|
+| EfficientNet-B0 (trained on lab photos only) | 30.1% | 52.1% | 7.2% |
+| EfficientNet-B0 + CBAM (trained on lab photos only) | 31.8% | 59.7% | 11.0% |
+| EfficientNet-B0 + CBAM (**live: trained on real photos**) | 72.0% | 92.8% | 8.5% |
+
+When it is not sure, the site says so and shows the closest matches instead of a diagnosis - [details](docs/results.md#accuracy-on-real-photographs).
 
 ### Beyond the lab test set
 
@@ -275,7 +290,7 @@ All 38 classes: [`docs/results.md` → Per-class accuracy](docs/results.md#per-c
 
 Leaves imitated as field photos, through the full live pipeline - [details](docs/results.md#accuracy-on-field-like-photos).
 
-**Dust detection:** flags 93% of heavily and 87% of moderately dusted leaves, with false alarms on 0.1% of clean lab photos and 5.9% of clean field-like photos ([details](docs/results.md#dust-soil-and-sand-detection)).
+**Dust detection:** flags 97% of heavily and 87% of moderately dusted leaves, with false alarms on 1.2% of clean lab photos and 5.0% of clean field-like photos ([details](docs/results.md#dust-soil-and-sand-detection)).
 
 ### Benchmark (identical protocol across all architectures)
 
@@ -304,7 +319,11 @@ Trained on the complete training split at 224px and scored on the full test spli
 
 | | Model | Protocol | Accuracy | Precision | Recall | Macro F1 | Top-3 | Params | Size | ms/img | ECE |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+|  | ResNet50 + CBAM | field_long_resnet50 | 99.74% | 0.9973 | 0.9973 | 0.9973 | 99.98% | 24.11M | 92.2 MB | 11.01 | 0.0472 |
 | **★** | EfficientNet-B0 + CBAM | field_long | 99.68% | 0.9968 | 0.9967 | 0.9967 | 99.98% | 4.26M | 16.4 MB | 18.82 | 0.0437 |
+| **★** | EfficientNet-B0 + CBAM | field_real | 99.56% | 0.9956 | 0.9954 | 0.9955 | 99.98% | 4.26M | 16.4 MB | 14.56 | 0.0527 |
+| **★** | EfficientNet-B0 + CBAM | field_real_all | 99.53% | 0.9952 | 0.9952 | 0.9952 | 99.98% | 4.26M | 16.4 MB | 13.35 | 0.0506 |
+| **★** | EfficientNet-B0 + CBAM | field_real_plus | 99.33% | 0.9933 | 0.9931 | 0.9931 | 99.98% | 4.26M | 16.4 MB | 14.02 | 0.0470 |
 |  | EfficientNet-B0 | production | 99.06% | 0.9906 | 0.9904 | 0.9904 | 99.94% | 4.06M | 15.6 MB | 18.50 | 0.0500 |
 | **★** | EfficientNet-B0 + CBAM | production | 99.00% | 0.9900 | 0.9898 | 0.9898 | 99.94% | 4.26M | 16.4 MB | 13.17 | 0.0500 |
 | **★** | Custom CNN + CBAM | production | 98.42% | 0.9845 | 0.9842 | 0.9842 | 99.90% | 1.26M | 4.8 MB | 7.41 | 0.0245 |
@@ -1230,10 +1249,17 @@ photographs rather than the single leaves on plain backgrounds this dataset uses
 Stated plainly, because a project that hides its limits cannot be trusted about
 its results.
 
-1. **Laboratory imagery.** PlantVillage photographs are single leaves on uniform
-   backgrounds under controlled lighting. Accuracy here says little about a field
-   photograph with soil, sky, multiple leaves and harsh sun. This is the largest
-   gap between this project and a deployable agricultural tool.
+1. **Real photographs are still much harder.** PlantVillage photographs are single
+   leaves on uniform backgrounds; the lab accuracy (~99%) says little about a phone
+   or web photo. Fine-tuning on five real-photo datasets raised accuracy on held-out
+   real photos from 32% to 72% (93% with the right answer in the top 3), and the app
+   says "not sure" rather than guess on the hardest ones - but roughly 1 in 4 real
+   photos is still misidentified, and about 7% get a confidently wrong diagnosis.
+   Look-alike diseases (corn grey leaf spot vs northern leaf blight, tomato
+   bacterial vs Septoria leaf spot) cause most of the errors. The real-photo test
+   set is small (236 photos) and its labels carry some noise.
+1a. **Non-commercial training data.** One fine-tuning source (PlantWild) is
+   licensed CC BY-NC-ND 4.0, so the deployed model is for research and education.
 2. **Single seed.** Each configuration was trained once. The ablation measures
    its own noise floor — two of its arms are, by construction, identical to two
    benchmark models, so their disagreement *is* the run-to-run variation — and

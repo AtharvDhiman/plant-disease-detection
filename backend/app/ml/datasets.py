@@ -48,13 +48,18 @@ class ManifestEntry:
     path: str          # absolute path to the image
     label: int         # class index
     class_name: str    # raw class directory name
+    # Where the photograph comes from. Training treats sources differently: the
+    # field-condition augmentation assumes a PlantVillage grey-card photo and
+    # must not be applied to real field photographs. Manifests written before
+    # this column existed read back as "plantvillage", which is what they are.
+    source: str = "plantvillage"
 
 
 def write_manifest(rows: list[ManifestEntry], destination: Path) -> None:
     """Persist manifest rows as CSV."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     with destination.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["path", "label", "class_name"])
+        writer = csv.DictWriter(handle, fieldnames=["path", "label", "class_name", "source"])
         writer.writeheader()
         writer.writerows(asdict(row) for row in rows)
 
@@ -63,7 +68,8 @@ def read_manifest(source: Path) -> list[ManifestEntry]:
     """Load manifest rows from CSV."""
     with Path(source).open("r", newline="", encoding="utf-8") as handle:
         return [
-            ManifestEntry(path=row["path"], label=int(row["label"]), class_name=row["class_name"])
+            ManifestEntry(path=row["path"], label=int(row["label"]), class_name=row["class_name"],
+                          source=row.get("source") or "plantvillage")
             for row in csv.DictReader(handle)
         ]
 
@@ -87,6 +93,9 @@ class ManifestImageDataset(Dataset):
         self.transform = transform
         self.class_names = class_names or sorted({e.class_name for e in entries})
         self.failed_paths: list[str] = []
+        # Per-source overrides of ``transform`` (source name -> transform). Unset
+        # sources use ``transform``.
+        self.source_transforms: dict = {}
 
     def __len__(self) -> int:
         return len(self.entries)
@@ -105,8 +114,9 @@ class ManifestImageDataset(Dataset):
         else:  # pragma: no cover - would mean the dataset directory is gone
             raise RuntimeError(f"8 consecutive unreadable images starting at index {index}")
 
-        if self.transform is not None:
-            image = self.transform(image)
+        transform = self.source_transforms.get(entry.source, self.transform)
+        if transform is not None:
+            image = transform(image)
         return image, entry.label
 
     @property

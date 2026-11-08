@@ -1,0 +1,192 @@
+{
+  "generated_at": "2026-11-08T05:59:37.425131+00:00",
+  "split": "plantdoc_test",
+  "n": 236,
+  "ood_thresholds_from": "efficientnet_b0_cbam",
+  "results": {
+    "efficientnet_b0_cbam__fieldreal__2112fc86": {
+      "label": "EfficientNet-B0 + CBAM",
+      "protocol": "field_real",
+      "lab_test_accuracy": 0.9955611199635784,
+      "n": 236,
+      "top1": 0.6652542372881356,
+      "top1_ci95": [
+        0.6028252037940813,
+        0.7223894378694167
+      ],
+      "top3": 0.9067796610169492,
+      "macro_class_accuracy": 0.6788252899364009,
+      "per_class": {
+        "Apple___Apple_scab": {
+          "correct": 5,
+          "total": 10
+        },
+        "Apple___Cedar_apple_rust": {
+          "correct": 8,
+          "total": 10
+        },
+        "Apple___healthy": {
+          "correct": 7,
+          "total": 9
+        },
+        "Blueberry___healthy": {
+          "correct": 7,
+          "total": 11
+        },
+        "Cherry_(including_sour)___healthy": {
+          "correct": 5,
+          "total": 10
+        },
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": {
+          "correct": 2,
+          "total": 4
+        },
+        "Corn_(maize)___Common_rust_": {
+          "correct": 8,
+          "total": 10
+        },
+        "Corn_(maize)___Northern_Leaf_Blight": {
+          "correct": 5,
+          "total": 12
+        },
+        "Grape___Black_rot": {
+          "correct": 7,
+          "total": 8
+        },
+        "Grape___healthy": {
+          "correct": 11,
+          "total": 12
+        },
+        "Peach___healthy": {
+          "correct": 7,
+          "total": 9
+        },
+        "Pepper,_bell___Bacterial_spot": {
+          "correct": 3,
+          "total": 9
+        },
+        "Pepper,_bell___healthy": {
+          "correct": 6,
+          "total": 8
+        },
+        "Potato___Early_blight": {
+          "correct": 5,
+          "total": 8
+        },
+        "Potato___Late_blight": {
+          "correct": 5,
+          "total": 8
+        },
+        "Raspberry___healthy": {
+          "correct": 7,
+          "total": 7
+        },
+        "Soybean___healthy": {
+          "correct": 5,
+          "total": 8
+        },
+        "Squash___Powdery_mildew": {
+          "correct": 6,
+          "total": 6
+        },
+        "Strawberry___healthy": {
+          "correct": 8,
+          "total": 8
+        },
+        "Tomato___Bacterial_spot": {
+          "correct": 3,
+          "total": 9
+        },
+        "Tomato___Early_blight": {
+          "correct": 6,
+          "total": 9
+        },
+        "Tomato___Late_blight": {
+          "correct": 7,
+          "total": 10
+        },
+        "Tomato___Leaf_Mold": {
+          "correct": 5,
+          "total": 6
+        },
+        "Tomato___Septoria_leaf_spot": {
+          "correct": 7,
+          "total": 11
+        },
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus": {
+          "correct": 6,
+          "total": 6
+        },
+        "Tomato___Tomato_mosaic_virus": {
+          "correct": 2,
+          "total": 10
+        },
+        "Tomato___healthy": {
+          "correct": 4,
+          "total": 8
+        }
+      },
+      "pipeline": {
+        "dusty_leaf": 0.03389830508474576,
+        "low_confidence": 0.22033898305084745,
+        "not_a_plant": 0.00847457627118644,
+        "ok_right": 0.4915254237288136,
+        "ok_wrong": 0.1483050847457627,
+        "out_of_distribution": 0.00847457627118644,
+        "poor_quality": 0.08898305084745763
+      },
+      "pipeline_counts": {
+        "dusty_leaf": 8,
+        "low_confidence": 52,
+        "not_a_plant": 2,
+        "ok_right": 116,
+        "ok_wrong": 35,
+        "out_of_distribution": 2,
+        "poor_quality": 21
+      },
+      "top_confusions": [
+        {
+          "true": "Corn_(maize)___Northern_Leaf_Blight",
+          "predicted": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+          "count": 7
+        },
+        {
+          "true": "Tomato___Bacterial_spot",
+          "predicted": "Tomato___Septoria_leaf_spot",
+          "count": 3
+        },
+        {
+          "true": "Tomato___Septoria_leaf_spot",
+          "predicted": "Tomato___Bacterial_spot",
+          "count": 3
+        },
+        {
+          "true": "Apple___Apple_scab",
+          "predicted": "Strawberry___Leaf_scorch",
+          "count": 2
+        },
+        {
+          "true": "Pepper,_bell___Bacterial_spot",
+          "predicted": "Tomato___Bacterial_spot",
+          "count": 2
+        },
+        {
+          "true": "Pepper,_bell___Bacterial_spot",
+          "predicted": "Tomato___Septoria_leaf_spot",
+          "count": 2
+        },
+        {
+          "true": "Cherry_(including_sour)___healthy",
+          "predicted": "Peach___healthy",
+          "count": 2
+        },
+        {
+          "true": "Cherry_(including_sour)___healthy",
+          "predicted": "Blueberry___healthy",
+          "count": 2
+        }
+      ]
+    }
+  },
+  "note": "PlantDoc test split (real field and web photographs), after removing training photos that near-duplicate test photos. Labels are PlantDoc's, mapped onto the model's classes; PlantDoc is known to contain some label noise."
+}

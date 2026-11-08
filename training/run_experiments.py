@@ -136,6 +136,130 @@ SUITES: dict[str, dict] = {
         },
         "tag": "fieldlongr50",
     },
+    # ---- real-world photographs -------------------------------------------
+    # Every model above learned from PlantVillage laboratory photographs only,
+    # and the field-condition augmentation imitates field conditions on those
+    # same photographs. Users upload real ones. These two runs fine-tune the
+    # two best full-data models on real photographs (PlantDoc, prepared by
+    # scripts/prepare_plantdoc.py) mixed with a PlantVillage subset, so the
+    # classes PlantDoc lacks are not forgotten. Field augmentation still applies
+    # to the PlantVillage photos; the real ones get standard augmentation.
+    # Scored on the PlantVillage test split here (for comparability with every
+    # other full-data run) and on PlantDoc's test split by
+    # scripts/evaluate_real_photos.py.
+    "field_real": {
+        "models": ["efficientnet_b0_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix_train",
+            "val_split": "realmix_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 6,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 3,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "efficientnet_b0_cbam__fieldlong__98176ce8.pt"),
+        },
+        "tag": "fieldreal",
+    },
+    "field_real_resnet50": {
+        "models": ["resnet50_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix_train",
+            "val_split": "realmix_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 6,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 3,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "resnet50_cbam__fieldlongr50__2cf67e16.pt"),
+        },
+        "tag": "fieldrealr50",
+    },
+    # The same fine-tuning on all three real-photo sources: PlantDoc, Plant
+    # Pathology 2021 (apple orchards) and CCMT (farms in Ghana), prepared by
+    # scripts/prepare_extra_realworld.py.
+    "field_real_all": {
+        "models": ["efficientnet_b0_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix2_train",
+            "val_split": "realmix2_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 6,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 3,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "efficientnet_b0_cbam__fieldlong__98176ce8.pt"),
+        },
+        "tag": "fieldrealall",
+    },
+    "field_real_all_resnet50": {
+        "models": ["resnet50_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix2_train",
+            "val_split": "realmix2_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 6,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 3,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "resnet50_cbam__fieldlongr50__2cf67e16.pt"),
+        },
+        "tag": "fieldrealallr50",
+    },
+    # Five real-photo sources - PlantDoc, Plant Pathology 2021, CCMT, PlantWild
+    # (search-engine photographs) and potato field photos - and 10 epochs.
+    "field_real_plus": {
+        "models": ["efficientnet_b0_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix3_train",
+            "val_split": "realmix3_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 10,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 4,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "efficientnet_b0_cbam__fieldlong__98176ce8.pt"),
+        },
+        "tag": "fieldrealplus",
+    },
+    "field_real_plus_resnet50": {
+        "models": ["resnet50_cbam"],
+        "protocol": {
+            **PRODUCTION_PROTOCOL,
+            "train_split": "realmix3_train",
+            "val_split": "realmix3_val",
+            "test_split": "test",
+            "augmentation": "field_mild",
+            "epochs": 10,
+            "two_stage": False,
+            "learning_rate": 1e-4,
+            "warmup_epochs": 1,
+            "early_stopping_patience": 4,
+            "init_checkpoint": str(settings.checkpoints_dir
+                                   / "resnet50_cbam__fieldlongr50__2cf67e16.pt"),
+        },
+        "tag": "fieldrealplusr50",
+    },
 }
 
 

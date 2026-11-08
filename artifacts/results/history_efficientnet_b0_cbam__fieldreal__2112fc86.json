@@ -1,0 +1,107 @@
+{
+  "experiment_id": "efficientnet_b0_cbam__fieldreal__2112fc86",
+  "model_name": "efficientnet_b0_cbam",
+  "config": {
+    "model_name": "efficientnet_b0_cbam",
+    "experiment_id": "efficientnet_b0_cbam__fieldreal__2112fc86",
+    "train_split": "realmix_train",
+    "val_split": "realmix_val",
+    "test_split": "test",
+    "image_size": 224,
+    "batch_size": 16,
+    "num_workers": 6,
+    "augmentation": "field_mild",
+    "epochs": 6,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "optimizer": "adamw",
+    "scheduler": "cosine",
+    "warmup_epochs": 1,
+    "label_smoothing": 0.05,
+    "grad_clip": 1.0,
+    "two_stage": false,
+    "stage1_epochs": 2,
+    "stage2_lr_scale": 0.15,
+    "unfreeze_last_n": 3,
+    "class_weight_scheme": null,
+    "use_balanced_sampler": false,
+    "use_focal_loss": false,
+    "focal_gamma": 2.0,
+    "amp": false,
+    "seed": 42,
+    "early_stopping_patience": 3,
+    "min_delta": 0.0001,
+    "pretrained": true,
+    "group": "benchmark",
+    "notes": "Model 8 - transfer learning combined with CBAM.",
+    "tags": [],
+    "init_checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\efficientnet_b0_cbam__fieldlong__98176ce8.pt"
+  },
+  "history": {
+    "epoch": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "train_loss": [
+      1.129728,
+      0.760213,
+      0.637854,
+      0.568782,
+      0.533742,
+      0.520045
+    ],
+    "train_acc": [
+      0.776823,
+      0.886029,
+      0.925487,
+      0.952517,
+      0.963494,
+      0.967999
+    ],
+    "val_loss": [
+      0.890384,
+      0.857366,
+      0.860824,
+      0.878506,
+      0.872455,
+      0.875431
+    ],
+    "val_acc": [
+      0.835165,
+      0.853022,
+      0.853022,
+      0.855769,
+      0.861264,
+      0.858516
+    ],
+    "lr": [
+      0.0001,
+      9.05463412215599e-05,
+      6.57963412215599e-05,
+      3.5203658778440106e-05,
+      1.0453658778440107e-05,
+      1.0000000000000002e-06
+    ],
+    "epoch_time_s": [
+      309.34,
+      164.22,
+      165.16,
+      168.55,
+      164.78,
+      171.71
+    ],
+    "stage_boundary": null
+  },
+  "best_val_accuracy": 0.8612637362637363,
+  "best_val_loss": 0.8724553480253114,
+  "best_epoch": 5,
+  "epochs_run": 6,
+  "training_time_s": 1146.2498908999999,
+  "total_parameters": 4261124,
+  "model_size_mb": 16.415550231933594,
+  "stopped_early": false
+}

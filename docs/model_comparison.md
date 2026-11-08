@@ -4,13 +4,17 @@
 
 # Model comparison
 
-_Generated 2026-11-01 12:29 UTC._
+_Generated 2026-11-08 10:55 UTC._
 
 ## Full metric table
 
 | | Model | Protocol | Accuracy | Precision | Recall | Macro F1 | Top-3 | Params | Size | ms/img | ECE |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+|  | ResNet50 + CBAM | field_long_resnet50 | 99.74% | 0.9973 | 0.9973 | 0.9973 | 99.98% | 24.11M | 92.2 MB | 11.01 | 0.0472 |
 | **★** | EfficientNet-B0 + CBAM | field_long | 99.68% | 0.9968 | 0.9967 | 0.9967 | 99.98% | 4.26M | 16.4 MB | 18.82 | 0.0437 |
+| **★** | EfficientNet-B0 + CBAM | field_real | 99.56% | 0.9956 | 0.9954 | 0.9955 | 99.98% | 4.26M | 16.4 MB | 14.56 | 0.0527 |
+| **★** | EfficientNet-B0 + CBAM | field_real_all | 99.53% | 0.9952 | 0.9952 | 0.9952 | 99.98% | 4.26M | 16.4 MB | 13.35 | 0.0506 |
+| **★** | EfficientNet-B0 + CBAM | field_real_plus | 99.33% | 0.9933 | 0.9931 | 0.9931 | 99.98% | 4.26M | 16.4 MB | 14.02 | 0.0470 |
 |  | ResNet50 + CBAM | benchmark | 99.14% | 0.9917 | 0.9914 | 0.9914 | 99.96% | 24.11M | 92.2 MB | 15.93 | 0.0612 |
 |  | ResNet50 | benchmark | 99.12% | 0.9914 | 0.9912 | 0.9912 | 99.93% | 23.59M | 90.2 MB | 14.19 | 0.0614 |
 |  | EfficientNet-B0 | production | 99.06% | 0.9906 | 0.9904 | 0.9904 | 99.94% | 4.06M | 15.6 MB | 18.50 | 0.0500 |
@@ -36,7 +40,11 @@ _Generated 2026-11-01 12:29 UTC._
 
 | Model | Weighted F1 | Top-5 | ROC-AUC (OvR) | Cohen's κ | Val accuracy | Best epoch | Train time |
 |---|---:|---:|---:|---:|---:|---:|---:|
+| ResNet50 + CBAM | 0.9974 | 99.99% | 1.0000 | 0.9973 | 99.80% | 10 | 167.0 min |
 | EfficientNet-B0 + CBAM | 0.9968 | 99.98% | 0.9999 | 0.9967 | 99.73% | 9 | 73.6 min |
+| EfficientNet-B0 + CBAM | 0.9956 | 99.99% | 0.9999 | 0.9954 | 86.13% | 5 | 19.1 min |
+| EfficientNet-B0 + CBAM | 0.9953 | 99.98% | 1.0000 | 0.9951 | 88.43% | 6 | 21.1 min |
+| EfficientNet-B0 + CBAM | 0.9933 | 99.98% | 0.9999 | 0.9931 | 83.36% | 7 | 39.0 min |
 | ResNet50 + CBAM | 0.9914 | 99.98% | 1.0000 | 0.9912 | 98.95% | 11 | 16.8 min |
 | ResNet50 | 0.9912 | 99.96% | 1.0000 | 0.9910 | 99.04% | 11 | 19.6 min |
 | EfficientNet-B0 | 0.9905 | 99.98% | 1.0000 | 0.9903 | 99.19% | 6 | 57.7 min |
@@ -70,8 +78,8 @@ _Generated 2026-11-01 12:29 UTC._
 
 | Criterion | Winner |
 |---|---|
-| `f1_macro` | efficientnet_b0_cbam |
-| `accuracy` | efficientnet_b0_cbam |
+| `f1_macro` | resnet50_cbam |
+| `accuracy` | resnet50_cbam |
 | `balanced` | place_cbam_last2 |
 | `fastest` | place_cbam_last2 |
 | `smallest` | place_cbam_last2 |

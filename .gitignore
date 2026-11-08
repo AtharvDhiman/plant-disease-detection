@@ -54,3 +54,6 @@ frontend/.vite/
 Thumbs.db
 artifacts/results/predictions/
 deploy/
+
+# Extra datasets downloaded for evaluation/fine-tuning (e.g. PlantDoc); never committed.
+_datasets/

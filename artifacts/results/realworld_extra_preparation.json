@@ -1,0 +1,112 @@
+{
+  "generated_at": "2026-11-08T06:53:49.031921+00:00",
+  "sources": {
+    "plantpathology2021": {
+      "photos_used": 3464,
+      "duplicates_removed": 0,
+      "removed_as_plantdoc_test_near_duplicates": 0,
+      "per_class": {
+        "Apple___Apple_scab": 1166,
+        "Apple___Black_rot": 773,
+        "Apple___Cedar_apple_rust": 422,
+        "Apple___healthy": 1103
+      },
+      "splits": {
+        "train": 1796,
+        "val": 346,
+        "test": 693
+      },
+      "skipped_labels": {
+        "multi-label": 322,
+        "powdery_mildew": 279,
+        "complex": 407
+      }
+    },
+    "ccmt": {
+      "photos_used": 3468,
+      "duplicates_removed": 462,
+      "removed_as_plantdoc_test_near_duplicates": 1,
+      "per_class": {
+        "Corn_(maize)___healthy": 206,
+        "Tomato___Septoria_leaf_spot": 2287,
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus": 510,
+        "Tomato___healthy": 465
+      },
+      "splits": {
+        "train": 1327,
+        "val": 347,
+        "test": 693
+      }
+    },
+    "plantwild": {
+      "photos_used": 7316,
+      "duplicates_removed": 217,
+      "removed_as_plantdoc_test_near_duplicates": 39,
+      "per_class": {
+        "Apple___Apple_scab": 281,
+        "Apple___Black_rot": 172,
+        "Apple___Cedar_apple_rust": 302,
+        "Apple___healthy": 439,
+        "Blueberry___healthy": 276,
+        "Cherry_(including_sour)___Powdery_mildew": 113,
+        "Cherry_(including_sour)___healthy": 280,
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": 211,
+        "Corn_(maize)___Common_rust_": 231,
+        "Corn_(maize)___Northern_Leaf_Blight": 203,
+        "Corn_(maize)___healthy": 154,
+        "Grape___Black_rot": 221,
+        "Grape___healthy": 198,
+        "Orange___Haunglongbing_(Citrus_greening)": 237,
+        "Peach___healthy": 157,
+        "Pepper,_bell___Bacterial_spot": 115,
+        "Pepper,_bell___healthy": 239,
+        "Potato___Early_blight": 223,
+        "Potato___Late_blight": 224,
+        "Potato___healthy": 247,
+        "Raspberry___healthy": 177,
+        "Soybean___healthy": 236,
+        "Squash___Powdery_mildew": 276,
+        "Strawberry___Leaf_scorch": 76,
+        "Strawberry___healthy": 196,
+        "Tomato___Bacterial_spot": 271,
+        "Tomato___Early_blight": 311,
+        "Tomato___Late_blight": 268,
+        "Tomato___Leaf_Mold": 229,
+        "Tomato___Septoria_leaf_spot": 187,
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus": 156,
+        "Tomato___Tomato_mosaic_virus": 188,
+        "Tomato___healthy": 222
+      },
+      "splits": {
+        "train": 5121,
+        "val": 734,
+        "test": 1461
+      }
+    },
+    "potato_field": {
+      "photos_used": 509,
+      "duplicates_removed": 39,
+      "removed_as_plantdoc_test_near_duplicates": 0,
+      "per_class": {
+        "Potato___Late_blight": 309,
+        "Potato___healthy": 200
+      },
+      "splits": {
+        "train": 356,
+        "val": 51,
+        "test": 102
+      }
+    }
+  },
+  "realmix3": {
+    "train": 27912,
+    "val": 2206,
+    "train_cap_per_class": 500,
+    "sources": [
+      "ccmt",
+      "plantpathology2021",
+      "plantwild",
+      "potato_field"
+    ]
+  }
+}

@@ -519,12 +519,13 @@ def serving_section(serving: dict | None) -> list[str]:
 def field_training_section(ledger: list[dict], manifest: dict | None, extra: dict) -> list[str]:
     """The field-augmentation experiment: lab scores, field-like scores, the caveats."""
     runs = [r for r in ledger
-            if r.get("model_name") in ("efficientnet_b0", "efficientnet_b0_cbam")
+            if r.get("model_name") in ("efficientnet_b0", "efficientnet_b0_cbam", "resnet50_cbam")
             and (r.get("protocol") == "production" or is_field(r.get("protocol")))
             and get(r, "test.metrics.accuracy") is not None]
     if not any(is_field(r.get("protocol")) for r in runs):
         return []
-    order = {"production": 0, "field": 1, "field_long": 2}
+    order = {"production": 0, "field": 1, "field_long": 2, "field_long_resnet50": 3,
+             "field_real": 4, "field_real_resnet50": 5}
     runs.sort(key=lambda r: (order.get(r["protocol"], 9), r["model_name"]))
     serving = (manifest or {}).get("experiment_id")
 
@@ -603,7 +604,11 @@ def field_training_section(ledger: list[dict], manifest: dict | None, extra: dic
                   "as not correct. The row marked **←** is the model the application serves.",
                   ""]
 
-    if get(manifest or {}, "protocol") and is_field(manifest.get("protocol")):
+    forced_reason = get(manifest or {}, "selection.forced_reason")
+    if forced_reason:
+        lines += ["### Why this model serves\n", f"{forced_reason}\n",
+                  "See [Accuracy on real photographs](#accuracy-on-real-photographs).\n"]
+    elif get(manifest or {}, "protocol") and is_field(manifest.get("protocol")):
         lines += ["### Why this model serves\n",
                   "The serving model is chosen by macro F1 on the 17,572-image test split "
                   "among all full-data runs (`training/export_model.py`), and the field "
@@ -614,7 +619,8 @@ def field_training_section(ledger: list[dict], manifest: dict | None, extra: dic
               "* **Not independent of the training.** The augmentation imitates the same "
               "kinds of condition the field-like test applies (through different "
               "generators), so the field-like scores flatter the field-trained models. "
-              "Real field photographs are the independent test, and none were used.",
+              "Real field photographs are the independent test - see "
+              "[Accuracy on real photographs](#accuracy-on-real-photographs).",
               "* **The gain cannot be attributed to CBAM.** Round one trained plain "
               "EfficientNet-B0 and EfficientNet-B0 + CBAM identically and they tied "
               "(98.32% vs 98.25%). Round two trained only the CBAM model, with a longer "
@@ -629,6 +635,11 @@ def field_training_section(ledger: list[dict], manifest: dict | None, extra: dic
               ""]
 
     points = ((extra or {}).get("ood_points") or {}).get("points")
+    # Superseded once the threshold is chosen on real photographs: this table
+    # compares two settings for an earlier model and would describe a threshold
+    # that is no longer in force.
+    if (extra or {}).get("real_op"):
+        points = None
     if points and "calibrated_95tpr" in points and "in_force" in points:
         lines += ["### Out-of-distribution operating point\n",
                   "The OOD thresholds calibrated to keep 95% of *laboratory* leaves are "
@@ -661,6 +672,116 @@ def field_training_section(ledger: list[dict], manifest: dict | None, extra: dic
     return lines
 
 
+def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
+    """Accuracy on real field and web photographs (PlantDoc test split)."""
+    real = (extra or {}).get("real_photos") or {}
+    results = real.get("results") or {}
+    if not results:
+        return []
+    prep = (extra or {}).get("plantdoc_prep") or {}
+    serving = (manifest or {}).get("experiment_id")
+    lines = ["\n## Accuracy on real photographs\n",
+             "Every other table uses PlantVillage laboratory photographs, or lab photographs "
+             "altered to look like field shots. This one uses **real photographs taken in "
+             "fields or collected from the web**: the held-out test split of PlantDoc "
+             f"(Singh et al., CODS-COMAD 2020; CC-BY-4.0), {real.get('n')} photos. Its classes "
+             "map onto the model's own, so nothing about the model's outputs changes.\n"]
+    if prep:
+        lines.append(
+            f"Before any training, {prep.get('train_photos_removed_as_test_near_duplicates', 0)} "
+            "PlantDoc training photos were removed because a perceptual hash matched a test "
+            f"photo ({prep.get('of_which_labelled_differently', 0)} of them carried a different "
+            "label), so no test photo was seen in training.\n")
+    lines += ["| Model | Trained on | Real photos: top-1 (95% CI) | Top-3 | Shown right | "
+              "Shown **wrong** | Lab test accuracy |",
+              "|---|---|---:|---:|---:|---:|---:|"]
+    order = {"production": 0, "field": 1, "field_long": 2, "field_long_resnet50": 3,
+             "field_real": 4, "field_real_resnet50": 5, "field_real_all": 6,
+             "field_real_all_resnet50": 7, "field_real_plus": 8, "field_real_plus_resnet50": 9}
+    trained_on = {"field_real": "lab + 1 real-photo dataset, 6 epochs",
+                  "field_real_resnet50": "lab + 1 real-photo dataset, 6 epochs",
+                  "field_real_all": "lab + 3 real-photo datasets, 6 epochs",
+                  "field_real_all_resnet50": "lab + 3 real-photo datasets, 6 epochs",
+                  "field_real_plus": "lab + 5 real-photo datasets, 10 epochs",
+                  "field_real_plus_resnet50": "lab + 5 real-photo datasets, 10 epochs"}
+    for experiment_id, r in sorted(results.items(), key=lambda kv: order.get(kv[1]["protocol"], 99)):
+        trained = trained_on.get(r["protocol"], "lab photos only")
+        low, high = r["top1_ci95"]
+        marker = " **←**" if experiment_id == serving else ""
+        lines.append(f"| {r['label']}{marker} | {trained} | {pct(r['top1'], 1)} "
+                     f"({pct(low, 0)}–{pct(high, 0)}) | {pct(r['top3'], 1)} | "
+                     f"{pct(r['pipeline'].get('ok_right', 0), 1)} | "
+                     f"{pct(r['pipeline'].get('ok_wrong', 0), 1)} | "
+                     f"{pct(r['lab_test_accuracy'])} |")
+    lines += ["",
+              "*Top-1/top-3*: the network alone, on every photo. *Shown right / wrong*: what the "
+              "full application displays with status `ok` (the rest are flagged as uncertain, "
+              "dusty or not identified, or refused), with every model judged at the one "
+              "\"not sure\" threshold now in force - so these columns compare networks, not the "
+              "settings each was originally served with. The row marked **←** is the model "
+              "the application serves.",
+              "",
+              "**What this means.** Real photographs are much harder than laboratory ones: "
+              "several leaves, real backgrounds, different lighting, cultivars and disease "
+              "stages. A model's PlantVillage accuracy (~99.7%) is not its accuracy on a "
+              "photo from a phone or a web search, and this table is the closer estimate. "
+              "PlantDoc's labels are themselves known to contain some noise, and its test "
+              "split is small - read differences smaller than the intervals as ties.",
+              ""]
+
+    sources = get(extra or {}, "splits.external_sources") or {}
+    extra_prep = (extra or {}).get("extra_prep") or {}
+    if sources:
+        lines += ["### Real-photo training data\n",
+                  "Fine-tuning used a stratified PlantVillage subset (so no class is forgotten) "
+                  "plus these real-photo sources. Only classes that map unambiguously onto the "
+                  "model's 38 were used; photos were resized to 512 px, de-duplicated, and any "
+                  "photo matching a PlantDoc test photo was removed.\n",
+                  "| Source | Photos used | Licence | Citation |", "|---|---:|---|---|"]
+        used = {"plantdoc": sum(get(extra, "plantdoc_prep.splits", {}).get(k, 0)
+                                for k in ("plantdoc_train", "plantdoc_val", "plantdoc_test"))}
+        for name, info in get(extra_prep, "sources", {}).items():
+            used[name] = info.get("photos_used")
+        for name, info in sources.items():
+            lines.append(f"| [{name}]({info.get('url')}) | {num(used.get(name))} | "
+                         f"{info.get('licence')} | {info.get('citation')} |")
+        lines += ["",
+                  "PlantWild's licence (CC BY-NC-ND 4.0) is non-commercial: a model fine-tuned "
+                  "on it should be used for research and education, which is this project's "
+                  "purpose. No photos from any source are committed to this repository.",
+                  ""]
+
+    op = (extra or {}).get("real_op") or {}
+    if op.get("chosen"):
+        chosen = op["chosen"]
+        at_015 = next((r for r in op.get("sweep", []) if abs(r["msp_min"] - 0.15) < 1e-6), None)
+        lines += ["### When the app says \"not sure\"\n",
+                  "Below a minimum top-class probability the app does not give a plain "
+                  "diagnosis; it says it is unsure and shows the closest matches. That threshold "
+                  f"was chosen on {num(op.get('photos'))} real validation photographs "
+                  "(`scripts/choose_real_operating_point.py`; never the PlantDoc test split) as "
+                  f"the most permissive one at which answers shown as a diagnosis are right at "
+                  f"least {pct(op.get('target_precision'), 0)} of the time.\n",
+                  "| Threshold | Shown as diagnosis | Of those, right | Confidently wrong (of all photos) |",
+                  "|---:|---:|---:|---:|"]
+        rows = [r for r in op.get("sweep", []) if round(r["msp_min"] * 100) % 10 == 0 or r is chosen
+                or abs(r["msp_min"] - chosen["msp_min"]) < 1e-6]
+        for r in rows:
+            mark = " **(in force)**" if abs(r["msp_min"] - chosen["msp_min"]) < 1e-6 else ""
+            lines.append(f"| {r['msp_min']:.2f}{mark} | {pct(r['coverage'], 1)} | "
+                         f"{pct(r['precision'], 1)} | {pct(r['shown_wrong'], 1)} |")
+        if at_015:
+            lines += ["",
+                      f"At the previous setting (0.15) this model would show every real photo as "
+                      f"a diagnosis, {pct(at_015['shown_wrong'], 1)} of them confidently wrong; at "
+                      f"{chosen['msp_min']:.2f} that falls to {pct(chosen['shown_wrong'], 1)}, at "
+                      f"the cost of saying \"not sure\" for {pct(1 - chosen['coverage'], 1)} of "
+                      "photos - for which the right answer is usually among the closest matches "
+                      "shown."]
+        lines.append("")
+    return lines
+
+
 def readme_extras(deployed: dict | None, names: dict, extra: dict) -> list[str]:
     """Short versions of the extra sections, linking to the full tables."""
     lines: list[str] = []
@@ -682,6 +803,25 @@ def readme_extras(deployed: dict | None, names: dict, extra: dict) -> list[str]:
                       for raw, m in hardest]
             lines.append("\nAll 38 classes: [`docs/results.md` → Per-class accuracy]"
                          "(docs/results.md#per-class-accuracy-deployed-model).")
+    real = get(extra, "real_photos.results") or {}
+    if real:
+        lines += ["", "### On real photographs", "",
+                  f"Held-out real field and web photos (PlantDoc test split, "
+                  f"{get(extra, 'real_photos.n')} photos, never seen in training):", "",
+                  "| Model | Right (top-1) | Right answer in top 3 | Confidently wrong |",
+                  "|---|---:|---:|---:|"]
+        serving = (deployed or {}).get("experiment_id")
+        keep = [(k, r) for k, r in real.items()
+                if r["protocol"] in ("production", "field_long") or k == serving
+                or r["protocol"].startswith("field_real_plus")]
+        for experiment_id, r in keep:
+            what = ("**live: trained on real photos**" if experiment_id == serving
+                    else "trained on lab photos only" if "real" not in r["protocol"]
+                    else "trained on real photos")
+            lines.append(f"| {r['label']} ({what}) | {pct(r['top1'], 1)} | {pct(r['top3'], 1)} | "
+                         f"{pct(r['pipeline'].get('ok_wrong', 0), 1)} |")
+        lines.append("\nWhen it is not sure, the site says so and shows the closest matches instead "
+                     "of a diagnosis - [details](docs/results.md#accuracy-on-real-photographs).")
     conditions = get(extra, "domain_shift.conditions")
     if conditions:
         lines += ["", "### Beyond the lab test set", "",
@@ -869,6 +1009,7 @@ def build_results_doc(ledger, manifest, dataset, ablation, ood, classical,
                 )
 
     parts += field_training_section(ledger, manifest, extra)
+    parts += real_photo_section(extra, manifest)
     parts += domain_shift_section(extra.get("domain_shift"))
     parts += dust_section(extra.get("dust"))
     parts += tuning_section(extra.get("tuning"))
@@ -1248,6 +1389,11 @@ def main() -> int:
         "serving": load(settings.results_dir / "serving_benchmark.json"),
         "field_comparison": load(settings.results_dir / "field_comparison.json"),
         "ood_points": load(settings.results_dir / "ood_operating_points.json"),
+        "real_photos": load(settings.results_dir / "real_photo_eval.json"),
+        "plantdoc_prep": load(settings.results_dir / "plantdoc_preparation.json"),
+        "extra_prep": load(settings.results_dir / "realworld_extra_preparation.json"),
+        "real_op": load(settings.results_dir / "real_operating_point.json"),
+        "splits": load(settings.splits_path),
     }
 
     docs_dir = PROJECT_ROOT / "docs"

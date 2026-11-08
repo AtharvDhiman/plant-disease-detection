@@ -50,6 +50,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 from app.core.config import settings  # noqa: E402
+from app.ml.datasets import read_manifest  # noqa: E402
 from app.ml.dust import FEATURE_NAMES, DustDetector, dust_features  # noqa: E402
 
 HELD_OUT_CROPS = ("Squash", "Cherry_(including_sour)", "Corn_(maize)", "Grape")
@@ -219,6 +220,55 @@ def build(split: str, per_class: int, seed: int) -> dict[str, np.ndarray]:
             "kind": np.asarray(kinds), "cls": np.asarray(classes)}
 
 
+REAL_TRAIN = ("plantdoc_train", "plantpathology2021_train", "ccmt_train")
+REAL_EVAL = ("plantdoc_val", "plantpathology2021_val", "ccmt_val")
+
+
+def build_real(split_names: tuple[str, ...], per_source: int, seed: int) -> dict[str, np.ndarray]:
+    """Real field and web photographs: each as a clean negative and, dusted, as a positive.
+
+    The first detector saw only laboratory photographs as clean examples, and on
+    real photographs - soil, sky, glare, pale foliage - it raised a dust alarm on
+    17% of PlantDoc's validation photos and refused 9%. Real photographs as
+    negatives are what teach it that a real background is not dust.
+    """
+    rng = np.random.default_rng(seed)
+    split_config = json.loads(settings.splits_path.read_text(encoding="utf-8"))
+    feats, labels, crops, kinds, classes = [], [], [], [], []
+    for name in split_names:
+        if name not in split_config["splits"]:
+            continue
+        entries = read_manifest(Path(split_config["splits"][name]["manifest"]))
+        picks = rng.choice(len(entries), size=min(per_source, len(entries)), replace=False)
+        for index in picks:
+            entry = entries[index]
+            with Image.open(entry.path) as image:
+                image = image.convert("RGB")
+                image.thumbnail((512, 512))
+                rgb = np.asarray(image)
+            crop = entry.class_name.split("___")[0]
+            feats.append(dust_features(rgb))
+            labels.append(0)
+            crops.append(crop)
+            kinds.append("real_clean")
+            classes.append(entry.class_name)
+            strength = float(rng.uniform(0.25, 1.0))
+            kind = "dust_light" if strength < 0.45 else "dust_moderate" if strength < 0.7 else "dust_heavy"
+            feats.append(dust_features(add_dust(rgb, rng, strength)))
+            labels.append(1)
+            crops.append(crop)
+            kinds.append("real_" + kind)
+            classes.append(entry.class_name)
+    return {"X": np.asarray(feats), "y": np.asarray(labels), "crop": np.asarray(crops),
+            "kind": np.asarray(kinds), "cls": np.asarray(classes)}
+
+
+def concat(a: dict, b: dict) -> dict:
+    if not len(b.get("y", [])):
+        return a
+    return {key: np.concatenate([a[key], b[key]]) for key in a}
+
+
 def fit(X: np.ndarray, y: np.ndarray) -> tuple[StandardScaler, MLPClassifier]:
     # Classes are balanced by construction (two clean and two dusty rows per
     # source image), so no class weighting is needed.
@@ -245,6 +295,8 @@ def main() -> int:
     parser.add_argument("--per-class", type=int, default=40)
     parser.add_argument("--eval-per-class", type=int, default=20)
     parser.add_argument("--rebuild", action="store_true", help="Ignore cached features.")
+    parser.add_argument("--real-per-source", type=int, default=1500,
+                        help="Real photographs per source used as negatives (0 = laboratory only).")
     args = parser.parse_args()
 
     started = time.time()
@@ -252,6 +304,8 @@ def main() -> int:
     # model or the operating points does not regenerate every image.
     cache = settings.project_root / "artifacts" / "features" / (
         f"dust_features_{args.per_class}_{args.eval_per_class}.npz")
+    real_cache = settings.project_root / "artifacts" / "features" / (
+        f"dust_features_real_{args.real_per_source}.npz")
     if cache.is_file() and not args.rebuild:
         stored = np.load(cache)
         train = {k[6:]: stored[k] for k in stored.files if k.startswith("train_")}
@@ -268,6 +322,20 @@ def main() -> int:
         np.savez(cache, **{f"train_{k}": v for k, v in train.items()},
                  **{f"test_{k}": v for k, v in test.items()})
 
+    if args.real_per_source > 0:
+        if real_cache.is_file() and not args.rebuild:
+            stored = np.load(real_cache)
+            real_train = {k[6:]: stored[k] for k in stored.files if k.startswith("train_")}
+            real_test = {k[5:]: stored[k] for k in stored.files if k.startswith("test_")}
+        else:
+            print("Building real-photograph rows ...", flush=True)
+            real_train = build_real(REAL_TRAIN, args.real_per_source, seed=31)
+            real_test = build_real(REAL_EVAL, args.real_per_source, seed=37)
+            np.savez(real_cache, **{f"train_{k}": v for k, v in real_train.items()},
+                     **{f"test_{k}": v for k, v in real_test.items()})
+        print(f"  real rows: train {len(real_train.get('y', []))}, eval {len(real_test.get('y', []))}")
+        train, test = concat(train, real_train), concat(test, real_test)
+
     # ---- leave-crops-out transfer check ---------------------------------
     keep = ~np.isin(train["crop"], HELD_OUT_CROPS)
     scaler_lco, model_lco = fit(train["X"][keep], train["y"][keep])
@@ -282,6 +350,12 @@ def main() -> int:
     negatives = scores[test["y"] == 0]
     threshold = threshold_at_fpr(negatives, TARGET_FPR)
     heavy = max(threshold_at_fpr(negatives, HEAVY_FPR), threshold + 1e-6)
+    real_negatives = scores[test["kind"] == "real_clean"]
+    if len(real_negatives):
+        # Real uploads are what the site receives, so their false-alarm rate must
+        # meet the target on its own, not just averaged with laboratory photos.
+        threshold = max(threshold, threshold_at_fpr(real_negatives, TARGET_FPR))
+        heavy = max(heavy, threshold_at_fpr(real_negatives, HEAVY_FPR), threshold + 1e-6)
 
     powdery = (test["y"] == 0) & (np.char.find(test["cls"].astype(str), "Powdery") >= 0)
     report = {

@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-11-01T12:26:02.727528+00:00",
+  "generated_at": "2026-11-08T10:54:00.271997+00:00",
   "model": "EfficientNet-B0 + CBAM",
   "threads": 1,
-  "inference_ms_median": 17.99,
-  "pipeline_ms_median_no_explain": 34.5,
-  "explain_ms_median": 92.62,
-  "resident_mb_after_requests": 113.4,
+  "inference_ms_median": 16.39,
+  "pipeline_ms_median_no_explain": 31.47,
+  "explain_ms_median": 79.25,
+  "resident_mb_after_requests": 108.3,
   "resident_mb_before_model": 53.9,
   "host": {
     "cpu_count": 12,

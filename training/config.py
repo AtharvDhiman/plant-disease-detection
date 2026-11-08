@@ -307,9 +307,17 @@ class TrainConfig:
     group: str = "benchmark"
     notes: str = ""
     tags: list[str] = field(default_factory=list)
+    # Start from this checkpoint's weights instead of ImageNet: used to fine-tune
+    # an already-trained model on additional data (real-world photographs).
+    init_checkpoint: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        # Omitted when unset so that every configuration that predates the field
+        # keeps the experiment id (a hash of this dict) it was recorded under.
+        if data.get("init_checkpoint") is None:
+            data.pop("init_checkpoint", None)
+        return data
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TrainConfig:
