@@ -85,10 +85,12 @@ COPY backend/ ./backend/
 COPY --from=frontend /build/dist/ ./frontend/dist/
 
 # --- the model bundle -----------------------------------------------------
-# Two files, and that is the whole model: the graph plus a manifest carrying
-# class names, temperature and OOD thresholds. No .pt checkpoint, so nothing in
-# this image needs torch to read it.
-COPY models/exported/serving.onnx ./models/exported/serving.onnx
+# The graph plus a manifest carrying class names, temperature and OOD
+# thresholds - and, for a graph too big for one git file (the two-network
+# ensemble, ~108 MB), its weights in serving.onnx.weights-<n>.bin side files,
+# which the glob picks up. No .pt checkpoint, so nothing in this image needs
+# torch to read it.
+COPY models/exported/serving.onnx* ./models/exported/
 COPY models/exported/serving.json ./models/exported/serving.json
 COPY models/exported/production.json ./models/exported/production.json
 COPY models/metadata/ ./models/metadata/

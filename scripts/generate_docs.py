@@ -698,7 +698,7 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
     order = {"production": 0, "field": 1, "field_long": 2, "field_long_resnet50": 3,
              "field_real": 4, "field_real_resnet50": 5, "field_real_all": 6,
              "field_real_all_resnet50": 7, "field_real_plus": 8, "field_real_plus_resnet50": 9,
-             "field_real_max": 10, "field_real_max_resnet50": 11}
+             "field_real_max": 10, "field_real_max_resnet50": 11, "field_real_max_ensemble": 12}
     trained_on = {"field_real": "lab + 1 real-photo dataset, 6 epochs",
                   "field_real_resnet50": "lab + 1 real-photo dataset, 6 epochs",
                   "field_real_all": "lab + 3 real-photo datasets, 6 epochs",
@@ -706,7 +706,8 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
                   "field_real_plus": "lab + 5 real-photo datasets, 10 epochs",
                   "field_real_plus_resnet50": "lab + 5 real-photo datasets, 10 epochs",
                   "field_real_max": "lab (800/class) + 8 real-photo datasets, 10 epochs",
-                  "field_real_max_resnet50": "lab (800/class) + 8 real-photo datasets, 10 epochs"}
+                  "field_real_max_resnet50": "lab (800/class) + 8 real-photo datasets, 10 epochs",
+                  "field_real_max_ensemble": "average of the two models above"}
     for experiment_id, r in sorted(results.items(), key=lambda kv: order.get(kv[1]["protocol"], 99)):
         trained = trained_on.get(r["protocol"], "lab photos only")
         low, high = r["top1_ci95"]
@@ -736,12 +737,11 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
     if ensemble.get("splits"):
         labels = ensemble.get("labels", {})
         ids = ensemble.get("experiments", [])
-        lines += ["### A bigger model, and both together\n",
-                  "ResNet50 + CBAM (24 M parameters, 92 MB) was fine-tuned on five of the "
-                  "real-photo sources with the same schedule. Averaging its calibrated "
-                  "probabilities with the served model's (`ensemble_cbam`, assembled by "
-                  "`scripts/build_ensemble.py`) was also measured. Top-1 / top-3 on real "
-                  "photos:\n",
+        lines += ["### Two networks, averaged - the served model\n",
+                  "EfficientNet-B0 + CBAM and ResNet50 + CBAM (24 M parameters, 92 MB) were "
+                  "fine-tuned on the same eight sources with the same schedule. The application "
+                  "serves the average of their calibrated probabilities (`ensemble_cbam`, "
+                  "assembled by `scripts/build_ensemble.py`). Top-1 / top-3 on real photos:\n",
                   "| Real-photo split | " + " | ".join(labels.get(i, i) for i in ids)
                   + " | Average of both |",
                   "|---|" + "---:|" * (len(ids) + 1)]
@@ -750,15 +750,20 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
                      for k in [*ids, "ensemble"]]
             lines.append(f"| {split} ({info['n']}) | " + " | ".join(cells) + " |")
         lines += ["",
-                  "Alone, the two networks are within a point of each other. Averaged, they are "
-                  "the most accurate configuration measured on real photos - about three points "
-                  "better than either on the PlantDoc test photos and five on PlantWild's "
-                  "validation photos - which puts the system at the top of the 60-76% range "
-                  "published for this benchmark. Serving the average would add the 92 MB "
-                  "ResNet50 to the 16 MB model and multiply CPU time per photo several times on "
-                  "the free host, so the application serves EfficientNet-B0 + CBAM alone; the "
-                  "ensemble is implemented end to end (torch and ONNX) for a host with more "
-                  "memory.",
+                  "Alone, the two networks are within about two points of each other; averaged, "
+                  "they match or beat the better one on every real-photo set but one and are "
+                  "clearly ahead at top-3 - and on the PlantVillage test split they make 46 "
+                  "mistakes in 17,572 (99.74%) against 70 and 58 for the two alone. That puts "
+                  "the system at the top of the 60-76% range published for PlantDoc. The pair "
+                  "was chosen on validation photographs, never the test splits: of the "
+                  "configurations the free host can serve (at most two networks, no test-time "
+                  "flipping), the one with the highest PlantVillage validation accuracy among "
+                  "those at least as accurate as the single EfficientNet on the real web-photo "
+                  "validation sets. Larger combinations (three or four networks, with mirrored "
+                  "copies) scored higher on validation but reached at most 99.77% on the test "
+                  "split, not 99.8%. Serving the pair costs about 206 MB of memory (one network: "
+                  "108 MB) and about 94 ms of CPU per photo on one thread (16 ms), within the "
+                  "free host's 512 MB.",
                   ""]
 
     new_sources = (extra or {}).get("new_sources") or {}
@@ -1456,7 +1461,7 @@ def main() -> int:
         "plantdoc_prep": load(settings.results_dir / "plantdoc_preparation.json"),
         "extra_prep": load(settings.results_dir / "realworld_extra_preparation.json"),
         "real_op": load(settings.results_dir / "real_operating_point.json"),
-        "ensemble": (load(settings.results_dir / "ensemble_max_r50plus.json")
+        "ensemble": (load(settings.results_dir / "ensemble_served.json")
                      or load(settings.results_dir / "ensemble_eval.json")),
         "new_sources": load(settings.results_dir / "new_sources_eval.json"),
         "splits": load(settings.splits_path),

@@ -224,3 +224,52 @@ def test_serving_bundle_is_not_gitignored():
         "serving.onnx is excluded by models/exported/**/*.onnx and needs an "
         "explicit negation, or Render will build an image with no model in it"
     )
+
+
+@needs_bundle
+def test_weight_side_files_exist_fit_github_and_ship_in_the_image():
+    """A large graph keeps its weights in side files; each must be in the repo, under
+    GitHub's 50 MB warning size, and copied into the Render image with the graph."""
+    manifest = json.loads(BUNDLE.read_text(encoding="utf-8"))
+    for name in manifest.get("weight_files", []):
+        path = GRAPH.parent / name
+        assert path.exists(), f"{name} is listed in serving.json but missing"
+        assert path.stat().st_size < 50 * 1024 * 1024
+    for path in GRAPH.parent.glob("serving.onnx*"):
+        assert path.stat().st_size < 100 * 1024 * 1024, f"{path.name} is over GitHub's limit"
+    dockerfile = (PROJECT_ROOT / "docker" / "render.Dockerfile").read_text(encoding="utf-8")
+    assert "COPY models/exported/serving.onnx* " in dockerfile
+
+
+def test_split_weights_keeps_the_graph_loadable_and_exact(tmp_path):
+    ort = pytest.importorskip("onnxruntime")
+    pytest.importorskip("onnx")
+    import torch
+
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    from export_serving_onnx import split_weights
+
+    from app.ml.architectures import build_model
+
+    model = build_model("cnn_baseline", 5).eval()
+    path = tmp_path / "g.onnx"
+    example = torch.randn(1, 3, 64, 64)
+    torch.onnx.export(model, (example,), str(path), input_names=["image"],
+                      output_names=["logits"], opset_version=17, dynamo=False)
+    with torch.no_grad():
+        reference = model(example).numpy()
+
+    files = split_weights(path, chunk_bytes=256 * 1024)
+    assert len(files) >= 2
+    assert all((tmp_path / f).stat().st_size <= 256 * 1024 + 4 * 1024 * 1024 for f in files)
+    session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
+    produced = session.run(None, {"image": example.numpy()})[0]
+    assert np.abs(produced - reference).max() < 1e-4
+
+    with pytest.raises(ValueError):                  # splitting twice would orphan the graph
+        split_weights(path, chunk_bytes=10**9)
+    # A fresh, small export replaces a split one: the stale side files go.
+    torch.onnx.export(model, (example,), str(path), input_names=["image"],
+                      output_names=["logits"], opset_version=17, dynamo=False)
+    assert split_weights(path, chunk_bytes=10**9) == []
+    assert not list(tmp_path.glob("g.onnx.weights-*.bin"))

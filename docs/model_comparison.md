@@ -4,7 +4,7 @@
 
 # Model comparison
 
-_Generated 2026-11-08 17:36 UTC._
+_Generated 2026-11-10 14:37 UTC._
 
 ## Full metric table
 
@@ -12,6 +12,7 @@ _Generated 2026-11-08 17:36 UTC._
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 |  | ResNet50 + CBAM | field_long_resnet50 | 99.74% | 0.9973 | 0.9973 | 0.9973 | 99.98% | 24.11M | 92.2 MB | 11.01 | 0.0472 |
 | **★** | EfficientNet-B0 + CBAM | field_long | 99.68% | 0.9968 | 0.9967 | 0.9967 | 99.98% | 4.26M | 16.4 MB | 18.82 | 0.0437 |
+|  | ResNet50 + CBAM | field_real_max_resnet50 | 99.67% | 0.9967 | 0.9966 | 0.9966 | 99.98% | 24.11M | 92.2 MB | 9.18 | 0.0462 |
 | **★** | EfficientNet-B0 + CBAM | field_real_max | 99.60% | 0.9960 | 0.9959 | 0.9959 | 99.98% | 4.26M | 16.4 MB | 15.12 | 0.0536 |
 | **★** | EfficientNet-B0 + CBAM | field_real | 99.56% | 0.9956 | 0.9954 | 0.9955 | 99.98% | 4.26M | 16.4 MB | 14.56 | 0.0527 |
 | **★** | EfficientNet-B0 + CBAM | field_real_all | 99.53% | 0.9952 | 0.9952 | 0.9952 | 99.98% | 4.26M | 16.4 MB | 13.35 | 0.0506 |
@@ -44,6 +45,7 @@ _Generated 2026-11-08 17:36 UTC._
 |---|---:|---:|---:|---:|---:|---:|---:|
 | ResNet50 + CBAM | 0.9974 | 99.99% | 1.0000 | 0.9973 | 99.80% | 10 | 167.0 min |
 | EfficientNet-B0 + CBAM | 0.9968 | 99.98% | 0.9999 | 0.9967 | 99.73% | 9 | 73.6 min |
+| ResNet50 + CBAM | 0.9967 | 99.98% | 0.9999 | 0.9966 | 85.85% | 9 | 149.3 min |
 | EfficientNet-B0 + CBAM | 0.9960 | 99.99% | 1.0000 | 0.9959 | 85.62% | 7 | 69.6 min |
 | EfficientNet-B0 + CBAM | 0.9956 | 99.99% | 0.9999 | 0.9954 | 86.13% | 5 | 19.1 min |
 | EfficientNet-B0 + CBAM | 0.9953 | 99.98% | 1.0000 | 0.9951 | 88.43% | 6 | 21.1 min |
@@ -72,7 +74,7 @@ _Generated 2026-11-08 17:36 UTC._
 
 ## Production selection
 
-**Serving:** EfficientNet-B0 + CBAM (`efficientnet_b0_cbam`)
+**Serving:** EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged) (`ensemble_cbam`)
 
 **Criterion:** `f1_macro` — Highest macro F1 on the held-out test split - treats every disease class equally regardless of how many images it has.
 
@@ -82,7 +84,7 @@ _Generated 2026-11-08 17:36 UTC._
 
 | Criterion | Winner |
 |---|---|
-| `f1_macro` | resnet50_cbam |
+| `f1_macro` | ensemble_cbam |
 | `accuracy` | resnet50_cbam |
 | `balanced` | place_cbam_last2 |
 | `fastest` | place_cbam_last2 |

@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-11-10T14:18:46.111712+00:00",
+  "model": "ensemble_cbam",
+  "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\ensemble_cbam__fieldrealmaxens__1abec594.pt",
+  "in_distribution": {
+    "split": "test_bench",
+    "count": 4000,
+    "accuracy": 0.9985
+  },
+  "ood_source": {
+    "kind": "synthetic_proxies",
+    "families": [
+      "noise",
+      "flat",
+      "shuffle",
+      "extreme"
+    ],
+    "count": 1200,
+    "caveat": "Synthetic proxies (uniform noise, flat colour fields, tile-shuffled leaves, heavily degraded leaves) are genuinely out of distribution but are easier to reject than real photographs of unrelated subjects. The detection rates below are therefore an upper bound. Re-run with --ood-dir pointing at a real non-leaf corpus for a tighter estimate."
+  },
+  "selected": {
+    "target_tpr": 0.95,
+    "msp_min": 0.69,
+    "entropy_max": 1.0,
+    "energy_max": 1.9744038581848145e-07,
+    "distributions": {
+      "in_distribution": {
+        "msp_mean": 0.9407627582550049,
+        "entropy_mean": 0.11541687748265858,
+        "energy_mean": -6.662448925887077e-10
+      },
+      "ood": {
+        "msp_mean": 0.47756215929985046,
+        "entropy_mean": 0.6002588764232702,
+        "energy_mean": 6.440095567938897e-09
+      }
+    },
+    "method": "msp"
+  },
+  "metrics": {
+    "auroc": {
+      "Max softmax probability": 0.97961,
+      "Normalised entropy": 0.9798895833333333,
+      "Free energy": 0.5185113541666667
+    },
+    "detection_rates": {
+      "Max softmax probability": 0.9425,
+      "Normalised entropy": 0.94,
+      "Free energy": 0.01749999999999996
+    },
+    "pipeline": {
+      "sampled_ood": 400,
+      "sampled_in_distribution": 300,
+      "quality_gate_rejects_ood": 0.6675,
+      "ood_score_rejects_ood": 0.9433333333333334,
+      "pipeline_rejects_ood": 0.9725,
+      "quality_gate_rejects_real_leaves": 0.03,
+      "per_family": {
+        "extreme": {
+          "count": 100,
+          "quality_gate_rejected": 0.64,
+          "ood_score_rejected": 0.85,
+          "pipeline_rejected": 0.93
+        },
+        "flat": {
+          "count": 100,
+          "quality_gate_rejected": 1.0,
+          "ood_score_rejected": 1.0,
+          "pipeline_rejected": 1.0
+        },
+        "noise": {
+          "count": 100,
+          "quality_gate_rejected": 1.0,
+          "ood_score_rejected": 1.0,
+          "pipeline_rejected": 1.0
+        },
+        "shuffle": {
+          "count": 100,
+          "quality_gate_rejected": 0.03,
+          "ood_score_rejected": 0.95,
+          "pipeline_rejected": 0.96
+        }
+      },
+      "interpretation": "The deployed pipeline runs the image-quality gate before the model, so the end-to-end rejection rate is what a user experiences. The 'quality_gate_rejects_real_leaves' figure is the cost of that gate: the fraction of genuine test photographs it would ask the user to retake."
+    }
+  },
+  "plot": "D:\\Data science projects\\Plant disease detection\\artifacts\\plots\\ood_score_distributions.png",
+  "note": "The serving path enforces the MSP and entropy thresholds. The energy threshold is recorded for reference; it is the least stable of the three across retraining because it depends on the absolute logit scale.",
+  "operating_point": {
+    "msp_min": 0.69,
+    "entropy_max": 1.0,
+    "chosen_by": "real-validation-sweep",
+    "method": "msp",
+    "reason": "Chosen on 2095 real validation photographs (plantdoc, plantwild, plantpathology2021, ccmt, potato_field, plantseg, gvlid, cds): the most permissive threshold at which answers shown as diagnoses are right at least 90% of the time overall and 85% on the web-search photos alone (PlantDoc, PlantWild, PlantSeg) (scripts/choose_real_operating_point.py).",
+    "set_at": "2026-11-10T14:21:35.901006+00:00",
+    "calibrated_at_target_tpr": {
+      "msp_min": 0.8990453481674194,
+      "entropy_max": 0.18715110626858486,
+      "energy_max": 1.9744038581848145e-07,
+      "per_score": {
+        "msp": {
+          "tpr": 0.95,
+          "fpr": 0.0575,
+          "ood_detection_rate": 0.9425
+        },
+        "entropy": {
+          "tpr": 0.95,
+          "fpr": 0.06,
+          "ood_detection_rate": 0.94
+        },
+        "energy": {
+          "tpr": 0.951,
+          "fpr": 0.9825,
+          "ood_detection_rate": 0.01749999999999996
+        }
+      },
+      "target_tpr": 0.95
+    },
+    "note": "`selected` holds the operating point in force. The values calibrated to keep 95% of laboratory leaves are stricter and are recorded here."
+  }
+}

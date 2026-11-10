@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-11-08T15:39:52.937527+00:00",
+  "generated_at": "2026-11-10T14:31:36.213129+00:00",
   "experiments": [
-    "efficientnet_b0_cbam__fieldrealmax__b2596c9c",
+    "ensemble_cbam__fieldrealmaxens__1abec594",
     "efficientnet_b0_cbam__fieldrealplus__cf5d499f"
   ],
   "labels": {
-    "efficientnet_b0_cbam__fieldrealmax__b2596c9c": "EfficientNet-B0 + CBAM",
+    "ensemble_cbam__fieldrealmaxens__1abec594": "EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged)",
     "efficientnet_b0_cbam__fieldrealplus__cf5d499f": "EfficientNet-B0 + CBAM"
   },
   "splits": {
     "gvlid_test": {
       "n": 447,
       "scores": {
-        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
-          "top1": 0.9865771812080537,
+        "ensemble_cbam__fieldrealmaxens__1abec594": {
+          "top1": 0.9888143176733781,
           "top3": 0.9977628635346756
         },
         "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
@@ -21,16 +21,16 @@
           "top3": 0.4742729306487696
         },
         "ensemble": {
-          "top1": 0.8926174496644296,
-          "top3": 0.9932885906040269
+          "top1": 0.941834451901566,
+          "top3": 0.9955257270693513
         }
       }
     },
     "cds_test": {
       "n": 204,
       "scores": {
-        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
-          "top1": 0.9852941176470589,
+        "ensemble_cbam__fieldrealmaxens__1abec594": {
+          "top1": 0.9901960784313726,
           "top3": 1.0
         },
         "efficientnet_b0_cbam__fieldrealplus__cf5d499f": {
@@ -38,7 +38,7 @@
           "top3": 0.9852941176470589
         },
         "ensemble": {
-          "top1": 0.9558823529411765,
+          "top1": 0.9852941176470589,
           "top3": 1.0
         }
       }

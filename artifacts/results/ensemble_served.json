@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-11-10T14:30:35.706660+00:00",
+  "experiments": [
+    "efficientnet_b0_cbam__fieldrealmax__b2596c9c",
+    "resnet50_cbam__fieldrealmaxr50__4aab5d0b"
+  ],
+  "labels": {
+    "efficientnet_b0_cbam__fieldrealmax__b2596c9c": "EfficientNet-B0 + CBAM",
+    "resnet50_cbam__fieldrealmaxr50__4aab5d0b": "ResNet50 + CBAM"
+  },
+  "splits": {
+    "plantdoc_test": {
+      "n": 236,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.7161016949152542,
+          "top3": 0.9110169491525424
+        },
+        "resnet50_cbam__fieldrealmaxr50__4aab5d0b": {
+          "top1": 0.7372881355932204,
+          "top3": 0.8983050847457628
+        },
+        "ensemble": {
+          "top1": 0.7372881355932204,
+          "top3": 0.9322033898305084
+        }
+      }
+    },
+    "plantdoc_val": {
+      "n": 348,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.7528735632183908,
+          "top3": 0.896551724137931
+        },
+        "resnet50_cbam__fieldrealmaxr50__4aab5d0b": {
+          "top1": 0.7298850574712644,
+          "top3": 0.8850574712643678
+        },
+        "ensemble": {
+          "top1": 0.7413793103448276,
+          "top3": 0.9166666666666666
+        }
+      }
+    },
+    "plantwild_val": {
+      "n": 734,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.6934604904632152,
+          "top3": 0.8664850136239782
+        },
+        "resnet50_cbam__fieldrealmaxr50__4aab5d0b": {
+          "top1": 0.7098092643051771,
+          "top3": 0.8773841961852861
+        },
+        "ensemble": {
+          "top1": 0.7275204359673024,
+          "top3": 0.888283378746594
+        }
+      }
+    },
+    "plantpathology2021_val": {
+      "n": 346,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.9682080924855492,
+          "top3": 0.9942196531791907
+        },
+        "resnet50_cbam__fieldrealmaxr50__4aab5d0b": {
+          "top1": 0.9739884393063584,
+          "top3": 0.9942196531791907
+        },
+        "ensemble": {
+          "top1": 0.9797687861271677,
+          "top3": 0.9971098265895953
+        }
+      }
+    },
+    "ccmt_val": {
+      "n": 347,
+      "scores": {
+        "efficientnet_b0_cbam__fieldrealmax__b2596c9c": {
+          "top1": 0.9077809798270894,
+          "top3": 0.9827089337175793
+        },
+        "resnet50_cbam__fieldrealmaxr50__4aab5d0b": {
+          "top1": 0.9020172910662824,
+          "top3": 0.9913544668587896
+        },
+        "ensemble": {
+          "top1": 0.9193083573487032,
+          "top3": 0.9942363112391931
+        }
+      }
+    }
+  }
+}

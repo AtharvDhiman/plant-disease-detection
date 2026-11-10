@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-11-08T10:54:00.271997+00:00",
-  "model": "EfficientNet-B0 + CBAM",
+  "generated_at": "2026-11-10T14:26:45.047520+00:00",
+  "model": "EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged)",
   "threads": 1,
-  "inference_ms_median": 16.39,
-  "pipeline_ms_median_no_explain": 31.47,
-  "explain_ms_median": 79.25,
-  "resident_mb_after_requests": 108.3,
+  "inference_ms_median": 94.33,
+  "pipeline_ms_median_no_explain": 109.68,
+  "explain_ms_median": 161.83,
+  "resident_mb_after_requests": 205.7,
   "resident_mb_before_model": 53.9,
   "host": {
     "cpu_count": 12,

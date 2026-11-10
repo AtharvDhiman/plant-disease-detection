@@ -2,7 +2,7 @@
   "per_class": 4,
   "disease_classes": 26,
   "seed": 7,
-  "ood_thresholds_from": "efficientnet_b0_cbam",
+  "ood_thresholds_from": "ensemble_cbam",
   "results": {
     "efficientnet_b0_cbam@production": {
       "label": "EfficientNet-B0 + CBAM [production]",
@@ -13,44 +13,44 @@
         "original": {
           "n": 104,
           "correct": 100,
-          "ok_right": 92,
-          "ok_wrong": 0
+          "ok_right": 97,
+          "ok_wrong": 1
         },
         "background": {
           "n": 104,
           "correct": 100,
-          "ok_right": 62,
+          "ok_right": 81,
           "ok_wrong": 0
         },
         "angle": {
           "n": 104,
           "correct": 100,
-          "ok_right": 80,
-          "ok_wrong": 0
+          "ok_right": 89,
+          "ok_wrong": 1
         },
         "distance": {
           "n": 104,
           "correct": 9,
-          "ok_right": 0,
+          "ok_right": 1,
           "ok_wrong": 0
         },
         "lighting": {
           "n": 104,
           "correct": 101,
-          "ok_right": 92,
-          "ok_wrong": 0
+          "ok_right": 97,
+          "ok_wrong": 1
         },
         "compression": {
           "n": 104,
           "correct": 96,
-          "ok_right": 61,
-          "ok_wrong": 0
+          "ok_right": 79,
+          "ok_wrong": 1
         },
         "combined": {
           "n": 104,
           "correct": 74,
-          "ok_right": 10,
-          "ok_wrong": 0
+          "ok_right": 24,
+          "ok_wrong": 1
         }
       }
     },
@@ -63,44 +63,44 @@
         "original": {
           "n": 104,
           "correct": 100,
-          "ok_right": 92,
-          "ok_wrong": 0
+          "ok_right": 97,
+          "ok_wrong": 1
         },
         "background": {
           "n": 104,
           "correct": 100,
-          "ok_right": 64,
+          "ok_right": 81,
           "ok_wrong": 0
         },
         "angle": {
           "n": 104,
           "correct": 100,
-          "ok_right": 80,
-          "ok_wrong": 0
+          "ok_right": 88,
+          "ok_wrong": 1
         },
         "distance": {
           "n": 104,
           "correct": 7,
-          "ok_right": 0,
-          "ok_wrong": 0
+          "ok_right": 2,
+          "ok_wrong": 1
         },
         "lighting": {
           "n": 104,
           "correct": 101,
-          "ok_right": 92,
-          "ok_wrong": 0
+          "ok_right": 97,
+          "ok_wrong": 1
         },
         "compression": {
           "n": 104,
           "correct": 96,
-          "ok_right": 64,
-          "ok_wrong": 0
+          "ok_right": 80,
+          "ok_wrong": 1
         },
         "combined": {
           "n": 104,
           "correct": 72,
-          "ok_right": 12,
-          "ok_wrong": 0
+          "ok_right": 25,
+          "ok_wrong": 1
         }
       }
     },
@@ -113,44 +113,44 @@
         "original": {
           "n": 104,
           "correct": 99,
-          "ok_right": 84,
-          "ok_wrong": 0
+          "ok_right": 93,
+          "ok_wrong": 1
         },
         "background": {
           "n": 104,
           "correct": 99,
-          "ok_right": 77,
+          "ok_right": 89,
           "ok_wrong": 0
         },
         "angle": {
           "n": 104,
           "correct": 100,
-          "ok_right": 78,
+          "ok_right": 86,
           "ok_wrong": 1
         },
         "distance": {
           "n": 104,
           "correct": 63,
-          "ok_right": 29,
-          "ok_wrong": 4
+          "ok_right": 42,
+          "ok_wrong": 10
         },
         "lighting": {
           "n": 104,
           "correct": 99,
-          "ok_right": 84,
+          "ok_right": 92,
           "ok_wrong": 1
         },
         "compression": {
           "n": 104,
           "correct": 95,
-          "ok_right": 75,
+          "ok_right": 89,
           "ok_wrong": 0
         },
         "combined": {
           "n": 104,
           "correct": 91,
-          "ok_right": 41,
-          "ok_wrong": 1
+          "ok_right": 57,
+          "ok_wrong": 2
         }
       }
     },
@@ -163,43 +163,43 @@
         "original": {
           "n": 104,
           "correct": 99,
-          "ok_right": 84,
-          "ok_wrong": 0
+          "ok_right": 93,
+          "ok_wrong": 1
         },
         "background": {
           "n": 104,
           "correct": 101,
-          "ok_right": 77,
+          "ok_right": 89,
           "ok_wrong": 0
         },
         "angle": {
           "n": 104,
           "correct": 99,
-          "ok_right": 81,
-          "ok_wrong": 0
+          "ok_right": 88,
+          "ok_wrong": 1
         },
         "distance": {
           "n": 104,
           "correct": 67,
-          "ok_right": 30,
-          "ok_wrong": 4
+          "ok_right": 44,
+          "ok_wrong": 7
         },
         "lighting": {
           "n": 104,
           "correct": 100,
-          "ok_right": 87,
+          "ok_right": 94,
           "ok_wrong": 1
         },
         "compression": {
           "n": 104,
           "correct": 96,
-          "ok_right": 73,
+          "ok_right": 89,
           "ok_wrong": 0
         },
         "combined": {
           "n": 104,
           "correct": 89,
-          "ok_right": 42,
+          "ok_right": 59,
           "ok_wrong": 1
         }
       }
@@ -213,6 +213,106 @@
         "original": {
           "n": 104,
           "correct": 100,
+          "ok_right": 98,
+          "ok_wrong": 1
+        },
+        "background": {
+          "n": 104,
+          "correct": 103,
+          "ok_right": 98,
+          "ok_wrong": 0
+        },
+        "angle": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 94,
+          "ok_wrong": 1
+        },
+        "distance": {
+          "n": 104,
+          "correct": 98,
+          "ok_right": 79,
+          "ok_wrong": 0
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 100,
+          "ok_wrong": 1
+        },
+        "compression": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 98,
+          "ok_wrong": 0
+        },
+        "combined": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 79,
+          "ok_wrong": 1
+        }
+      }
+    },
+    "resnet50_cbam@field_long_resnet50": {
+      "label": "ResNet50 + CBAM [field_long_resnet50]",
+      "experiment_id": "resnet50_cbam__fieldlongr50__2cf67e16",
+      "lab_test_accuracy": 0.9973821989528796,
+      "lab_test_f1_macro": 0.9972950884197845,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 99,
+          "ok_wrong": 0
+        },
+        "background": {
+          "n": 104,
+          "correct": 103,
+          "ok_right": 97,
+          "ok_wrong": 0
+        },
+        "angle": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 95,
+          "ok_wrong": 0
+        },
+        "distance": {
+          "n": 104,
+          "correct": 98,
+          "ok_right": 90,
+          "ok_wrong": 1
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 99,
+          "ok_wrong": 0
+        },
+        "compression": {
+          "n": 104,
+          "correct": 99,
+          "ok_right": 94,
+          "ok_wrong": 0
+        },
+        "combined": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 80,
+          "ok_wrong": 2
+        }
+      }
+    },
+    "efficientnet_b0_cbam@field_real_plus": {
+      "label": "EfficientNet-B0 + CBAM [field_real_plus]",
+      "experiment_id": "efficientnet_b0_cbam__fieldrealplus__cf5d499f",
+      "lab_test_accuracy": 0.993284771226952,
+      "lab_test_f1_macro": 0.9931430976120722,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 101,
           "ok_right": 98,
           "ok_wrong": 0
         },
@@ -230,127 +330,27 @@
         },
         "distance": {
           "n": 104,
-          "correct": 98,
-          "ok_right": 63,
-          "ok_wrong": 0
-        },
-        "lighting": {
-          "n": 104,
-          "correct": 101,
-          "ok_right": 99,
-          "ok_wrong": 0
-        },
-        "compression": {
-          "n": 104,
-          "correct": 100,
-          "ok_right": 95,
-          "ok_wrong": 0
-        },
-        "combined": {
-          "n": 104,
-          "correct": 102,
-          "ok_right": 76,
-          "ok_wrong": 1
-        }
-      }
-    },
-    "resnet50_cbam@field_long_resnet50": {
-      "label": "ResNet50 + CBAM [field_long_resnet50]",
-      "experiment_id": "resnet50_cbam__fieldlongr50__2cf67e16",
-      "lab_test_accuracy": 0.9973821989528796,
-      "lab_test_f1_macro": 0.9972950884197845,
-      "conditions": {
-        "original": {
-          "n": 104,
-          "correct": 101,
-          "ok_right": 97,
-          "ok_wrong": 0
-        },
-        "background": {
-          "n": 104,
-          "correct": 103,
-          "ok_right": 97,
-          "ok_wrong": 0
-        },
-        "angle": {
-          "n": 104,
-          "correct": 102,
-          "ok_right": 94,
-          "ok_wrong": 0
-        },
-        "distance": {
-          "n": 104,
-          "correct": 98,
-          "ok_right": 89,
-          "ok_wrong": 1
-        },
-        "lighting": {
-          "n": 104,
-          "correct": 100,
-          "ok_right": 99,
-          "ok_wrong": 0
-        },
-        "compression": {
-          "n": 104,
-          "correct": 99,
-          "ok_right": 93,
-          "ok_wrong": 0
-        },
-        "combined": {
-          "n": 104,
-          "correct": 101,
-          "ok_right": 78,
-          "ok_wrong": 1
-        }
-      }
-    },
-    "efficientnet_b0_cbam@field_real_plus": {
-      "label": "EfficientNet-B0 + CBAM [field_real_plus]",
-      "experiment_id": "efficientnet_b0_cbam__fieldrealplus__cf5d499f",
-      "lab_test_accuracy": 0.993284771226952,
-      "lab_test_f1_macro": 0.9931430976120722,
-      "conditions": {
-        "original": {
-          "n": 104,
-          "correct": 101,
-          "ok_right": 92,
-          "ok_wrong": 0
-        },
-        "background": {
-          "n": 104,
-          "correct": 103,
-          "ok_right": 92,
-          "ok_wrong": 0
-        },
-        "angle": {
-          "n": 104,
-          "correct": 101,
-          "ok_right": 86,
-          "ok_wrong": 0
-        },
-        "distance": {
-          "n": 104,
           "correct": 95,
-          "ok_right": 60,
-          "ok_wrong": 2
+          "ok_right": 80,
+          "ok_wrong": 3
         },
         "lighting": {
           "n": 104,
           "correct": 102,
-          "ok_right": 94,
+          "ok_right": 99,
           "ok_wrong": 0
         },
         "compression": {
           "n": 104,
           "correct": 98,
-          "ok_right": 89,
-          "ok_wrong": 0
+          "ok_right": 93,
+          "ok_wrong": 2
         },
         "combined": {
           "n": 104,
           "correct": 96,
-          "ok_right": 70,
-          "ok_wrong": 0
+          "ok_right": 75,
+          "ok_wrong": 2
         }
       }
     },
@@ -369,37 +369,37 @@
         "background": {
           "n": 104,
           "correct": 102,
-          "ok_right": 95,
+          "ok_right": 96,
           "ok_wrong": 1
         },
         "angle": {
           "n": 104,
           "correct": 99,
-          "ok_right": 90,
-          "ok_wrong": 0
+          "ok_right": 92,
+          "ok_wrong": 1
         },
         "distance": {
           "n": 104,
           "correct": 89,
-          "ok_right": 81,
-          "ok_wrong": 3
+          "ok_right": 83,
+          "ok_wrong": 7
         },
         "lighting": {
           "n": 104,
           "correct": 101,
-          "ok_right": 97,
-          "ok_wrong": 0
+          "ok_right": 98,
+          "ok_wrong": 1
         },
         "compression": {
           "n": 104,
           "correct": 98,
-          "ok_right": 91,
-          "ok_wrong": 1
+          "ok_right": 94,
+          "ok_wrong": 2
         },
         "combined": {
           "n": 104,
           "correct": 98,
-          "ok_right": 75,
+          "ok_right": 78,
           "ok_wrong": 3
         }
       }
@@ -413,44 +413,144 @@
         "original": {
           "n": 104,
           "correct": 100,
-          "ok_right": 95,
+          "ok_right": 97,
           "ok_wrong": 0
         },
         "background": {
           "n": 104,
           "correct": 103,
-          "ok_right": 94,
+          "ok_right": 96,
           "ok_wrong": 0
         },
         "angle": {
           "n": 104,
           "correct": 102,
-          "ok_right": 90,
+          "ok_right": 92,
           "ok_wrong": 0
         },
         "distance": {
           "n": 104,
           "correct": 94,
-          "ok_right": 66,
-          "ok_wrong": 1
+          "ok_right": 79,
+          "ok_wrong": 2
         },
         "lighting": {
           "n": 104,
           "correct": 101,
-          "ok_right": 97,
+          "ok_right": 100,
           "ok_wrong": 0
         },
         "compression": {
           "n": 104,
           "correct": 99,
-          "ok_right": 95,
-          "ok_wrong": 0
+          "ok_right": 97,
+          "ok_wrong": 1
         },
         "combined": {
           "n": 104,
           "correct": 98,
-          "ok_right": 74,
+          "ok_right": 79,
           "ok_wrong": 1
+        }
+      }
+    },
+    "resnet50_cbam@field_real_max_resnet50": {
+      "label": "ResNet50 + CBAM [field_real_max_resnet50]",
+      "experiment_id": "resnet50_cbam__fieldrealmaxr50__4aab5d0b",
+      "lab_test_accuracy": 0.9966992943318916,
+      "lab_test_f1_macro": 0.996601141495179,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 99,
+          "ok_wrong": 0
+        },
+        "background": {
+          "n": 104,
+          "correct": 104,
+          "ok_right": 97,
+          "ok_wrong": 0
+        },
+        "angle": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 95,
+          "ok_wrong": 0
+        },
+        "distance": {
+          "n": 104,
+          "correct": 97,
+          "ok_right": 85,
+          "ok_wrong": 3
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 102,
+          "ok_wrong": 0
+        },
+        "compression": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 97,
+          "ok_wrong": 0
+        },
+        "combined": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 83,
+          "ok_wrong": 0
+        }
+      }
+    },
+    "ensemble_cbam@field_real_max_ensemble": {
+      "label": "EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged) [field_real_max_ensemble]",
+      "experiment_id": "ensemble_cbam__fieldrealmaxens__1abec594",
+      "lab_test_accuracy": 0.9973821989528796,
+      "lab_test_f1_macro": 0.9973018118845873,
+      "conditions": {
+        "original": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 98,
+          "ok_wrong": 0
+        },
+        "background": {
+          "n": 104,
+          "correct": 104,
+          "ok_right": 97,
+          "ok_wrong": 0
+        },
+        "angle": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 94,
+          "ok_wrong": 0
+        },
+        "distance": {
+          "n": 104,
+          "correct": 97,
+          "ok_right": 80,
+          "ok_wrong": 0
+        },
+        "lighting": {
+          "n": 104,
+          "correct": 102,
+          "ok_right": 101,
+          "ok_wrong": 0
+        },
+        "compression": {
+          "n": 104,
+          "correct": 100,
+          "ok_right": 96,
+          "ok_wrong": 0
+        },
+        "combined": {
+          "n": 104,
+          "correct": 101,
+          "ok_right": 79,
+          "ok_wrong": 0
         }
       }
     }

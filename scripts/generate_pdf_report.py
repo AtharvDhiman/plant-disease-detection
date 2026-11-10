@@ -126,7 +126,7 @@ def generate_report():
     # threshold chosen on real validation photos, and the data sources.
     real_eval = load_json(PROJECT_ROOT / "artifacts/results/real_photo_eval.json", {})
     real_op = load_json(PROJECT_ROOT / "artifacts/results/real_operating_point.json", {})
-    ensemble = (load_json(PROJECT_ROOT / "artifacts/results/ensemble_max_r50plus.json", {})
+    ensemble = (load_json(PROJECT_ROOT / "artifacts/results/ensemble_served.json", {})
                 or load_json(PROJECT_ROOT / "artifacts/results/ensemble_eval.json", {}))
     real_n = real_eval.get("n", "—")
     real_rows = ""
@@ -1411,15 +1411,15 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
 </div>
 
 <div class="avoid-break">
-  <h3>A Bigger Model, and Both Together</h3>
-  <p>ResNet50 + CBAM (92&nbsp;MB) was fine-tuned on five of the real-photo sources with the same schedule, and averaging its calibrated probabilities with the served model's was measured. Top-1 / top-3 on real photos:</p>
+  <h3>Two Networks, Averaged &mdash; the Served Model</h3>
+  <p>EfficientNet-B0 + CBAM and ResNet50 + CBAM (92&nbsp;MB) were fine-tuned on the same eight real-photo sources with the same schedule; the application serves the average of their calibrated probabilities. Top-1 / top-3 on real photos:</p>
   <table>
     <thead><tr><th>Split</th><th class="numeric">EfficientNet-B0 + CBAM</th><th class="numeric">ResNet50 + CBAM</th><th class="numeric">Average of both</th></tr></thead>
     <tbody>
       {ensemble_rows}
     </tbody>
   </table>
-  <p>Alone the two are within a point of each other; averaged they are the most accurate configuration measured on real photos &mdash; about three points better on the test photos and five on PlantWild's validation photos, at the top of the 60&ndash;76% range published for this benchmark. Serving the average would add the 92&nbsp;MB ResNet50 and several times the CPU time per photo on the 512&nbsp;MB free host, so the application serves the EfficientNet model; the ensemble is implemented end to end for a larger host.</p>
+  <p>Averaged, the two match or beat the better network on almost every real-photo set and are clearly ahead at top-3, and on the laboratory test split they make 46 mistakes in 17,572 (99.74%) against 70 and 58 alone &mdash; at the top of the 60&ndash;76% range published for PlantDoc. The pair was chosen on validation photographs only, among the configurations the free host can serve; larger combinations reached at most 99.77% on the test split, not 99.8%. It costs about 206&nbsp;MB of memory (one network: 108&nbsp;MB) and about 94&nbsp;ms of CPU per photo, within the 512&nbsp;MB free host.</p>
 </div>
 
 <div class="avoid-break">

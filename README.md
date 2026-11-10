@@ -9,8 +9,8 @@
 
 <p>
   <a href="https://plant-disease-detection-x3y4.onrender.com/"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-online-2f8a4e?style=for-the-badge&logo=render&logoColor=white"></a>
-  <a href="docs/results.md"><img alt="Lab test accuracy 99.60%" src="https://img.shields.io/badge/lab%20accuracy-99.60%25-16432a?style=for-the-badge"></a>
-  <a href="docs/results.md#accuracy-on-real-photographs"><img alt="Real-photo accuracy 72%, top-3 91%" src="https://img.shields.io/badge/real%20photos-72%25%20%C2%B7%20top--3%2091%25-2f8a4e?style=for-the-badge"></a>
+  <a href="docs/results.md"><img alt="Lab test accuracy 99.74%" src="https://img.shields.io/badge/lab%20accuracy-99.74%25-16432a?style=for-the-badge"></a>
+  <a href="docs/results.md#accuracy-on-real-photographs"><img alt="Real-photo accuracy 74%, top-3 93%" src="https://img.shields.io/badge/real%20photos-74%25%20%C2%B7%20top--3%2093%25-2f8a4e?style=for-the-badge"></a>
   <a href="docs/results.md#per-class-accuracy-deployed-model"><img alt="38 classes, 14 crops" src="https://img.shields.io/badge/classes-38%20%C2%B7%2014%20crops-1f5c38?style=for-the-badge"></a>
 </p>
 <p>
@@ -77,9 +77,9 @@
 
 | | |
 |---|---|
-| 📷 **Tested on real photos, not just lab ones** | On 236 held-out real field and web photos it names the right disease **72%** of the time (top-3: **91%**), up from **32%** for the lab-trained model — fine-tuned on eight real-photo datasets (PlantDoc, PlantWild, PlantSeg, Plant Pathology 2021, CCMT, potato, GVLiD vineyard and CD&S corn-field photos). On held-out vineyard and corn-field photos it is right **98–99%** of the time ([details](docs/results.md#accuracy-on-real-photographs)) |
+| 📷 **Tested on real photos, not just lab ones** | On 236 held-out real field and web photos it names the right disease **74%** of the time (top-3: **93%**), up from **32%** for the lab-trained model — two networks (EfficientNet-B0 + CBAM and ResNet50 + CBAM) fine-tuned on eight real-photo datasets (PlantDoc, PlantWild, PlantSeg, Plant Pathology 2021, CCMT, potato, GVLiD vineyard and CD&S corn-field photos), their predictions averaged. On held-out vineyard and corn-field photos it is right **99%** of the time ([details](docs/results.md#accuracy-on-real-photographs)) |
 | 🤔 **Says "not sure" instead of guessing** | The confidence threshold is set on real photos: confidently wrong answers fell from 20% to 7%; uncertain photos get the closest matches instead of a verdict |
-| 🎯 **99.60% lab accuracy** | On 17,572 held-out PlantVillage images, 38 classes across 14 crops — every number generated from the experiment ledger, none hard-coded |
+| 🎯 **99.74% lab accuracy** | On 17,572 held-out PlantVillage images, 38 classes across 14 crops — every number generated from the experiment ledger, none hard-coded |
 | 🌾 **Trained for field conditions** | Field-condition augmentation (soil backdrops, small leaves, harsh light, JPEG) keeps 91–99% on lab photos made to look like field shots ([details](docs/results.md#field-condition-training)) |
 | 🧠 **CBAM attention, tested properly** | A controlled ablation (none / channel / spatial / SE / CBAM) and 18 trained configurations against classical ML and 7 other deep architectures, with a measured noise floor |
 | 🔍 **Explains every answer** | Grad-CAM, Grad-CAM++ and the learned CBAM attention map, with the caveat that heat maps are not lesion segmentation |
@@ -241,26 +241,26 @@ and must be able to justify itself.
 | Fastest inference | Logistic Regression (hand-crafted features) | classical | 0.02 ms/image |
 | Smallest model | Ablation A: CNN | ablation | 4.8 MB |
 | Best proposed (CBAM) model | EfficientNet-B0 + CBAM | field_long | 99.68% accuracy, 0.9967 macro F1 |
-| Serving in the application | EfficientNet-B0 + CBAM | field_real_max | selected by `f1_macro` |
+| Serving in the application | EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged) | field_real_max_ensemble | selected by `f1_macro` |
 | Evaluated on | held-out test split | — | 17,572 images, 38 classes |
 
 Rows with different protocols are **not** comparable: `benchmark` models were trained on a fixed subset and scored on a 4,560-image split; `production`, `field` and `field_long` models were trained on the full data and scored on 17,572 images.
 
-### The deployed model (EfficientNet-B0 + CBAM) at a glance
+### The deployed model (EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged)) at a glance
 
 | Accuracy | Top-3 | Macro F1 | Balanced acc. | Cohen's κ | ROC AUC | Test images |
 |---:|---:|---:|---:|---:|---:|---:|
-| **99.60%** | 99.98% | 0.9959 | 99.59% | 0.9959 | 0.99996 | 17,572 |
+| **99.74%** | 99.99% | 0.9973 | 99.73% | 0.9973 | 0.99996 | 17,572 |
 
 Hardest classes (per-class accuracy = recall):
 
 | Class | Accuracy | F1 |
 |---|---:|---:|
-| Corn (maize) - Cercospora leaf spot Gray leaf spot | 95.61% | 0.9691 |
-| Corn (maize) - Northern Leaf Blight | 98.11% | 0.9720 |
-| Tomato - Target Spot | 96.72% | 0.9833 |
-| Tomato - Early blight | 99.17% | 0.9886 |
-| Tomato - Spider mites Two-spotted spider mite | 99.54% | 0.9897 |
+| Corn (maize) - Cercospora leaf spot Gray leaf spot | 96.34% | 0.9765 |
+| Corn (maize) - Northern Leaf Blight | 99.37% | 0.9804 |
+| Tomato - Target Spot | 97.16% | 0.9856 |
+| Tomato - Septoria leaf spot | 99.77% | 0.9909 |
+| Tomato - Bacterial spot | 100.00% | 0.9918 |
 
 All 38 classes: [`docs/results.md` → Per-class accuracy](docs/results.md#per-class-accuracy-deployed-model).
 
@@ -274,7 +274,7 @@ Held-out real field and web photos (PlantDoc test split, 236 photos, never seen 
 | EfficientNet-B0 + CBAM (trained on lab photos only) | 31.8% | 59.7% |
 | EfficientNet-B0 + CBAM (trained on real photos) | 72.0% | 92.8% |
 | ResNet50 + CBAM (trained on real photos) | 72.5% | 89.8% |
-| EfficientNet-B0 + CBAM (**live: trained on real photos**) | 71.6% | 91.1% |
+| EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged) (**live: trained on real photos**) | 73.7% | 93.2% |
 
 When it is not sure, the site says so and shows the closest matches instead of a diagnosis - [details](docs/results.md#accuracy-on-real-photographs).
 
@@ -323,6 +323,7 @@ Trained on the complete training split at 224px and scored on the full test spli
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 |  | ResNet50 + CBAM | field_long_resnet50 | 99.74% | 0.9973 | 0.9973 | 0.9973 | 99.98% | 24.11M | 92.2 MB | 11.01 | 0.0472 |
 | **★** | EfficientNet-B0 + CBAM | field_long | 99.68% | 0.9968 | 0.9967 | 0.9967 | 99.98% | 4.26M | 16.4 MB | 18.82 | 0.0437 |
+|  | ResNet50 + CBAM | field_real_max_resnet50 | 99.67% | 0.9967 | 0.9966 | 0.9966 | 99.98% | 24.11M | 92.2 MB | 9.18 | 0.0462 |
 | **★** | EfficientNet-B0 + CBAM | field_real_max | 99.60% | 0.9960 | 0.9959 | 0.9959 | 99.98% | 4.26M | 16.4 MB | 15.12 | 0.0536 |
 | **★** | EfficientNet-B0 + CBAM | field_real | 99.56% | 0.9956 | 0.9954 | 0.9955 | 99.98% | 4.26M | 16.4 MB | 14.56 | 0.0527 |
 | **★** | EfficientNet-B0 + CBAM | field_real_all | 99.53% | 0.9952 | 0.9952 | 0.9952 | 99.98% | 4.26M | 16.4 MB | 13.35 | 0.0506 |
@@ -1255,12 +1256,14 @@ its results.
 
 1. **Real photographs are still much harder.** PlantVillage photographs are single
    leaves on uniform backgrounds; the lab accuracy (~99%) says little about a phone
-   or web photo. Fine-tuning on eight real-photo datasets raised accuracy on held-out
-   real photos from 32% to 72% (91% with the right answer in the top 3), and the app
-   says "not sure" rather than guess on the hardest ones - but roughly 1 in 4 real
-   photos is still misidentified, and about 6% get a confidently wrong diagnosis.
-   Averaging with a ResNet50 reaches about 75%; published results on this benchmark
-   range from 60% to 76%, so 80% would be beyond the state of the art for it.
+   or web photo. Fine-tuning two networks on eight real-photo datasets and averaging
+   them raised accuracy on held-out real photos from 32% to 74% (93% with the right
+   answer in the top 3), and the app says "not sure" rather than guess on the hardest
+   ones - but roughly 1 in 4 real photos is still misidentified, and about 1 in 10 of
+   these hard web photos gets a confidently wrong diagnosis. Published results on this
+   benchmark range from 60% to 76%, so 80% would be beyond the state of the art for it.
+   Lab accuracy is 99.74%: larger combinations of networks did no better than 99.77%,
+   short of 99.8%.
    Look-alike diseases (corn grey leaf spot vs northern leaf blight, tomato
    bacterial vs Septoria leaf spot) cause most of the errors. The real-photo test
    set is small (236 photos) and its labels carry some noise.

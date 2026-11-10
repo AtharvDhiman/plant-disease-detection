@@ -179,6 +179,54 @@ def export(model: torch.nn.Module, image_size: int, destination: Path,
     return with_cam
 
 
+# GitHub refuses files over 100 MB and warns above 50 MB, and Render builds the
+# image from the repository - so a graph bigger than this keeps its weights in
+# side files (ONNX "external data") of at most this size each.
+WEIGHT_CHUNK_BYTES = 45 * 1024 * 1024
+
+
+def split_weights(onnx_path: Path, chunk_bytes: int = WEIGHT_CHUNK_BYTES) -> list[str]:
+    """Move the graph's weights into ``<graph>.weights-<n>.bin`` files.
+
+    Returns the side-file names (empty when the graph is small enough to stay
+    one file). ONNX Runtime finds them next to the graph by itself, so serving
+    code does not change; they only have to be shipped together.
+
+    Expects a freshly exported, self-contained graph: side files left by an
+    earlier export are deleted, which would break a graph that still used them.
+    """
+    import onnx
+    from onnx.external_data_helper import (
+        set_external_data,
+        uses_external_data,
+        write_external_data_tensors,
+    )
+
+    header = onnx.load(str(onnx_path), load_external_data=False)
+    if any(uses_external_data(t) for t in header.graph.initializer):
+        raise ValueError(f"{onnx_path.name} already keeps its weights in side files; "
+                         "re-export it before splitting")
+    for stale in onnx_path.parent.glob(f"{onnx_path.name}.weights-*.bin"):
+        stale.unlink()
+    if onnx_path.stat().st_size <= chunk_bytes:
+        return []
+    model = onnx.load(str(onnx_path))
+    chunk, used, names = 0, 0, set()
+    for tensor in model.graph.initializer:
+        size = len(tensor.raw_data)
+        if size < 4096:                      # small tensors stay inside the graph
+            continue
+        if used and used + size > chunk_bytes:
+            chunk, used = chunk + 1, 0
+        name = f"{onnx_path.name}.weights-{chunk}.bin"
+        set_external_data(tensor, location=name)
+        names.add(name)
+        used += size
+    write_external_data_tensors(model, str(onnx_path.parent))
+    onnx.save_model(model, str(onnx_path))
+    return sorted(names)
+
+
 def verify_cam(model: torch.nn.Module, onnx_path: Path, image_size: int,
                trials: int = 4) -> float:
     """Compare the graph's CAM output against real autograd Grad-CAM.
@@ -302,6 +350,12 @@ def main() -> int:
     has_cam = export(model, image_size, destination, with_cam=not args.no_cam)
     size_mb = destination.stat().st_size / (1024 * 1024)
     print(f"  wrote:      {destination}  ({size_mb:.2f} MB, {time.perf_counter()-started:.1f}s)")
+    weight_files = split_weights(destination)
+    if weight_files:
+        print(f"  weights:    split into {', '.join(weight_files)} (each <= "
+              f"{WEIGHT_CHUNK_BYTES // (1024 * 1024)} MB, for GitHub and the Render build)")
+        size_mb = sum((destination.parent / f).stat().st_size
+                      for f in [destination.name, *weight_files]) / (1024 * 1024)
 
     cam_exact = False
     if has_cam and not args.skip_verify:
@@ -350,6 +404,8 @@ def main() -> int:
         "format": "onnx",
         "opset": OPSET,
         "graph": destination.name,
+        # Side files holding the weights of a large graph; ship them with it.
+        "weight_files": weight_files,
         "model_name": name,
         "label": spec.label if spec else name,
         "version": entry.get("version", "1.0.0"),
