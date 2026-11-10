@@ -186,10 +186,15 @@ class Predictor:
                 if loaded.device.type == "cuda":
                     torch.cuda.synchronize()
             raw_logits = logits.float().cpu().numpy()[0]
+            onnx_cam = None
         else:
             tensor = batch
+            # One run yields the logits and, when the graph has a CAM head, the
+            # class activation maps; keeping the maps saves a second full run
+            # for the Grad-CAM heat map (a whole extra pass of an ensemble).
             with loaded.lock:
-                raw_logits = loaded.logits(batch)[0]
+                raw, onnx_cam = loaded.logits_and_cam(batch)
+            raw_logits = raw[0]
         inference_ms = (time.perf_counter() - inference_start) * 1000
         # Temperature scaling only rescales the logits, so the argmax - and
         # therefore the predicted class - is unchanged; only confidence moves.
@@ -227,7 +232,8 @@ class Predictor:
         if explain and not is_rejected:
             explain_start = time.perf_counter()
             explanations, attention_stats, channel_profile, explanation_errors = self._explain(
-                loaded, tensor, image, int(order[0]), explain_methods, save_dir, file_stem
+                loaded, tensor, image, int(order[0]), explain_methods, save_dir, file_stem,
+                onnx_cam=onnx_cam,
             )
             explain_ms = (time.perf_counter() - explain_start) * 1000
 
@@ -376,7 +382,7 @@ class Predictor:
 
     @staticmethod
     def _explain_onnx(loaded, batch: np.ndarray, class_index: int,
-                      method: str, errors: dict) -> CamResult | None:
+                      method: str, errors: dict, cam: np.ndarray | None = None) -> CamResult | None:
         """Explanations available without autograd.
 
         ``grad_cam`` is the real thing, not an approximation: for a head that is
@@ -391,7 +397,7 @@ class Predictor:
         silently substituted, so a missing tab in the UI is explained.
         """
         if method == "grad_cam" and getattr(loaded, "cam_exact", False):
-            produced = loaded.grad_cam(batch, class_index)
+            produced = loaded.grad_cam(batch, class_index, cam=cam)
             if produced is not None:
                 heatmap, index = produced
                 return CamResult(heatmap, index, "grad_cam")
@@ -432,6 +438,7 @@ class Predictor:
         methods: tuple[str, ...],
         save_dir: Path | None,
         file_stem: str | None,
+        onnx_cam: np.ndarray | None = None,
     ) -> tuple[dict, dict, list[float] | None, dict]:
         """Produce heat maps, overlays, their statistics, and any failures."""
         base_image = np.asarray(eval_crop(original, loaded.image_size))
@@ -482,7 +489,8 @@ class Predictor:
                             log.warning("Unknown explanation method", fields={"method": method})
                             continue
                     else:
-                        result = self._explain_onnx(loaded, tensor, class_index, method, errors)
+                        result = self._explain_onnx(loaded, tensor, class_index, method, errors,
+                                                    cam=onnx_cam)
                         if result is None:
                             continue
                 except Exception as exc:  # noqa: BLE001 - never fail a prediction on a heat map

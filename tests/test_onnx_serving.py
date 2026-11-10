@@ -273,3 +273,32 @@ def test_split_weights_keeps_the_graph_loadable_and_exact(tmp_path):
                       output_names=["logits"], opset_version=17, dynamo=False)
     assert split_weights(path, chunk_bytes=10**9) == []
     assert not list(tmp_path.glob("g.onnx.weights-*.bin"))
+
+
+def test_grad_cam_reuses_the_maps_from_the_prediction_run():
+    """The prediction run already yields the CAM output; the heat map must not
+    run the graph again (for the two-network ensemble that is a whole extra pass)."""
+    from app.ml.onnx_backend import OnnxModel
+    from app.ml.ood import OODThresholds
+
+    class CountingSession:
+        runs = 0
+
+        def run(self, _outputs, _feeds):
+            CountingSession.runs += 1
+            rng = np.random.default_rng(0)
+            return [rng.normal(size=(1, 3)).astype(np.float32),
+                    rng.random((1, 3, 7, 7)).astype(np.float32)]
+
+    model = OnnxModel(name="m", label="m", session=CountingSession(), class_names=["a", "b", "c"],
+                      image_size=32, temperature=1.0,
+                      ood_thresholds=OODThresholds.defaults(0.1, 0.9), graph_path="x",
+                      parameters=0, size_mb=0.0, load_time_ms=0.0, cam_exact=True)
+    batch = np.zeros((1, 3, 32, 32), np.float32)
+    _, cam = model.logits_and_cam(batch)
+    assert CountingSession.runs == 1
+    reused, index = model.grad_cam(batch, 2, cam=cam)
+    assert CountingSession.runs == 1                      # no second run
+    fresh, _ = model.grad_cam(batch, 2)
+    assert CountingSession.runs == 2
+    assert index == 2 and np.allclose(reused, fresh)

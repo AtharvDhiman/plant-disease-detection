@@ -150,8 +150,8 @@ class OnnxModel:
         return raw, softmax(raw, self.temperature)
 
     # -------------------------------------------------------- explainability
-    def grad_cam(self, batch: np.ndarray,
-                 class_index: int | None = None) -> tuple[np.ndarray, int] | None:
+    def grad_cam(self, batch: np.ndarray, class_index: int | None = None,
+                 cam: np.ndarray | None = None) -> tuple[np.ndarray, int] | None:
         """Grad-CAM, computed from the graph's CAM head with no backward pass.
 
         Returns ``None`` when the bundle has no CAM output, so callers can fall
@@ -160,11 +160,20 @@ class OnnxModel:
 
         The map is upsampled to the input resolution and min-max normalised, to
         match what :func:`app.ml.explain.grad_cam` returns on the torch backend.
+
+        ``cam`` takes the maps from a run that already happened (the prediction
+        itself), so the graph is not run a second time for the heat map.
         """
-        raw, cam = self.logits_and_cam(batch)
+        raw = None
         if cam is None:
-            return None
-        index = int(raw[0].argmax()) if class_index is None else int(class_index)
+            raw, cam = self.logits_and_cam(batch)
+            if cam is None:
+                return None
+        if class_index is None:
+            raw = self.logits(batch) if raw is None else raw
+            index = int(raw[0].argmax())
+        else:
+            index = int(class_index)
         return _upsample_normalised(cam[0, index], batch.shape[-1]), index
 
     def occlusion_map(self, batch: np.ndarray, class_index: int | None = None,
