@@ -298,7 +298,7 @@
         <span class="sub">T=0.9222 scaling</span>
       </div>
       <div class="metric-card">
-        <span class="val">~206 MB</span>
+        <span class="val">~205 MB</span>
         <span class="lbl">Serving Footprint</span>
         <span class="sub">ONNX Runtime (512MB RAM)</span>
       </div>
@@ -340,7 +340,7 @@ This project develops an <strong>end-to-end, trustworthy, production-grade deep 
   <li><strong>Trust & Statistical Calibration:</strong> Incorporates post-hoc Temperature Scaling to align predictive probabilities with empirical error rates, dropping Expected Calibration Error (ECE) from <strong>5.65% to 3.42%</strong>.</li>
   <li><strong>Out-of-Distribution (OOD) Rejection:</strong> Calculates joint metrics (Max Softmax Probability, Predictive Entropy, and Free Energy) calibrated to a 95% True Positive Rate, ensuring non-leaf or unrecognizable subjects are safely refused rather than hallucinating high-confidence misdiagnoses.</li>
   <li><strong>Explainable AI (XAI):</strong> Generates visual saliency maps via Grad-CAM, Grad-CAM++, and forward-pass Occlusion Sensitivity, pinpointing the specific pathological lesions that drove the prediction.</li>
-  <li><strong>Resource-Constrained Cloud Deployment:</strong> Engineered specifically to operate within <strong>Render's 512 MB Free Tier</strong> by exporting PyTorch checkpoints to ONNX Runtime graphs, reducing memory footprint by ~78% (from 657 MB to ~206 MB).</li>
+  <li><strong>Resource-Constrained Cloud Deployment:</strong> Engineered specifically to operate within <strong>Render's 512 MB Free Tier</strong> by exporting PyTorch checkpoints to ONNX Runtime graphs, reducing memory footprint by ~78% (from 657 MB to ~205 MB).</li>
 </ul>
 
 <div class="callout callout-blue avoid-break">
@@ -1240,21 +1240,21 @@ The system leverages a production-grade Python, Deep Learning, and TypeScript/Re
 <div class="avoid-break">
   <h3>When the Application Says "Not Sure"</h3>
   <p>
-  The threshold below which the app gives no plain diagnosis was chosen on 2095 real validation photographs (never the test split) as the most permissive value at which answers shown as a diagnosis are right at least 90% of the time overall and at least 85% on the photos found through web image searches (PlantDoc, PlantWild, PlantSeg) on their own &mdash; pooled with the easy field collections, a threshold could otherwise look precise while letting through confidently wrong answers on exactly the photos people check against a web search. At the previous setting (0.15) this model would give a confidently wrong diagnosis for 15.4% of real photos; at 0.69 that falls to 6.3%, and the uncertain photos are shown with their closest matches instead.
+  The threshold below which the app gives no plain diagnosis was chosen on 2140 real validation photographs (never the test split) as the most permissive value at which answers shown as a diagnosis are right at least 90% of the time overall and at least 85% on the photos found through web image searches (PlantDoc, PlantWild, PlantSeg) on their own &mdash; pooled with the easy field collections, a threshold could otherwise look precise while letting through confidently wrong answers on exactly the photos people check against a web search. At the previous setting (0.15) this model would give a confidently wrong diagnosis for 15.3% of real photos; at 0.69 that falls to 6.2%, and the uncertain photos are shown with their closest matches instead.
   </p>
   <table>
     <thead><tr><th class="numeric">Threshold</th><th class="numeric">Shown as diagnosis</th><th class="numeric">Of those, right</th><th class="numeric">Confidently wrong (of all)</th></tr></thead>
     <tbody>
-      <tr><td class='numeric'>0.10</td><td class='numeric'>100.0%</td><td class='numeric'>84.5%</td><td class='numeric'>15.5%</td></tr>
-<tr><td class='numeric'>0.20</td><td class='numeric'>99.7%</td><td class='numeric'>84.6%</td><td class='numeric'>15.3%</td></tr>
-<tr><td class='numeric'>0.30</td><td class='numeric'>98.2%</td><td class='numeric'>85.5%</td><td class='numeric'>14.3%</td></tr>
-<tr><td class='numeric'>0.40</td><td class='numeric'>95.8%</td><td class='numeric'>87.1%</td><td class='numeric'>12.4%</td></tr>
-<tr><td class='numeric'>0.50</td><td class='numeric'>90.1%</td><td class='numeric'>90.0%</td><td class='numeric'>9.0%</td></tr>
-<tr><td class='numeric'>0.60</td><td class='numeric'>85.0%</td><td class='numeric'>91.5%</td><td class='numeric'>7.2%</td></tr>
-<tr style="background-color: #ecfdf5; font-weight: 600;"><td class='numeric'>0.69 (in force)</td><td class='numeric'>80.8%</td><td class='numeric'>92.3%</td><td class='numeric'>6.3%</td></tr>
-<tr><td class='numeric'>0.70</td><td class='numeric'>80.4%</td><td class='numeric'>92.4%</td><td class='numeric'>6.1%</td></tr>
-<tr><td class='numeric'>0.80</td><td class='numeric'>75.6%</td><td class='numeric'>93.9%</td><td class='numeric'>4.6%</td></tr>
-<tr><td class='numeric'>0.90</td><td class='numeric'>65.8%</td><td class='numeric'>95.2%</td><td class='numeric'>3.2%</td></tr>
+      <tr><td class='numeric'>0.10</td><td class='numeric'>100.0%</td><td class='numeric'>84.7%</td><td class='numeric'>15.3%</td></tr>
+<tr><td class='numeric'>0.20</td><td class='numeric'>99.7%</td><td class='numeric'>84.8%</td><td class='numeric'>15.2%</td></tr>
+<tr><td class='numeric'>0.30</td><td class='numeric'>98.2%</td><td class='numeric'>85.6%</td><td class='numeric'>14.1%</td></tr>
+<tr><td class='numeric'>0.40</td><td class='numeric'>95.8%</td><td class='numeric'>87.3%</td><td class='numeric'>12.2%</td></tr>
+<tr><td class='numeric'>0.50</td><td class='numeric'>89.9%</td><td class='numeric'>90.2%</td><td class='numeric'>8.8%</td></tr>
+<tr><td class='numeric'>0.60</td><td class='numeric'>84.8%</td><td class='numeric'>91.6%</td><td class='numeric'>7.1%</td></tr>
+<tr style="background-color: #ecfdf5; font-weight: 600;"><td class='numeric'>0.69 (in force)</td><td class='numeric'>80.7%</td><td class='numeric'>92.4%</td><td class='numeric'>6.2%</td></tr>
+<tr><td class='numeric'>0.70</td><td class='numeric'>80.3%</td><td class='numeric'>92.5%</td><td class='numeric'>6.0%</td></tr>
+<tr><td class='numeric'>0.80</td><td class='numeric'>75.5%</td><td class='numeric'>94.0%</td><td class='numeric'>4.5%</td></tr>
+<tr><td class='numeric'>0.90</td><td class='numeric'>65.5%</td><td class='numeric'>95.3%</td><td class='numeric'>3.1%</td></tr>
 
     </tbody>
   </table>

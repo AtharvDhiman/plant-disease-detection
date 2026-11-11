@@ -848,6 +848,39 @@ def real_photo_section(extra: dict, manifest: dict | None) -> list[str]:
                       "photos - for which the right answer is usually among the closest matches "
                       "shown."]
         lines.append("")
+
+    camera = (extra or {}).get("camera_gate") or {}
+    if camera.get("camera_only_refusals"):
+        before = get(camera, "plantdoc_test_pipeline.before", {})
+        after = get(camera, "plantdoc_test_pipeline.after", {})
+        lines += ["### Camera problems no longer refuse a confident answer\n",
+                  "The quality gate used to refuse any photo it judged blurry, too bright, too "
+                  "dark or too small - but a leaf on white paper reads as \"too bright\" and a "
+                  "soft web photo as \"blurry\", and the model can still be sure of them. Of "
+                  f"{num(camera.get('validation_photos'))} real validation photographs, "
+                  f"{camera['camera_only_refusals']} were refused for such camera reasons alone; "
+                  f"the model was right on {camera.get('camera_only_refusals_model_right')} of "
+                  f"them, and on all {camera.get('camera_only_confident_right')} of the "
+                  f"{camera.get('camera_only_confident')} it was confident about (at or above the "
+                  f"{camera.get('threshold'):.2f} threshold). Such a photo now gets its diagnosis, "
+                  "with the photo tip; an unsure one is still refused with advice to retake it. "
+                  "Soil, dust, \"not a plant\" and \"not a photograph\" still refuse outright.\n",
+                  "| | Before | After |", "|---|---:|---:|",
+                  f"| PlantDoc test photos shown as a diagnosis, right | {pct(before.get('ok_right'), 1)} "
+                  f"| {pct(after.get('ok_right'), 1)} |",
+                  f"| PlantDoc test photos shown as a diagnosis, wrong | {pct(before.get('ok_wrong'), 1)} "
+                  f"| {pct(after.get('ok_wrong'), 1)} |",
+                  f"| Real lab leaves refused by the gate | "
+                  f"{pct(get(camera, 'real_leaves_refused_by_gate.before'), 1)} | "
+                  f"{pct(get(camera, 'real_leaves_refused_by_gate.after'), 1)} |",
+                  f"| Synthetic non-leaf / degraded images refused by the pipeline | "
+                  f"{pct(get(camera, 'synthetic_ood_pipeline_rejects.before'), 1)} | "
+                  f"{pct(get(camera, 'synthetic_ood_pipeline_rejects.after'), 1)} |",
+                  "",
+                  "The cost is in the last row, almost all of it on heavily degraded leaf images "
+                  "the model is confident about; noise, flat colour and scrambled images are "
+                  "still refused at the same rates.",
+                  ""]
     return lines
 
 
@@ -1464,6 +1497,7 @@ def main() -> int:
         "ensemble": (load(settings.results_dir / "ensemble_served.json")
                      or load(settings.results_dir / "ensemble_eval.json")),
         "new_sources": load(settings.results_dir / "new_sources_eval.json"),
+        "camera_gate": load(settings.results_dir / "camera_gate_analysis.json"),
         "splits": load(settings.splits_path),
     }
 

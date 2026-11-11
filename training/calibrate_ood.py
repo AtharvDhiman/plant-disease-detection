@@ -182,13 +182,15 @@ def quality_rejects(dataset, indices: list[int]) -> np.ndarray:
     stand-alone AUROC understates what actually protects the user. Measuring
     both stages is the only way to report the pipeline honestly.
     """
-    from app.ml.quality import analyse_image
+    from app.ml.quality import analyse_image, camera_only
 
+    # A camera problem alone refuses only when the model is also unsure, which
+    # the OOD score already counts, so only the other refusals belong here.
     rejected = np.zeros(len(indices), dtype=bool)
     for position, index in enumerate(indices):
         image = dataset.raw_image(index)
         report = analyse_image(image)
-        rejected[position] = not report.passed
+        rejected[position] = not report.passed and not camera_only(report)
     return rejected
 
 
@@ -329,11 +331,11 @@ def main() -> int:
     in_sample_indices = list(range(0, len(in_dataset), max(1, len(in_dataset) // in_sample_size)))[:in_sample_size]
 
     from app.ml.quality import analyse_image as _analyse
+    from app.ml.quality import camera_only as _camera_only
 
-    in_quality_rejected = np.array([
-        not _analyse(Image.open(in_dataset.entries[i].path).convert("RGB")).passed
-        for i in in_sample_indices
-    ])
+    in_reports = [_analyse(Image.open(in_dataset.entries[i].path).convert("RGB"))
+                  for i in in_sample_indices]
+    in_quality_rejected = np.array([not r.passed and not _camera_only(r) for r in in_reports])
 
     ood_msp = msp_score(ood_probs)
     ood_ent = normalised_entropy(ood_probs)

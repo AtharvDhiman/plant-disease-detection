@@ -985,3 +985,43 @@ def test_a_genuinely_uncertain_prediction_is_still_rejected():
 
     assert verdict.is_ood is True
     assert len(verdict.reasons) == 2
+
+
+@pytest.mark.parametrize(
+    "codes,is_ood,level,expected",
+    [
+        # Camera problems alone: a confident answer is shown, with the photo tip...
+        (("blurry",), False, "high", "ok"),
+        (("too_bright",), False, "medium", "ok"),
+        (("too_dark", "too_small"), False, "high", "ok"),
+        # ...but an unsure one still asks for a better photo.
+        (("blurry",), True, "high", "poor_quality"),
+        (("too_bright",), False, "low", "poor_quality"),
+        # Problems with what is in the photo refuse whatever the confidence.
+        (("not_a_photograph",), False, "high", "poor_quality"),
+        (("blurry", "not_a_photograph"), False, "high", "poor_quality"),
+        (("not_a_plant",), False, "high", "not_a_plant"),
+        (("dusty_leaf",), False, "high", "poor_quality"),
+        (("soil_or_sand",), False, "high", "not_a_plant"),
+    ],
+)
+def test_camera_problems_refuse_only_unsure_answers(codes, is_ood, level, expected):
+    from app.services.predictor import Predictor
+
+    report = _issue_report(*[QualityIssue(code, "error", f"{code} message", f"{code} tip")
+                             for code in codes])
+    status, message = Predictor._decide_status(report, _verdict(is_ood), level)
+    assert status == expected
+    if status == "ok":
+        assert all(f"{code} tip" in message for code in codes)          # the tip is kept
+        assert codes[0].replace("_", " ") in message
+
+
+def test_camera_only_needs_a_failed_report_with_only_camera_errors():
+    from app.ml.quality import camera_only
+
+    blurry = QualityIssue("blurry", "error", "m", "s")
+    assert camera_only(_issue_report(blurry))
+    assert not camera_only(_issue_report(blurry, QualityIssue("not_a_plant", "error", "m", "s")))
+    assert not camera_only(_issue_report(QualityIssue("small_leaf_area", "warning", "m", "s")))
+    assert camera_only(_issue_report(QualityIssue("low_contrast", "warning", "m", "s"), passed=False))

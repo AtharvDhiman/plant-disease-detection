@@ -4,7 +4,7 @@
 
 # Results
 
-_Generated 2026-11-10 14:44 UTC from `artifacts/results/experiments.json` (36 completed experiments)._
+_Generated 2026-11-11 04:50 UTC from `artifacts/results/experiments.json` (36 completed experiments)._
 
 ## Headline
 
@@ -232,18 +232,18 @@ The image-quality gate runs *before* the model, so the end-to-end rate is what a
 
 | Stage | OOD rejected |
 |---|---:|
-| Image-quality gate alone | 66.8% |
+| Image-quality gate alone | 56.0% |
 | OOD score alone | 94.3% |
-| **Combined pipeline** | **97.2%** |
-| Cost: genuine leaves rejected | 3.0% |
+| **Combined pipeline** | **95.2%** |
+| Cost: genuine leaves rejected | 1.3% |
 
 
 | OOD family | Quality gate | OOD score | Combined |
 |---|---:|---:|---:|
-| extreme | 64.0% | 85.0% | 93.0% |
+| extreme | 22.0% | 85.0% | 86.0% |
 | flat | 100.0% | 100.0% | 100.0% |
 | noise | 100.0% | 100.0% | 100.0% |
-| shuffle | 3.0% | 95.0% | 96.0% |
+| shuffle | 2.0% | 95.0% | 95.0% |
 
 
 > **Caveat.** Synthetic proxies (uniform noise, flat colour fields, tile-shuffled leaves, heavily degraded leaves) are genuinely out of distribution but are easier to reject than real photographs of unrelated subjects. The detection rates below are therefore an upper bound. Re-run with --ood-dir pointing at a real non-leaf corpus for a tighter estimate.
@@ -322,16 +322,16 @@ Before any training, 16 PlantDoc training photos were removed because a perceptu
 
 | Model | Trained on | Real photos: top-1 (95% CI) | Top-3 | Shown right | Shown **wrong** | Lab test accuracy |
 |---|---|---:|---:|---:|---:|---:|
-| EfficientNet-B0 | lab photos only | 30.1% (25%–36%) | 52.1% | 11.4% | 8.9% | 99.06% |
-| EfficientNet-B0 + CBAM | lab photos only | 31.8% (26%–38%) | 59.7% | 16.9% | 14.0% | 99.68% |
-| ResNet50 + CBAM | lab photos only | 37.7% (32%–44%) | 66.5% | 25.0% | 21.2% | 99.74% |
-| EfficientNet-B0 + CBAM | lab + 1 real-photo dataset, 6 epochs | 66.5% (60%–72%) | 90.7% | 46.2% | 11.9% | 99.56% |
-| EfficientNet-B0 + CBAM | lab + 3 real-photo datasets, 6 epochs | 67.4% (61%–73%) | 90.7% | 48.7% | 13.1% | 99.53% |
-| EfficientNet-B0 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.0% (66%–77%) | 92.8% | 54.2% | 8.9% | 99.33% |
-| ResNet50 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.5% (66%–78%) | 89.8% | 61.4% | 15.7% | 99.23% |
-| EfficientNet-B0 + CBAM | lab (800/class) + 8 real-photo datasets, 10 epochs | 71.6% (66%–77%) | 91.1% | 55.5% | 14.0% | 99.60% |
-| ResNet50 + CBAM | lab (800/class) + 8 real-photo datasets, 10 epochs | 73.7% (68%–79%) | 89.8% | 59.7% | 14.4% | 99.67% |
-| EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged) **←** | average of the two models above | 73.7% (68%–79%) | 93.2% | 54.2% | 9.7% | 99.74% |
+| EfficientNet-B0 | lab photos only | 30.1% (25%–36%) | 52.1% | 11.4% | 9.3% | 99.06% |
+| EfficientNet-B0 + CBAM | lab photos only | 31.8% (26%–38%) | 59.7% | 16.9% | 14.8% | 99.68% |
+| ResNet50 + CBAM | lab photos only | 37.7% (32%–44%) | 66.5% | 25.4% | 23.3% | 99.74% |
+| EfficientNet-B0 + CBAM | lab + 1 real-photo dataset, 6 epochs | 66.5% (60%–72%) | 90.7% | 50.0% | 11.9% | 99.56% |
+| EfficientNet-B0 + CBAM | lab + 3 real-photo datasets, 6 epochs | 67.4% (61%–73%) | 90.7% | 52.1% | 13.1% | 99.53% |
+| EfficientNet-B0 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.0% (66%–77%) | 92.8% | 58.1% | 8.9% | 99.33% |
+| ResNet50 + CBAM | lab + 5 real-photo datasets, 10 epochs | 72.5% (66%–78%) | 89.8% | 65.3% | 15.7% | 99.23% |
+| EfficientNet-B0 + CBAM | lab (800/class) + 8 real-photo datasets, 10 epochs | 71.6% (66%–77%) | 91.1% | 58.9% | 14.0% | 99.60% |
+| ResNet50 + CBAM | lab (800/class) + 8 real-photo datasets, 10 epochs | 73.7% (68%–79%) | 89.8% | 63.6% | 14.4% | 99.67% |
+| EfficientNet-B0 + CBAM & ResNet50 + CBAM (averaged) **←** | average of the two models above | 73.7% (68%–79%) | 93.2% | 58.1% | 9.7% | 99.74% |
 
 *Top-1/top-3*: the network alone, on every photo. *Shown right / wrong*: what the full application displays with status `ok` (the rest are flagged as uncertain, dusty or not identified, or refused), with every model judged at the one "not sure" threshold now in force - so these columns compare networks, not the settings each was originally served with. The row marked **←** is the model the application serves.
 
@@ -379,22 +379,35 @@ PlantWild (CC BY-NC-ND 4.0) and PlantSeg (CC BY-NC 4.0) are licensed for non-com
 
 ### When the app says "not sure"
 
-Below a minimum top-class probability the app does not give a plain diagnosis; it says it is unsure and shows the closest matches. That threshold was chosen on 2,095 real validation photographs (`scripts/choose_real_operating_point.py`; never the PlantDoc test split) as the most permissive one at which answers shown as a diagnosis are right at least 90% of the time - and at least 85% on the 1,045 photos found through web image searches (PlantDoc, PlantWild, PlantSeg) on their own. The field collections are easy, and pooled with them a threshold can look precise overall while letting through confidently wrong answers on exactly the photos people check against a web search; no threshold reaches 90% on the web photos alone, so their floor is 85%, slightly above what the previous model achieved there (84.7%).
+Below a minimum top-class probability the app does not give a plain diagnosis; it says it is unsure and shows the closest matches. That threshold was chosen on 2,140 real validation photographs (`scripts/choose_real_operating_point.py`; never the PlantDoc test split) as the most permissive one at which answers shown as a diagnosis are right at least 90% of the time - and at least 85% on the 1,074 photos found through web image searches (PlantDoc, PlantWild, PlantSeg) on their own. The field collections are easy, and pooled with them a threshold can look precise overall while letting through confidently wrong answers on exactly the photos people check against a web search; no threshold reaches 90% on the web photos alone, so their floor is 85%, slightly above what the previous model achieved there (84.7%).
 
 | Threshold | Shown as diagnosis | Of those, right | Confidently wrong (of all photos) | Web photos shown | Of those, right |
 |---:|---:|---:|---:|---:|---:|
-| 0.10 | 100.0% | 84.5% | 15.5% | 100.0% | 72.9% |
-| 0.20 | 99.7% | 84.6% | 15.3% | 99.5% | 73.0% |
-| 0.30 | 98.2% | 85.5% | 14.3% | 96.5% | 74.3% |
-| 0.40 | 95.8% | 87.1% | 12.4% | 92.0% | 77.1% |
-| 0.50 | 90.1% | 90.0% | 9.0% | 81.7% | 81.9% |
-| 0.60 | 85.0% | 91.5% | 7.2% | 73.3% | 84.1% |
-| 0.69 **(in force)** | 80.8% | 92.3% | 6.3% | 67.0% | 85.3% |
-| 0.70 | 80.4% | 92.4% | 6.1% | 66.3% | 85.4% |
-| 0.80 | 75.6% | 93.9% | 4.6% | 59.4% | 87.9% |
-| 0.90 | 65.8% | 95.2% | 3.2% | 46.5% | 89.5% |
+| 0.10 | 100.0% | 84.7% | 15.3% | 100.0% | 73.3% |
+| 0.20 | 99.7% | 84.8% | 15.2% | 99.5% | 73.3% |
+| 0.30 | 98.2% | 85.6% | 14.1% | 96.5% | 74.7% |
+| 0.40 | 95.8% | 87.3% | 12.2% | 92.0% | 77.5% |
+| 0.50 | 89.9% | 90.2% | 8.8% | 81.7% | 82.2% |
+| 0.60 | 84.8% | 91.6% | 7.1% | 73.2% | 84.4% |
+| 0.69 **(in force)** | 80.7% | 92.4% | 6.2% | 67.0% | 85.6% |
+| 0.70 | 80.3% | 92.5% | 6.0% | 66.4% | 85.7% |
+| 0.80 | 75.5% | 94.0% | 4.5% | 59.6% | 88.1% |
+| 0.90 | 65.5% | 95.3% | 3.1% | 46.6% | 89.8% |
 
-At the previous setting (0.15) this model would show every real photo as a diagnosis, 15.4% of them confidently wrong; at 0.69 that falls to 6.3%, at the cost of saying "not sure" for 19.2% of photos - for which the right answer is usually among the closest matches shown.
+At the previous setting (0.15) this model would show every real photo as a diagnosis, 15.3% of them confidently wrong; at 0.69 that falls to 6.2%, at the cost of saying "not sure" for 19.3% of photos - for which the right answer is usually among the closest matches shown.
+
+### Camera problems no longer refuse a confident answer
+
+The quality gate used to refuse any photo it judged blurry, too bright, too dark or too small - but a leaf on white paper reads as "too bright" and a soft web photo as "blurry", and the model can still be sure of them. Of 2,101 real validation photographs, 44 were refused for such camera reasons alone; the model was right on 41 of them, and on all 33 of the 33 it was confident about (at or above the 0.69 threshold). Such a photo now gets its diagnosis, with the photo tip; an unsure one is still refused with advice to retake it. Soil, dust, "not a plant" and "not a photograph" still refuse outright.
+
+| | Before | After |
+|---|---:|---:|
+| PlantDoc test photos shown as a diagnosis, right | 54.2% | 58.1% |
+| PlantDoc test photos shown as a diagnosis, wrong | 9.7% | 9.7% |
+| Real lab leaves refused by the gate | 3.0% | 1.3% |
+| Synthetic non-leaf / degraded images refused by the pipeline | 97.2% | 95.2% |
+
+The cost is in the last row, almost all of it on heavily degraded leaf images the model is confident about; noise, flat colour and scrambled images are still refused at the same rates.
 
 
 ## Accuracy on field-like photos

@@ -35,7 +35,7 @@ from app.ml.heatmap import CamResult, attention_coverage, overlay_heatmap
 # tests), which is what lets the ONNX path serve the same predictions while
 # keeping torchvision - 77 MB - out of the serving process entirely.
 from app.ml.preprocess import eval_crop, eval_preprocess
-from app.ml.quality import QualityReport, analyse_image, quality_band
+from app.ml.quality import QualityReport, analyse_image, camera_only, quality_band
 from app.ml.serving import BACKEND, registry
 from app.services.knowledge import knowledge_base
 
@@ -336,6 +336,18 @@ class Predictor:
         dust = issues.get("dusty_leaf")
         if dust and dust.severity == "error":
             return "poor_quality", f"{dust.message} {dust.suggestion}"
+
+        # A camera problem alone (blur, exposure, size) does not refuse a photo the
+        # model is confident about - it was right on every such validation photo
+        # (see quality.CAMERA_ISSUES). The diagnosis is shown with the photo tip.
+        if camera_only(quality) and not verdict.is_ood and level != "low":
+            errors = [i for i in quality.issues if i.severity == "error"]
+            problems = ", ".join(i.code.replace("_", " ") for i in errors) or "low overall quality"
+            tips = " ".join(i.suggestion for i in errors) or (
+                "A sharp, evenly lit photo of a single leaf filling the frame would be more reliable.")
+            lead = CONFIDENCE_MESSAGES.get(level) or ""
+            return "ok", (f"{lead} The photo has a quality problem ({problems}), but the model "
+                          f"is confident about this leaf. {tips}").strip()
 
         # Photographic errors outrank non-plant detection so that dark/blurry shots
         # are flagged as camera defects to fix:

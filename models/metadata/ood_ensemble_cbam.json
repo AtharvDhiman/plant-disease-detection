@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-10T14:18:46.111712+00:00",
+  "generated_at": "2026-11-10T16:25:35.704547+00:00",
   "model": "ensemble_cbam",
   "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\ensemble_cbam__fieldrealmaxens__1abec594.pt",
   "in_distribution": {
@@ -51,16 +51,16 @@
     "pipeline": {
       "sampled_ood": 400,
       "sampled_in_distribution": 300,
-      "quality_gate_rejects_ood": 0.6675,
+      "quality_gate_rejects_ood": 0.56,
       "ood_score_rejects_ood": 0.9433333333333334,
-      "pipeline_rejects_ood": 0.9725,
-      "quality_gate_rejects_real_leaves": 0.03,
+      "pipeline_rejects_ood": 0.9525,
+      "quality_gate_rejects_real_leaves": 0.013333333333333334,
       "per_family": {
         "extreme": {
           "count": 100,
-          "quality_gate_rejected": 0.64,
+          "quality_gate_rejected": 0.22,
           "ood_score_rejected": 0.85,
-          "pipeline_rejected": 0.93
+          "pipeline_rejected": 0.86
         },
         "flat": {
           "count": 100,
@@ -76,9 +76,9 @@
         },
         "shuffle": {
           "count": 100,
-          "quality_gate_rejected": 0.03,
+          "quality_gate_rejected": 0.02,
           "ood_score_rejected": 0.95,
-          "pipeline_rejected": 0.96
+          "pipeline_rejected": 0.95
         }
       },
       "interpretation": "The deployed pipeline runs the image-quality gate before the model, so the end-to-end rejection rate is what a user experiences. The 'quality_gate_rejects_real_leaves' figure is the cost of that gate: the fraction of genuine test photographs it would ask the user to retake."
@@ -91,8 +91,8 @@
     "entropy_max": 1.0,
     "chosen_by": "real-validation-sweep",
     "method": "msp",
-    "reason": "Chosen on 2095 real validation photographs (plantdoc, plantwild, plantpathology2021, ccmt, potato_field, plantseg, gvlid, cds): the most permissive threshold at which answers shown as diagnoses are right at least 90% of the time overall and 85% on the web-search photos alone (PlantDoc, PlantWild, PlantSeg) (scripts/choose_real_operating_point.py).",
-    "set_at": "2026-11-10T14:21:35.901006+00:00",
+    "reason": "Chosen on 2140 real validation photographs (plantdoc, plantwild, plantpathology2021, ccmt, potato_field, plantseg, gvlid, cds): the most permissive threshold at which answers shown as diagnoses are right at least 90% of the time overall and 85% on the web-search photos alone (PlantDoc, PlantWild, PlantSeg) (scripts/choose_real_operating_point.py).",
+    "set_at": "2026-11-11T04:43:02.051625+00:00",
     "calibrated_at_target_tpr": {
       "msp_min": 0.8990453481674194,
       "entropy_max": 0.18715110626858486,

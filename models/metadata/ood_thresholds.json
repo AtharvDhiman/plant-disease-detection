@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-10T14:18:46.111712+00:00",
+  "generated_at": "2026-11-10T16:25:35.704547+00:00",
   "model": "ensemble_cbam",
   "checkpoint": "D:\\Data science projects\\Plant disease detection\\models\\checkpoints\\ensemble_cbam__fieldrealmaxens__1abec594.pt",
   "in_distribution": {
@@ -68,16 +68,16 @@
     "pipeline": {
       "sampled_ood": 400,
       "sampled_in_distribution": 300,
-      "quality_gate_rejects_ood": 0.6675,
+      "quality_gate_rejects_ood": 0.56,
       "ood_score_rejects_ood": 0.9433333333333334,
-      "pipeline_rejects_ood": 0.9725,
-      "quality_gate_rejects_real_leaves": 0.03,
+      "pipeline_rejects_ood": 0.9525,
+      "quality_gate_rejects_real_leaves": 0.013333333333333334,
       "per_family": {
         "extreme": {
           "count": 100,
-          "quality_gate_rejected": 0.64,
+          "quality_gate_rejected": 0.22,
           "ood_score_rejected": 0.85,
-          "pipeline_rejected": 0.93
+          "pipeline_rejected": 0.86
         },
         "flat": {
           "count": 100,
@@ -93,9 +93,9 @@
         },
         "shuffle": {
           "count": 100,
-          "quality_gate_rejected": 0.03,
+          "quality_gate_rejected": 0.02,
           "ood_score_rejected": 0.95,
-          "pipeline_rejected": 0.96
+          "pipeline_rejected": 0.95
         }
       },
       "interpretation": "The deployed pipeline runs the image-quality gate before the model, so the end-to-end rejection rate is what a user experiences. The 'quality_gate_rejects_real_leaves' figure is the cost of that gate: the fraction of genuine test photographs it would ask the user to retake."

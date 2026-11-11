@@ -393,6 +393,28 @@ def analyse_image(image: Image.Image) -> QualityReport:
     )
 
 
+# Problems with how the photo was taken, as opposed to what is in it. A leaf on
+# white paper reads as "too bright", a soft web photo as "blurry", yet the model
+# can still be sure of it: on real validation photographs refused for these
+# reasons alone, it was right on all 33 of the 33 it was confident about. So
+# they refuse a photo only when the model is unsure (Predictor._decide_status).
+# Soil, dust, "not a plant" and "not a photograph" still refuse outright - those
+# guard against confident answers about something that is not a clear leaf.
+CAMERA_ISSUES = frozenset({"blurry", "too_bright", "too_dark", "too_small"})
+
+
+def camera_only(report: QualityReport) -> bool:
+    """Whether the photo failed the gate for camera reasons alone.
+
+    True for a failed report whose errors are all in :data:`CAMERA_ISSUES`, or
+    that has no error at all and failed only on its overall score.
+    """
+    if report.passed:
+        return False
+    return all(issue.code in CAMERA_ISSUES
+               for issue in report.issues if issue.severity == "error")
+
+
 def quality_band(score: float) -> str:
     """Human-facing bucket for the quality score."""
     if score >= 0.75:

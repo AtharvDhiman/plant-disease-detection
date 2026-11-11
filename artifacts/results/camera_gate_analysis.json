@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-11-11T04:50:14.749375+00:00",
+  "rule": "A photo failing the quality gate only for camera reasons (blurry, too bright, too dark, too small, or a low overall score) is given a diagnosis, with the photo tip, when the model is confident (top-class probability at or above the 'not sure' threshold); otherwise it is refused as before.",
+  "validation_photos": 2101,
+  "camera_only_refusals": 44,
+  "camera_only_refusals_model_right": 41,
+  "camera_only_confident": 33,
+  "camera_only_confident_right": 33,
+  "threshold": 0.69,
+  "plantdoc_test_pipeline": {
+    "before": {
+      "ok_right": 0.5423728813559322,
+      "ok_wrong": 0.09745762711864407
+    },
+    "after": {
+      "ok_right": 0.5805084745762712,
+      "ok_wrong": 0.09745762711864407
+    }
+  },
+  "synthetic_ood_pipeline_rejects": {
+    "before": 0.9725,
+    "after": 0.9525
+  },
+  "real_leaves_refused_by_gate": {
+    "before": 0.03,
+    "after": 0.013333333333333334
+  }
+}

@@ -11,7 +11,7 @@ of every real-photo source in ``VALIDATION`` - never the PlantDoc test split).
 It sweeps the threshold and takes the most permissive one at which the answers
 that pass are right at least ``--target-precision`` of the time overall, and at
 least ``--web-target-precision`` on the web-search photos alone (``WEB_SOURCES``).
-Photos the quality gate would refuse are left out, since they never reach the
+Photos the quality gate refuses outright are left out, since they never reach the
 threshold.
 
     python scripts/choose_real_operating_point.py --experiment <id> --target-precision 0.9
@@ -41,7 +41,7 @@ from app.core.config import settings  # noqa: E402
 from app.ml.datasets import read_manifest  # noqa: E402
 from app.ml.ood import OODThresholds, softmax  # noqa: E402
 from app.ml.preprocess import eval_preprocess  # noqa: E402
-from app.ml.quality import analyse_image  # noqa: E402
+from app.ml.quality import analyse_image, camera_only  # noqa: E402
 from app.ml.registry import registry  # noqa: E402
 
 VALIDATION = ("plantdoc_val", "plantwild_val", "plantpathology2021_val", "ccmt_val",
@@ -86,7 +86,9 @@ def main() -> int:
             with Image.open(entry.path) as image:
                 image = image.convert("RGB")
             report = analyse_image(image)
-            if not report.passed:
+            # Camera-only problems do not refuse a confident answer, so those
+            # photos are in the sweep; every other gate failure refuses outright.
+            if not report.passed and not camera_only(report):
                 refused_by_gate += 1
                 continue
             batch = torch.from_numpy(eval_preprocess(image, loaded.image_size)).to(device)
