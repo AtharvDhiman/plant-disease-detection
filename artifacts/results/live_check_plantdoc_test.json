@@ -1,0 +1,20 @@
+{
+  "url": "https://plant-disease-detection-x3y4.onrender.com",
+  "split": "plantdoc_test",
+  "photos": 236,
+  "answered": 235,
+  "top1": 0.7191489361702128,
+  "top3": 0.9148936170212766,
+  "outcomes": {
+    "diagnosis shown - WRONG": 24,
+    "diagnosis shown - right": 137,
+    "'out_of_distribution' - right answer in top 3": 58,
+    "'out_of_distribution' - not in top 3": 8,
+    "'poor_quality' - not in top 3": 4,
+    "'not_a_plant' - not in top 3": 2,
+    "no response": 1,
+    "'dusty_leaf' - right answer in top 3": 1,
+    "'dusty_leaf' - not in top 3": 1
+  },
+  "checked_at": "2026-11-11T10:43:36+0530"
+}
