@@ -30,6 +30,13 @@ ALLOWED_PIL_FORMATS = {"JPEG", "PNG", "WEBP"}
 # to gigabytes of RGB data ("decompression bomb").
 MAX_PIXELS = 60_000_000
 
+# Longest side an upload is decoded to. The model sees 224 px, the quality checks
+# work at 512 px and the stored copy is 640 px, so a 16-megapixel phone photo in
+# full only costs memory - about 48 MB of pixels per upload before any working
+# copies, which on the 512 MB free host left too little room for two large
+# uploads at once (the live site dropped requests under that load).
+DECODE_MAX_SIDE = 1024
+
 
 class UploadError(ValueError):
     """Raised when an upload fails validation. Carries an HTTP-ready detail."""
@@ -108,9 +115,17 @@ def decode_image(data: bytes) -> Image.Image:
 
     # Re-open for the actual decode; `Image.open` above only read the header.
     image = Image.open(io.BytesIO(data))
+    if image.format == "JPEG":
+        # JPEG decodes directly at 1/2, 1/4 or 1/8 scale; draft() picks the
+        # smallest of those that is still at least DECODE_MAX_SIDE, so the full
+        # resolution is never materialised.
+        image.draft("RGB", (DECODE_MAX_SIDE, DECODE_MAX_SIDE))
     # Honour the EXIF orientation flag, then discard EXIF entirely on save.
     image = ImageOps.exif_transpose(image)
-    return image.convert("RGB")
+    image = image.convert("RGB")
+    if max(image.size) > DECODE_MAX_SIDE:
+        image.thumbnail((DECODE_MAX_SIDE, DECODE_MAX_SIDE), Image.LANCZOS)
+    return image
 
 
 def safe_filename(extension: str = ".jpg") -> str:
